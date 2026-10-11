@@ -40,8 +40,6 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
   margin-left: var(--sidebar-width);
   min-height: 100vh;
   transition: margin 0.3s ease;
-  display: flex;
-  flex-direction: column;
 }
 
 /* --- KIẾN TRÚC LAYOUT MỚI (MINI-SIDEBAR & BOTTOM NAV) --- */
@@ -63,8 +61,6 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
   flex-grow: 1;
   margin-left: var(--sidebar-collapsed); /* Chỉ chừa khoảng nhỏ cho icon bên trái */
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
   /* Chú ý: Cố định margin, khi menu bung ra sẽ trượt "lên trên" màn hình chính */
 }
 
