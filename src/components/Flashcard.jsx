@@ -22,7 +22,7 @@ function Flashcard({ vocab, autoPlay, contentType = 'vocab', isReversed = false,
     e.stopPropagation();
     const newStarState = !isStarred;
     setIsStarred(newStarState);
-    playSound('pop'); 
+    playSound('pop');
     try {
       await api.put(`/vocabularies/${vocab.id}/star`, { is_starred: newStarState });
     } catch (err) {
@@ -45,7 +45,7 @@ function Flashcard({ vocab, autoPlay, contentType = 'vocab', isReversed = false,
   const frontField = contentType === 'kanji' ? kanjiFront : (kanjiFront || (isReversed ? 'meaning' : 'word'));
   const backField = contentType === 'kanji' ? kanjiBack : (kanjiBack || (isReversed ? 'word' : 'meaning'));
 
-  const getFallbackText = (field, isFront) => {
+  const getFallbackText = (field) => {
     if (field === 'summary') return vocab.meaning;
     let text = vocab[field] || '';
     if (!text && (field === 'hanviet' || field === 'hiragana')) {
@@ -54,9 +54,9 @@ function Flashcard({ vocab, autoPlay, contentType = 'vocab', isReversed = false,
     return text;
   };
 
-  const frontText = getFallbackText(frontField, true);
-  const backText = getFallbackText(backField, false);
-  
+  const frontText = getFallbackText(frontField);
+  const backText = getFallbackText(backField);
+
   const frontLang = detectLanguage(frontText, frontField);
   const backLang = detectLanguage(backText, backField);
 
@@ -68,24 +68,24 @@ function Flashcard({ vocab, autoPlay, contentType = 'vocab', isReversed = false,
       const showMeaning = frontField !== 'meaning';
 
       return (
-        <div className="d-flex flex-column gap-3 text-center w-100 align-items-center justify-content-center h-100">
+        <div className="d-flex flex-column gap-2 text-center w-100 align-items-center justify-content-center h-100 px-2">
           {showKanji && (vocab.kanji || vocab.word) && (
-            <div className="fw-bold text-white" style={{ fontSize: '2.2rem', fontFamily: '"Yu Mincho", "MS Mincho", serif', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+            <div className="fw-bold text-white text-break" style={{ fontSize: 'clamp(1.5rem, 5vw, 2.1rem)', fontFamily: '"Yu Mincho", "MS Mincho", serif' }}>
               {vocab.kanji || vocab.word}
             </div>
           )}
           {showHanviet && vocab.hanviet && (
-            <div className="fw-bold text-uppercase" style={{ color: '#ffd700', fontSize: '1.2rem', letterSpacing: '4px' }}>
+            <div className="fw-bold text-uppercase" style={{ color: '#fde047', fontSize: '0.95rem', letterSpacing: '2px' }}>
               [{vocab.hanviet}]
             </div>
           )}
           {showHiragana && vocab.hiragana && (
-            <div className="fw-bold" style={{ color: '#00f2fe', fontSize: '1.8rem' }}>
+            <div className="fw-bold" style={{ color: '#67e8f9', fontSize: 'clamp(1.15rem, 4vw, 1.5rem)' }}>
               {vocab.hiragana}
             </div>
           )}
           {showMeaning && vocab.meaning && (
-            <div className="text-white fw-bold" style={{ fontSize: '1.8rem', textShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
+            <div className="text-white fw-bold text-break" style={{ fontSize: 'clamp(1.2rem, 4.5vw, 1.65rem)' }}>
               {vocab.meaning}
             </div>
           )}
@@ -95,26 +95,49 @@ function Flashcard({ vocab, autoPlay, contentType = 'vocab', isReversed = false,
 
     let displayField = field;
     if (!vocab[field] && (field === 'hanviet' || field === 'hiragana')) {
-        displayField = isFront ? 'word' : 'meaning';
+      displayField = isFront ? 'word' : 'meaning';
     }
+
+    const val = vocab[displayField] || '';
+    const isLong = val.length > 12;
 
     if (displayField === 'kanji' || displayField === 'word') {
       return (
-        <div className="d-flex flex-column align-items-center justify-content-center w-100 h-100">
-          <div style={{ fontSize: '4.5rem', fontFamily: '"Yu Mincho", "MS Mincho", serif', lineHeight: '1.2', color: isFront ? '#1f2937' : '#fff' }}>
-            {vocab[displayField]}
+        <div className="d-flex flex-column align-items-center justify-content-center w-100 h-100 px-2">
+          <div
+            className="fw-bold text-break"
+            style={{
+              fontSize: isLong ? 'clamp(1.5rem, 5.5vw, 2.2rem)' : 'clamp(2.1rem, 8vw, 3.2rem)',
+              fontFamily: '"Yu Mincho", "MS Mincho", serif',
+              lineHeight: '1.25',
+              color: isFront ? '#0f172a' : '#ffffff',
+            }}
+          >
+            {val}
           </div>
         </div>
       );
     }
-    
+
     if (displayField === 'hanviet') {
-      return <div className="fw-bold h-100 d-flex align-items-center justify-content-center" style={{ color: isFront ? '#863bff' : '#ffd700', fontSize: '2rem', letterSpacing: '2px' }}>{vocab[displayField]}</div>;
+      return (
+        <div className="fw-bold h-100 d-flex align-items-center justify-content-center px-2 text-break" style={{ color: isFront ? '#7c3aed' : '#fde047', fontSize: 'clamp(1.4rem, 5vw, 1.9rem)', letterSpacing: '1.5px' }}>
+          {val}
+        </div>
+      );
     }
     if (displayField === 'hiragana') {
-      return <div className="fw-bold h-100 d-flex align-items-center justify-content-center" style={{ color: isFront ? '#4b5563' : '#00f2fe', fontSize: '2rem' }}>{vocab[displayField]}</div>;
+      return (
+        <div className="fw-bold h-100 d-flex align-items-center justify-content-center px-2 text-break" style={{ color: isFront ? '#334155' : '#67e8f9', fontSize: 'clamp(1.4rem, 5vw, 1.9rem)' }}>
+          {val}
+        </div>
+      );
     }
-    return <div className="fw-bold h-100 d-flex align-items-center justify-content-center" style={{ color: isFront ? '#111827' : '#fff', fontSize: '2.2rem' }}>{vocab[displayField]}</div>;
+    return (
+      <div className="fw-bold h-100 d-flex align-items-center justify-content-center px-2 text-break" style={{ color: isFront ? '#0f172a' : '#ffffff', fontSize: 'clamp(1.35rem, 5vw, 1.85rem)' }}>
+        {val}
+      </div>
+    );
   };
 
   const speak = (text, lang) => {
@@ -140,23 +163,22 @@ function Flashcard({ vocab, autoPlay, contentType = 'vocab', isReversed = false,
   };
 
   const playAudio = (e, text, lang) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     speak(text, lang);
   };
 
   const renderStarButton = () => (
-    <button 
-      className="btn btn-light position-absolute top-0 start-0 m-3 rounded-circle border-0 d-flex align-items-center justify-content-center tap-effect"
-      style={{ 
-        width: '44px', height: '44px', zIndex: 20, 
-        backgroundColor: isStarred ? '#fffbeb' : '#f3f4f6',
-        color: isStarred ? '#f59e0b' : '#9ca3af',
-        boxShadow: isStarred ? '0 2px 8px rgba(245, 158, 11, 0.3)' : '0 2px 5px rgba(0,0,0,0.05)'
+    <button
+      className="btn-icon-soft position-absolute top-0 start-0 m-3 border-0 tap-effect"
+      style={{
+        zIndex: 20,
+        backgroundColor: isStarred ? '#fef3c7' : '#f1f5f9',
+        color: isStarred ? '#f59e0b' : '#94a3b8',
       }}
       onClick={handleToggleStar}
-      title="Đánh dấu sao (Quan trọng)"
+      title="Đánh dấu sao"
     >
-      <Star size={22} fill={isStarred ? "currentColor" : "none"} strokeWidth={isStarred ? 1.5 : 2.5} />
+      <Star size={18} fill={isStarred ? "currentColor" : "none"} strokeWidth={2} />
     </button>
   );
 
@@ -166,79 +188,82 @@ function Flashcard({ vocab, autoPlay, contentType = 'vocab', isReversed = false,
         className="w-100 h-100 position-relative"
         initial={false}
         animate={{ rotateY: flipped ? 180 : 0 }}
-        transition={{ type: "spring", stiffness: 200, damping: 20, mass: 1 }}
+        transition={{ type: "spring", stiffness: 220, damping: 22 }}
         style={{ transformStyle: "preserve-3d" }}
       >
-        <div 
+        {/* MẶT TRƯỚC */}
+        <div
           className="position-absolute w-100 h-100 d-flex flex-column rounded-4 bg-white"
-          style={{ 
+          style={{
             backfaceVisibility: 'hidden',
-            border: '2px solid #f3f4f6',
-            boxShadow: '0 12px 24px -6px rgba(0,0,0,0.08), 0 4px 8px -4px rgba(0,0,0,0.04), inset 0 -4px 0 rgba(0,0,0,0.02)',
-            overflow: 'hidden'
+            border: '1.5px solid #e2e8f0',
+            boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.06)',
+            overflow: 'hidden',
           }}
         >
           {renderStarButton()}
-          
-          <div className="flex-grow-1 p-4 d-flex align-items-center justify-content-center text-center">
+
+          <div className="flex-grow-1 p-3 d-flex align-items-center justify-content-center text-center">
             {renderField(frontField, true)}
           </div>
-          
-          <div className="p-3 d-flex justify-content-between align-items-center" style={{ backgroundColor: '#f9fafb', borderTop: '1px solid #f3f4f6' }}>
-            <button 
-              className="btn btn-sm btn-white rounded-pill text-muted fw-bold d-flex align-items-center gap-2 tap-effect"
+
+          <div className="p-2 px-3 d-flex justify-content-between align-items-center" style={{ backgroundColor: '#f8fafc', borderTop: '1px solid #f1f5f9' }}>
+            <button
+              className="btn btn-mobile-chip chip-slate"
               onClick={handleOpenNote}
             >
-              <BookOpen size={16} /> <span>Sổ tay</span>
+              <BookOpen size={14} /> <span>Sổ tay</span>
             </button>
-            <button 
-              className="btn btn-sm btn-primary rounded-pill fw-bold d-flex align-items-center gap-2 tap-effect shadow-sm"
+            <span className="text-muted" style={{ fontSize: '0.72rem' }}>Chạm để lật</span>
+            <button
+              className="btn btn-mobile-chip chip-primary"
               onClick={(e) => playAudio(e, frontText, frontLang)}
             >
-              <Volume2 size={16} /> <span>Nghe</span>
+              <Volume2 size={14} /> <span>Nghe</span>
             </button>
           </div>
         </div>
 
-        <div 
+        {/* MẶT SAU */}
+        <div
           className="position-absolute w-100 h-100 d-flex flex-column rounded-4"
-          style={{ 
+          style={{
             backfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)',
-            backgroundColor: '#863bff',
-            border: '2px solid #7c3aed',
-            boxShadow: '0 12px 24px -6px rgba(134,59,255,0.25), 0 4px 8px -4px rgba(134,59,255,0.15), inset 0 -4px 0 rgba(0,0,0,0.1)',
-            overflow: 'hidden'
+            background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+            border: '1.5px solid #6d28d9',
+            boxShadow: '0 10px 25px -5px rgba(124, 58, 237, 0.25)',
+            overflow: 'hidden',
           }}
         >
           {renderStarButton()}
 
-          <button 
-            className="btn btn-light position-absolute top-0 end-0 m-3 rounded-circle border-0 d-flex align-items-center justify-content-center tap-effect shadow-sm"
-            style={{ width: '44px', height: '44px', zIndex: 20, color: '#863bff' }}
-            onClick={(e) => { e.stopPropagation(); if(onEdit) onEdit(vocab); }}
+          <button
+            className="btn-icon-soft position-absolute top-0 end-0 m-3 border-0 tap-effect"
+            style={{ zIndex: 20, backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff' }}
+            onClick={(e) => { e.stopPropagation(); if (onEdit) onEdit(vocab); }}
             title="Sửa nhanh từ này"
           >
-            <Edit3 size={20} />
+            <Edit3 size={16} />
           </button>
-          
-          <div className="flex-grow-1 p-4 d-flex align-items-center justify-content-center text-center">
+
+          <div className="flex-grow-1 p-3 d-flex align-items-center justify-content-center text-center">
             {renderField(backField, false)}
           </div>
-          
-          <div className="p-3 d-flex justify-content-between align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.1)' }}>
-            <button 
-              className="btn btn-sm text-white fw-bold d-flex align-items-center gap-2 tap-effect rounded-pill"
-              style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
+
+          <div className="p-2 px-3 d-flex justify-content-between align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
+            <button
+              className="btn btn-mobile-chip text-white border-0"
+              style={{ backgroundColor: 'rgba(255,255,255,0.18)' }}
               onClick={handleOpenNote}
             >
-              <BookOpen size={16} /> <span>Sổ tay</span>
+              <BookOpen size={14} /> <span>Sổ tay</span>
             </button>
-            <button 
-              className="btn btn-sm bg-white text-primary rounded-pill fw-bold d-flex align-items-center gap-2 tap-effect shadow-sm"
+            <button
+              className="btn btn-mobile-chip bg-white text-primary border-0"
               onClick={(e) => playAudio(e, backText, backLang)}
             >
-              <Volume2 size={16} /> <span>Nghe</span>
+              <Volume2 size={14} /> <span>Nghe</span>
             </button>
           </div>
         </div>

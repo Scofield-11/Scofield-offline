@@ -63,26 +63,29 @@ function ExamList({
 
   return (
     <>
-      {/* NHẬP / XUẤT JSON LƯỚI 2 CỘT */}
-      <div className="card shadow-sm p-3 mb-3 border-0 bg-white rounded-4">
-        <div className="action-grid-2col">
-          <button
-            type="button"
-            className="btn btn-light text-primary btn-mobile-chip"
-            onClick={() => jsonInputRef.current?.click()}
-          >
-            <span>📂</span> <span>Nhập JSON Đề thi</span>
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary text-white btn-mobile-chip"
-            onClick={() => {
-              exportAllDataToJson();
-              toast.success('Đã xuất file JSON Backup!');
-            }}
-          >
-            <span>⬇️</span> <span>Xuất Backup JSON</span>
-          </button>
+      {/* THANH NHẬP / XUẤT JSON ĐỀ THI GỌN TRÊN 1 HÀNG */}
+      <div className="card border-0 rounded-4 p-2 px-3 mb-3 bg-white">
+        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <span className="fw-bold text-dark small">💾 Quản lý file JSON Đề thi</span>
+          <div className="d-flex gap-2">
+            <button
+              type="button"
+              className="btn btn-mobile-chip chip-primary"
+              onClick={() => jsonInputRef.current?.click()}
+            >
+              📂 Nhập JSON
+            </button>
+            <button
+              type="button"
+              className="btn btn-mobile-chip btn-primary text-white"
+              onClick={() => {
+                exportAllDataToJson();
+                toast.success('Đã xuất file JSON Backup!');
+              }}
+            >
+              ⬇️ Backup Tất cả
+            </button>
+          </div>
         </div>
         <input
           type="file"
@@ -93,31 +96,32 @@ function ExamList({
         />
       </div>
 
-      {/* KHUNG TẠO ĐỀ THI MỚI ĐÓNG/MỞ (COLLAPSE/TOGGLE) GỌN GÀNG TRÊN MOBILE */}
-      <div className="card shadow-sm mb-4 border-0 rounded-4 overflow-hidden">
+      {/* FORM TẠO ĐỀ THI MỚI (COLLAPSE GỌN GÀNG) */}
+      <div className="card border-0 rounded-4 mb-3 overflow-hidden">
         <div
-          className="card-header bg-white py-3 px-4 border-0 d-flex justify-content-between align-items-center"
-          style={{ cursor: 'pointer', minHeight: '54px' }}
+          className="card-header bg-white py-3 px-3 border-0 d-flex justify-content-between align-items-center"
+          style={{ cursor: 'pointer' }}
           onClick={() => setIsFormExpanded(!isFormExpanded)}
         >
-          <h5 className="mb-0 fw-bold text-primary">
-            {isFormExpanded ? '➖' : '➕'} Tạo bài kiểm tra mới (Dán nhanh)
-          </h5>
-          <span className="badge bg-light text-primary border rounded-pill px-3 py-2">
+          <div className="d-flex align-items-center gap-2">
+            <span className="btn-icon-soft chip-primary">{isFormExpanded ? '➖' : '➕'}</span>
+            <span className="fw-bold text-dark">Tạo đề thi trắc nghiệm mới</span>
+          </div>
+          <span className="btn-mobile-chip chip-slate">
             {isFormExpanded ? 'Thu gọn' : 'Mở form'}
           </span>
         </div>
 
         {isFormExpanded && (
-          <div className="card-body p-3 p-md-4 border-top bg-light">
+          <div className="card-body p-3 border-top bg-white">
             <input
-              className="form-control mb-3 fw-bold"
-              placeholder="Tên bài kiểm tra..."
+              className="form-control mb-2 fw-bold bg-light border-0"
+              placeholder="Tên đề thi..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
             <textarea
-              className="form-control mb-3"
+              className="form-control mb-3 bg-light border-0"
               rows="4"
               placeholder="Câu hỏi | Đáp án 1 | Đáp án 2 | Đáp án 3 | Đáp án 4 | 1"
               value={rawText}
@@ -131,19 +135,18 @@ function ExamList({
       </div>
 
       <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <h4 className="mb-0 fw-bold text-dark">Danh sách bài kiểm tra</h4>
-        <div className="form-check form-switch bg-white px-3 py-2 rounded-pill shadow-sm border">
+        <h5 className="mb-0 fw-bold text-dark">Danh sách đề thi</h5>
+        <div className="form-check form-switch bg-white px-3 py-1 rounded-pill border d-flex align-items-center gap-2">
           <input
-            className="form-check-input"
+            className="form-check-input m-0"
             type="checkbox"
             id="switch-instant-global"
             checked={isInstantFeedback}
             onChange={() => setIsInstantFeedback(!isInstantFeedback)}
           />
           <label
-            className="form-check-label text-primary fw-bold ms-1"
+            className="form-check-label text-primary fw-semibold small m-0"
             htmlFor="switch-instant-global"
-            style={{ fontSize: '0.9rem' }}
           >
             Hiện đáp án ngay
           </label>
@@ -152,51 +155,52 @@ function ExamList({
 
       {exams.length === 0 ? (
         <EmptyState
-          title="Chưa có bài kiểm tra"
-          message="Hãy bấm Tạo bài kiểm tra mới hoặc Nhập JSON ở phía trên nhé."
+          title="Chưa có đề thi"
+          message="Hãy bấm Tạo đề thi mới hoặc Nhập JSON ở phía trên nhé."
         />
       ) : (
-        <div className="row g-3 mb-5">
+        <div className="row g-3 mb-4">
           {exams.map((exam) => (
-            <div className="col-md-6" key={exam.id}>
-              <div className="card shadow-sm border-0 h-100 rounded-4">
-                <div className="card-body d-flex flex-column justify-content-between p-3 p-md-4">
+            <div className="col-12 col-md-6" key={exam.id}>
+              <div className="card border-0 h-100 rounded-4 p-3">
+                <div className="d-flex justify-content-between align-items-start gap-2 mb-3">
                   <div>
-                    <h5 className="card-title text-primary fw-bold mb-1">{exam.title}</h5>
-                    <span className="badge bg-light text-muted border rounded-pill">
+                    <h6 className="fw-bold text-dark mb-1">{exam.title}</h6>
+                    <span className="badge bg-light text-secondary border rounded-pill">
                       {exam.questions ? exam.questions.length : 0} câu hỏi
                     </span>
                   </div>
-
-                  <div className="mt-3">
+                  <div className="d-flex gap-1">
                     <button
-                      className="btn btn-primary btn-touch w-100 mb-2 shadow-sm"
-                      onClick={() => startExam(exam.id)}
+                      className="btn-icon-soft chip-slate"
+                      onClick={() => handleEditClick(exam.id)}
+                      title="Sửa đề"
                     >
-                      ▶️ Bắt đầu làm bài
+                      ✏️
                     </button>
-                    <div className="d-flex gap-2">
-                      <button
-                        className="btn btn-light text-dark btn-mobile-chip flex-fill"
-                        onClick={() => handleEditClick(exam.id)}
-                      >
-                        ✏️ Sửa
-                      </button>
-                      <button
-                        className="btn btn-light text-primary btn-mobile-chip flex-fill"
-                        onClick={() => handleExportExamJson(exam.id, exam.title)}
-                      >
-                        📦 JSON
-                      </button>
-                      <button
-                        className="btn btn-light text-danger btn-mobile-chip flex-fill"
-                        onClick={() => handleDeleteExam(exam.id)}
-                      >
-                        🗑️ Xóa
-                      </button>
-                    </div>
+                    <button
+                      className="btn-icon-soft chip-primary"
+                      onClick={() => handleExportExamJson(exam.id, exam.title)}
+                      title="Xuất JSON"
+                    >
+                      📦
+                    </button>
+                    <button
+                      className="btn-icon-soft chip-danger"
+                      onClick={() => handleDeleteExam(exam.id)}
+                      title="Xóa đề"
+                    >
+                      🗑️
+                    </button>
                   </div>
                 </div>
+
+                <button
+                  className="btn btn-primary btn-touch w-100 mt-auto"
+                  onClick={() => startExam(exam.id)}
+                >
+                  ▶️ Bắt đầu làm bài
+                </button>
               </div>
             </div>
           ))}

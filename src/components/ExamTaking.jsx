@@ -22,7 +22,7 @@ function ExamTaking({
   const scrollToQuestion = (idx) => {
     const element = document.getElementById(`question-${idx}`);
     if (element) {
-      const y = element.getBoundingClientRect().top + window.scrollY - 140;
+      const y = element.getBoundingClientRect().top + window.scrollY - 125;
       window.scrollTo({ top: y, behavior: 'smooth' });
     }
   };
@@ -33,7 +33,7 @@ function ExamTaking({
     const scoreCount = examData.questions.length - wrongQs.length;
 
     if (scoreCount / examData.questions.length >= 0.8) {
-      confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+      confetti({ particleCount: 140, spread: 75, origin: { y: 0.6 } });
     }
 
     const wrongDetails = wrongQs.map((q) => ({
@@ -59,8 +59,8 @@ function ExamTaking({
   const handleCreateFromCurrentMistakes = async () => {
     const wrongQs = examData.questions.filter((q) => answers[q.id] !== q.correct_ans);
     const newTitle = window.prompt(
-      'Vui lòng nhập tên cho đề ôn tập:',
-      `Ôn tập câu sai - ${examData.title}`
+      'Nhập tên cho đề ôn tập câu sai:',
+      `Ôn câu sai - ${examData.title}`
     );
     if (!newTitle || !newTitle.trim()) return;
 
@@ -73,7 +73,7 @@ function ExamTaking({
 
     try {
       await api.post('/exams/import', { title: newTitle.trim(), raw_text: rawText });
-      toast.success(`Đã tạo thành công đề thi: ${newTitle.trim()}`);
+      toast.success(`Đã tạo đề: ${newTitle.trim()}`);
       backToList();
       window.scrollTo(0, 0);
     } catch (error) {
@@ -88,22 +88,22 @@ function ExamTaking({
   const progressPercent = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
 
   return (
-    <div className="container mt-2 has-mobile-bottom-bar" style={{ maxWidth: '950px' }}>
-      {/* THANH TRẠNG THÁI GHIM ĐỈNH MÀN HÌNH (MOBILE-STICKY-TOP) */}
+    <div className="container mt-1 has-mobile-bottom-bar px-2 px-md-3" style={{ maxWidth: '900px' }}>
+      {/* THANH TRẠNG THÁI GHIM ĐỈNH */}
       <div className="mobile-sticky-top d-print-none">
         <div className="d-flex justify-content-between align-items-center mb-2">
-          <button className="btn btn-light text-dark btn-mobile-chip" onClick={backToList}>
+          <button className="btn btn-mobile-chip chip-slate" onClick={backToList}>
             ← Thoát
           </button>
-          <div className="text-truncate fw-bold text-dark px-2" style={{ maxWidth: '50%' }}>
+          <div className="text-truncate fw-bold text-dark small px-2" style={{ maxWidth: '52%' }}>
             {examData.title}
           </div>
-          <span className="badge bg-primary rounded-pill px-3 py-2 fs-6">
-            {isSubmitted ? `Điểm: ${score}/${totalQuestions}` : `${answeredCount}/${totalQuestions}`}
+          <span className="badge chip-primary rounded-pill px-2 py-1">
+            {isSubmitted ? `${score}/${totalQuestions} điểm` : `${answeredCount}/${totalQuestions} câu`}
           </span>
         </div>
 
-        <div className="progress mb-2" style={{ height: '6px', borderRadius: '8px' }}>
+        <div className="progress mb-2" style={{ height: '5px', borderRadius: '6px' }}>
           <div
             className="progress-bar bg-primary"
             role="progressbar"
@@ -111,24 +111,18 @@ function ExamTaking({
           ></div>
         </div>
 
-        {/* THANH CUỘN NGANG CÂU HỎI */}
         <div className="mobile-question-strip">
           {examData.questions.map((q, idx) => {
             const userAns = answers[q.id];
             const isAnswered = userAns !== undefined;
-            let btnColorClass = 'btn-outline-secondary bg-white';
+            let btnColorClass = 'chip-slate';
             if (isSubmitted) {
-              if (userAns === q.correct_ans) btnColorClass = 'btn-success text-white border-success';
-              else btnColorClass = 'btn-danger text-white border-danger';
+              btnColorClass = userAns === q.correct_ans ? 'btn-success text-white' : 'btn-danger text-white';
             } else if (isAnswered) {
               btnColorClass = 'btn-primary text-white';
             }
             return (
-              <button
-                key={idx}
-                className={`btn ${btnColorClass}`}
-                onClick={() => scrollToQuestion(idx)}
-              >
+              <button key={idx} className={`btn ${btnColorClass}`} onClick={() => scrollToQuestion(idx)}>
                 {idx + 1}
               </button>
             );
@@ -136,17 +130,21 @@ function ExamTaking({
         </div>
       </div>
 
-      {/* KẾT QUẢ TỔNG QUAN NẾU ĐÃ NỘP */}
       {isSubmitted && (
-        <div className="alert alert-info mb-4 shadow-sm border-0 rounded-4 p-4">
-          <h4 className="fw-bold mb-1">
-            🎯 Kết quả: {score} / {totalQuestions} câu đúng
-          </h4>
-          <p className="mb-0 text-muted">
-            {wrongQuestions.length === 0
-              ? 'Tuyệt vời! Bạn đã trả lời đúng tuyệt đối 100%.'
-              : `Bạn có ${wrongQuestions.length} câu trả lời chưa chính xác.`}
-          </p>
+        <div className="card border-0 rounded-4 p-3 mb-3 bg-white shadow-sm">
+          <div className="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 className="fw-bold text-primary mb-1">
+                🎯 Kết quả: {score} / {totalQuestions}
+              </h5>
+              <p className="text-muted small mb-0">
+                {wrongQuestions.length === 0
+                  ? 'Xuất sắc! Bạn đúng tuyệt đối 100%.'
+                  : `Cần ôn lại ${wrongQuestions.length} câu chưa chính xác.`}
+              </p>
+            </div>
+            <span className="fs-2">{score / totalQuestions >= 0.8 ? '🏆' : '💪'}</span>
+          </div>
         </div>
       )}
 
@@ -158,31 +156,26 @@ function ExamTaking({
           const showResult = isSubmitted || (isInstantFeedback && isAnswered);
 
           return (
-            <div
-              id={`question-${idx}`}
-              key={q.id}
-              className="bg-white rounded-4 shadow-sm mb-3 p-3 p-md-4 fade-in-slide"
-              style={{ transform: 'none' }}
-            >
+            <div id={`question-${idx}`} key={q.id} className="card border-0 rounded-4 mb-3 p-3">
               <div className="d-flex justify-content-between align-items-start mb-3 gap-2">
-                <h5 className="mb-0 fw-bold text-dark" style={{ lineHeight: '1.45' }}>
-                  Câu {idx + 1}: {q.question}
-                </h5>
+                <h6 className="mb-0 fw-bold text-dark" style={{ lineHeight: '1.45' }}>
+                  <span className="text-primary me-1">Câu {idx + 1}:</span> {q.question}
+                </h6>
                 <button
-                  className="btn btn-light text-warning fw-bold btn-mobile-chip d-print-none"
+                  className="btn-icon-soft chip-warning d-print-none"
                   onClick={() => openSaveModal(q)}
                   title="Lưu câu hỏi này"
                 >
-                  ⭐ Lưu
+                  ⭐
                 </button>
               </div>
+
               <div className="row g-2">
                 {q.options.map((opt, oIdx) => {
                   const optNumber = oIdx + 1;
-                  let btnClass = 'btn-outline-secondary bg-white text-dark';
+                  let btnClass = 'bg-light text-dark border';
                   if (showResult) {
-                    if (optNumber === q.correct_ans)
-                      btnClass = 'btn-success text-white border-success';
+                    if (optNumber === q.correct_ans) btnClass = 'btn-success text-white border-success';
                     else if (userAns === optNumber && userAns !== q.correct_ans)
                       btnClass = 'btn-danger text-white border-danger';
                   } else if (userAns === optNumber) {
@@ -192,10 +185,21 @@ function ExamTaking({
                   return (
                     <div className="col-12 col-sm-6" key={oIdx}>
                       <button
-                        className={`btn w-100 text-start px-3 py-3 fw-bold btn-touch justify-content-start ${btnClass}`}
+                        className={`btn w-100 text-start px-3 py-2 fw-semibold justify-content-start ${btnClass}`}
+                        style={{ minHeight: '42px', borderRadius: '10px' }}
                         onClick={() => handleSelect(q.id, optNumber)}
                       >
-                        <span className="badge bg-light text-dark me-2">{optNumber}</span>
+                        <span
+                          className="badge rounded-circle me-2 d-inline-flex align-items-center justify-content-center"
+                          style={{
+                            width: '24px',
+                            height: '24px',
+                            backgroundColor: 'rgba(0,0,0,0.08)',
+                            color: 'inherit',
+                          }}
+                        >
+                          {optNumber}
+                        </span>
                         <span className="text-wrap">{opt}</span>
                       </button>
                     </div>
@@ -207,25 +211,22 @@ function ExamTaking({
         })}
       </div>
 
-      {/* THANH CÔNG CỤ GHIM ĐÁY MÀN HÌNH (MOBILE-BOTTOM-BAR) */}
+      {/* THANH CÔNG CỤ GHIM ĐÁY */}
       <div className="mobile-bottom-bar d-print-none">
-        <div className="container px-0" style={{ maxWidth: '950px' }}>
+        <div className="container px-0" style={{ maxWidth: '900px' }}>
           {!isSubmitted ? (
             <div className="d-flex gap-2">
-              <button className="btn btn-light text-dark btn-mobile-chip" onClick={backToList}>
-                🏠 Danh sách
+              <button className="btn btn-mobile-chip chip-slate px-3" onClick={backToList}>
+                ← Danh sách
               </button>
-              <button
-                className="btn btn-primary btn-touch flex-grow-1 shadow-sm"
-                onClick={handleSubmit}
-              >
+              <button className="btn btn-primary btn-touch flex-grow-1" onClick={handleSubmit}>
                 ✅ Nộp bài ({answeredCount}/{totalQuestions})
               </button>
             </div>
           ) : (
             <div className="d-flex gap-2">
               <button
-                className="btn btn-warning text-dark btn-mobile-chip flex-fill"
+                className="btn btn-mobile-chip chip-warning flex-fill"
                 onClick={() => {
                   setAnswers({});
                   setIsSubmitted(false);
@@ -237,16 +238,13 @@ function ExamTaking({
               </button>
               {wrongQuestions.length > 0 && (
                 <button
-                  className="btn btn-primary text-white btn-mobile-chip flex-fill"
+                  className="btn btn-mobile-chip btn-primary text-white flex-fill"
                   onClick={handleCreateFromCurrentMistakes}
                 >
                   ✨ Tạo đề câu sai
                 </button>
               )}
-              <button
-                className="btn btn-light text-dark btn-mobile-chip"
-                onClick={backToList}
-              >
+              <button className="btn btn-mobile-chip chip-slate" onClick={backToList}>
                 🏠 Xong
               </button>
             </div>
