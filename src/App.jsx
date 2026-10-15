@@ -69,7 +69,19 @@ function App() {
             </div>
           </main>
         </div>
-        <ToastContainer position="bottom-right" autoClose={3000} theme="colored" />
+        <ToastContainer
+          position="top-center"
+          autoClose={1600}
+          hideProgressBar={true}
+          newestOnTop={true}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss={false}
+          draggable
+          pauseOnHover={false}
+          theme="colored"
+          style={{ top: 'env(safe-area-inset-top, 12px)', zIndex: 20000 }}
+        />
       </BrowserRouter>
     </VocabProvider>
   );

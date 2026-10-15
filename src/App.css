@@ -1,8 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
-
 body {
   background-color: #f6f7fb !important; 
-  font-family: 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Nunito', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
@@ -553,4 +551,121 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
   background-color: #fafafa;
   border-radius: 20px;
   margin-bottom: 12px;
+}
+
+/* ==========================================================================
+   MOBILE-FIRST UX SYSTEM (THUMB-FRIENDLY, STICKY TOP & FIXED BOTTOM BAR)
+   ========================================================================== */
+
+/* 1. Chống iOS Safari auto-zoom tuyệt đối trên mọi thiết bị */
+input, textarea, select, .form-control, .form-select {
+  font-size: 16px !important;
+  border-radius: 12px !important;
+}
+
+/* 2. Hệ thống nút cảm ứng (Touch-friendly Buttons 48px - 54px) */
+.btn-touch,
+.btn-lg {
+  min-height: 50px !important;
+  border-radius: 14px !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* 3. Nút dạng thẻ có cả Icon + Chữ rõ ràng (btn-mobile-chip) */
+.btn-mobile-chip {
+  min-height: 48px !important;
+  padding: 10px 14px !important;
+  border-radius: 12px !important;
+  font-size: 0.92rem !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+  white-space: nowrap;
+}
+
+/* 4. Lưới 2 cột cho các nhóm nút chức năng (Nhập/Xuất JSON, TXT, Excel...) */
+.action-grid-2col {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 10px !important;
+  width: 100%;
+}
+
+/* 5. Thanh trạng thái ghim đỉnh màn hình (mobile-sticky-top) */
+.mobile-sticky-top {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1040 !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) 14px 10px 14px !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
+  margin-left: -12px;
+  margin-right: -12px;
+  margin-bottom: 16px;
+  border-radius: 0 0 18px 18px;
+}
+
+/* Thanh cuộn ngang câu hỏi trên mobile-sticky-top */
+.mobile-question-strip {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  scroll-snap-type: x mandatory !important;
+  gap: 8px !important;
+  padding: 6px 2px 4px 2px !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
+}
+.mobile-question-strip::-webkit-scrollbar {
+  display: none !important;
+}
+.mobile-question-strip > button {
+  scroll-snap-align: center !important;
+  flex: 0 0 44px !important;
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 12px !important;
+  font-weight: 800 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 6. Thanh công cụ ghim đáy màn hình (mobile-bottom-bar) */
+.mobile-bottom-bar {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 1060 !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.08) !important;
+  padding: 10px 14px calc(env(safe-area-inset-bottom, 0px) + 10px) 14px !important;
+}
+
+@media (min-width: 992px) {
+  .mobile-bottom-bar {
+    left: var(--sidebar-collapsed) !important;
+  }
+}
+
+/* Chừa khoảng trống ở đáy khi trang có sử dụng mobile-bottom-bar */
+.has-mobile-bottom-bar {
+  padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px)) !important;
 }

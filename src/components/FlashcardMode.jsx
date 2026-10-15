@@ -393,76 +393,128 @@ function FlashcardMode() {
         <SaveNoteModal vocab={noteModalVocab} sets={sets} onClose={() => setNoteModalVocab(null)} onSaveSuccess={() => fetchSets(false, true)} />
       )}
 
-      <div className="d-flex justify-content-between align-items-center mx-auto mb-3" style={{ maxWidth: '450px' }}>
-        <h3 className="m-0 fw-bold">Flashcards</h3>
-        <button className="btn btn-light rounded-circle shadow-sm border-0 hover-scale" onClick={toggleFullscreen} title="Bật/Tắt Toàn màn hình (Phím F)">
-          {isFullscreen ? '↙️' : '⛶'}
-        </button>
-      </div>
-      
-      <div className="mb-2 text-muted fw-bold d-flex justify-content-between align-items-center mx-auto" style={{ maxWidth: '450px' }}>
-        <span>Thẻ {currentIndex + 1} / {vocabsToStudy.length}</span>
-        <span>{Math.round(((currentIndex + 1) / vocabsToStudy.length) * 100)}%</span>
-      </div>
-      <div className="progress mb-4 mx-auto shadow-sm" style={{ height: '8px', maxWidth: '450px', borderRadius: '10px' }}>
-        <div className="progress-bar" role="progressbar" style={{ width: `${((currentIndex + 1) / vocabsToStudy.length) * 100}%`, backgroundColor: '#8a2be2' }}></div>
-      </div>
-
-      <div 
-        className="d-flex justify-content-center fade-in-slide" 
-        key={currentIndex}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEndEvent}
-      >
-        <Flashcard 
-          vocab={vocabsToStudy[currentIndex]} 
-          autoPlay={autoPlay} 
-          contentType={currentContentType}
-          isReversed={isReversed}
-          kanjiFront={kanjiFront}
-          kanjiBack={kanjiBack}
-          onEdit={setEditingVocab}
-          onSaveNote={(item) => {
-            if (currentContentType === 'kanji') {
-              setNoteModalVocab({ word: item.kanji, hanviet: item.hanviet, hiragana: item.hiragana, meaning: item.meaning, language: 'ja' });
-            } else {
-              setNoteModalVocab(item);
-            }
-          }} 
-        />
-      </div>
-      
-      <div className="d-flex flex-wrap justify-content-center gap-4 mx-auto mt-4" style={{ maxWidth: '600px' }}>
-        <div className="form-check form-switch bg-white px-4 py-2 rounded-pill shadow-sm border d-flex align-items-center gap-2">
-          <input className="form-check-input m-0 shadow-sm" type="checkbox" id="autoPlaySwitch" checked={autoPlay} onChange={() => setAutoPlay(!autoPlay)} style={{ cursor: 'pointer' }} />
-          <label className="form-check-label text-muted fw-bold m-0" htmlFor="autoPlaySwitch" style={{ cursor: 'pointer' }}>Tự động phát âm</label>
+      <div className="mx-auto has-mobile-bottom-bar" style={{ maxWidth: '500px' }}>
+        {/* THANH TRẠNG THÁI GHIM ĐỈNH MÀN HÌNH */}
+        <div className="mobile-sticky-top">
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <button
+              className="btn btn-light text-dark btn-mobile-chip"
+              onClick={() => {
+                setIsStarted(false);
+                setIsFullscreen(false);
+              }}
+            >
+              ← Thoát
+            </button>
+            <span className="fw-bold text-dark">
+              Thẻ {currentIndex + 1} / {vocabsToStudy.length}
+            </span>
+            <button
+              className="btn btn-light text-dark btn-mobile-chip"
+              onClick={toggleFullscreen}
+              title="Toàn màn hình"
+            >
+              {isFullscreen ? '↙️' : '⛶'}
+            </button>
+          </div>
+          <div className="progress" style={{ height: '6px', borderRadius: '10px' }}>
+            <div
+              className="progress-bar"
+              role="progressbar"
+              style={{
+                width: `${((currentIndex + 1) / vocabsToStudy.length) * 100}%`,
+                backgroundColor: '#8a2be2',
+              }}
+            ></div>
+          </div>
         </div>
-        <div className="form-check form-switch bg-white px-4 py-2 rounded-pill shadow-sm border d-flex align-items-center gap-2">
-          <input className="form-check-input m-0 shadow-sm" type="checkbox" id="slideshowSwitch" checked={isSlideshow} onChange={() => setIsSlideshow(!isSlideshow)} style={{ cursor: 'pointer' }} />
-          <label className="form-check-label text-muted fw-bold m-0" htmlFor="slideshowSwitch" style={{ cursor: 'pointer' }}>Trình chiếu chậm</label>
+
+        <div
+          className="d-flex justify-content-center fade-in-slide"
+          key={currentIndex}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEndEvent}
+        >
+          <Flashcard
+            vocab={vocabsToStudy[currentIndex]}
+            autoPlay={autoPlay}
+            contentType={currentContentType}
+            isReversed={isReversed}
+            kanjiFront={kanjiFront}
+            kanjiBack={kanjiBack}
+            onEdit={setEditingVocab}
+            onSaveNote={(item) => {
+              if (currentContentType === 'kanji') {
+                setNoteModalVocab({
+                  word: item.kanji,
+                  hanviet: item.hanviet,
+                  hiragana: item.hiragana,
+                  meaning: item.meaning,
+                  language: 'ja',
+                });
+              } else {
+                setNoteModalVocab(item);
+              }
+            }}
+          />
+        </div>
+
+        <div className="action-grid-2col mt-3">
+          <div className="form-check form-switch bg-white px-3 py-2 rounded-4 shadow-sm border d-flex align-items-center justify-content-center gap-2 m-0" style={{ minHeight: '48px' }}>
+            <input
+              className="form-check-input m-0"
+              type="checkbox"
+              id="autoPlaySwitch"
+              checked={autoPlay}
+              onChange={() => setAutoPlay(!autoPlay)}
+            />
+            <label className="form-check-label text-dark fw-bold small m-0" htmlFor="autoPlaySwitch">
+              🔊 Tự phát âm
+            </label>
+          </div>
+          <div className="form-check form-switch bg-white px-3 py-2 rounded-4 shadow-sm border d-flex align-items-center justify-content-center gap-2 m-0" style={{ minHeight: '48px' }}>
+            <input
+              className="form-check-input m-0"
+              type="checkbox"
+              id="slideshowSwitch"
+              checked={isSlideshow}
+              onChange={() => setIsSlideshow(!isSlideshow)}
+            />
+            <label className="form-check-label text-dark fw-bold small m-0" htmlFor="slideshowSwitch">
+              ▶️ Tự lật thẻ
+            </label>
+          </div>
+        </div>
+
+        {/* THANH CÔNG CỤ GHIM ĐÁY MÀN HÌNH (MOBILE-BOTTOM-BAR) */}
+        <div className="mobile-bottom-bar">
+          <div className="container px-0" style={{ maxWidth: '500px' }}>
+            <div className="d-flex gap-2">
+              <button
+                className="btn btn-light text-dark btn-mobile-chip flex-fill"
+                onClick={handlePrev}
+                disabled={currentIndex === 0}
+              >
+                ← Trước
+              </button>
+              <button
+                className="btn btn-warning text-dark btn-mobile-chip flex-fill"
+                onClick={handleShuffle}
+              >
+                🔀 Trộn thẻ
+              </button>
+              <button
+                className="btn text-white btn-mobile-chip flex-fill"
+                style={{ backgroundColor: '#8a2be2' }}
+                onClick={handleNext}
+              >
+                Tiếp →
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-
-      <div className="mt-4 d-flex justify-content-center gap-3">
-        <button className="btn btn-outline-secondary px-4 py-2 fw-bold rounded-pill hover-scale" onClick={handlePrev} disabled={currentIndex === 0}>← Trước</button>
-        <button className="btn btn-warning px-4 py-2 fw-bold text-dark shadow-sm rounded-pill hover-scale" onClick={handleShuffle}>🔀 Trộn thẻ</button>
-        <button className="btn px-4 py-2 fw-bold text-white shadow-sm rounded-pill hover-scale" style={{ backgroundColor: '#8a2be2' }} onClick={handleNext}>Tiếp →</button>
-      </div>
-      
-      {!isFullscreen && (
-        <p className="text-muted small mb-0 mt-4 d-none d-md-block">
-          💡 <strong>Mẹo:</strong> Phím <strong>Space</strong> lật thẻ, <strong>Trái/Phải</strong> (Vuốt ngang) để chuyển từ, <strong>F</strong> toàn màn hình.
-        </p>
-      )}
-
-      {!isFullscreen && (
-        <div className="mt-4">
-           <button className="btn btn-link text-muted text-decoration-none fw-bold hover-bg-light rounded-pill px-3 py-2" onClick={() => setIsStarted(false)}>
-              &larr; Cài đặt lại / Đổi học phần
-           </button>
-        </div>
-      )}
     </div>
   );
 }

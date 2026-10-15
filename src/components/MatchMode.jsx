@@ -167,7 +167,7 @@ function MatchMode() {
     let faceA = currentContentType === 'kanji' ? kanjiMatchA : (hasFourFields ? (kanjiMatchA === 'kanji' ? 'word' : kanjiMatchA) : (isReversed ? 'meaning' : 'word'));
     let faceB = currentContentType === 'kanji' ? kanjiMatchB : (hasFourFields ? (kanjiMatchB === 'meaning' && kanjiMatchA === 'kanji' ? 'meaning' : (kanjiMatchB === 'kanji' ? 'word' : kanjiMatchB)) : (isReversed ? 'word' : 'meaning'));
     if (!vocab[faceA] && (faceA === 'hanviet' || faceA === 'hiragana')) faceA = 'word';
-    if (!vocab[faceB] && (faceB === 'hanviet' || faceB === 'hiragana')) faceB = 'meaning';
+    if (!vocab[faceB] && (faceB === 'hanviet' || faceB === 'hiragana')) faceB = 'word';
     
     return [vocab[faceA] || "", vocab[faceB] || ""];
   };

@@ -303,6 +303,7 @@ function ExamMode() {
       
       {editingExamId ? (
         <ExamEditForm 
+          editingExamId={editingExamId}
           editTitle={editTitle} setEditTitle={setEditTitle} editQuestions={editQuestions}
           handleDeleteQuestion={handleDeleteQuestion} handleUpdateQuestion={handleUpdateQuestion}
           handleAddNewQuestionToEdit={handleAddNewQuestionToEdit} setShowImportModal={setShowImportModal}

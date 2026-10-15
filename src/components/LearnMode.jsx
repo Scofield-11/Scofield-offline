@@ -138,7 +138,7 @@ function LearnMode() {
   const getAnswerText = (vocab) => {
     if (!vocab) return "";
     let back = currentContentType === 'kanji' ? kanjiBack : (hasFourFields ? (kanjiBack === 'meaning' && kanjiFront === 'kanji' ? 'meaning' : (kanjiBack === 'kanji' ? 'word' : kanjiBack)) : (isReversed ? 'word' : 'meaning'));
-    if (!vocab[back] && (back === 'hanviet' || back === 'hiragana')) back = 'meaning';
+    if (!vocab[back] && (back === 'hanviet' || back === 'hiragana')) back = 'word';
     return vocab[back] || "";
   };
 

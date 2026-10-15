@@ -204,7 +204,7 @@ function TestMode() {
   const getAnswerText = (vocab) => {
     if (!vocab) return "";
     let back = currentContentType === 'kanji' ? kanjiBack : (hasFourFields ? (kanjiBack === 'meaning' && kanjiFront === 'kanji' ? 'meaning' : (kanjiBack === 'kanji' ? 'word' : kanjiBack)) : (isReversed ? 'word' : 'meaning'));
-    if (!vocab[back] && (back === 'hanviet' || back === 'hiragana')) back = 'meaning';
+    if (!vocab[back] && (back === 'hanviet' || back === 'hiragana')) back = 'word';
     return vocab[back] || "";
   };
 
@@ -543,109 +543,126 @@ function TestMode() {
         </div>
       )}
 
-      <div className="mx-auto" style={{ maxWidth: '1100px' }}>
-        
-        {/* THANH TOP ĐIỀU HƯỚNG */}
-        <div className="d-flex justify-content-between align-items-center mb-4 d-print-none">
-          <button className="btn btn-outline-secondary fw-bold rounded-pill shadow-sm px-4 hover-bg-light transition-all" onClick={handleExit}>
-            ← Hủy bài thi
-          </button>
-          <button className="btn btn-light rounded-circle shadow-sm border-0 hover-bg-light transition-all" onClick={toggleFullscreen} title="Toàn màn hình (F)">
-            {isFullscreen ? '↙️' : '⛶'}
-          </button>
-        </div>
-
-        <div className="row">
-          {/* NỘI DUNG BÀI THI */}
-          <div className="col-lg-8 mb-4">
-            {questions.map((q, idx) => (
-              <div id={`test-question-${idx}`} key={idx} className="card shadow-sm border-0 mb-4 rounded-4 fade-in-slide">
-                <div className="card-body p-4 p-md-5">
-                  <h4 className="mb-4 fw-bold d-flex align-items-center" style={{ lineHeight: '1.5' }}>
-                    <span className="badge bg-primary me-3 shadow-sm fs-5 rounded-circle d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px', flexShrink: 0 }}>
-                      {idx + 1}
-                    </span> 
-                    {q.questionText}
-                  </h4>
-
-                  {q.type === 'choice' ? (
-                    <div className="row g-3 mt-4">
-                      {q.options.map((opt, oIdx) => {
-                        const isSelected = q.userAnswer === opt;
-                        return (
-                          <div className="col-sm-6" key={oIdx}>
-                            <button 
-                              className={`btn w-100 text-center p-3 fs-5 fw-bold transition-all shadow-sm d-flex align-items-center justify-content-center ${isSelected ? 'bg-primary text-white border-primary' : 'bg-white text-dark border hover-bg-light'}`}
-                              style={{ borderRadius: '16px', minHeight: '80px', borderWidth: '2px' }}
-                              onClick={() => handleAnswerChange(idx, opt)}
-                            >
-                              {opt}
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="mt-4">
-                      <input 
-                        type="text" 
-                        className="form-control form-control-lg py-4 px-4 bg-light fw-bold d-print-none shadow-sm rounded-4 text-center" 
-                        placeholder="Gõ đáp án chính xác vào đây..."
-                        value={q.userAnswer}
-                        onChange={(e) => handleAnswerChange(idx, e.target.value)}
-                        autoComplete="off"
-                        style={{ border: '2px solid #dee2e6', fontSize: '1.5rem' }}
-                      />
-                      <div className="print-blank-line d-none d-print-block"></div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            <button className="btn btn-success btn-lg px-5 py-4 fw-bold w-100 shadow-lg d-print-none mt-2 hover-scale transition-all" style={{ borderRadius: '16px', fontSize: '1.3rem' }} onClick={handleAttemptSubmit}>
-              Nộp bài ngay
+      <div className="mx-auto has-mobile-bottom-bar" style={{ maxWidth: '900px' }}>
+        {/* THANH TRẠNG THÁI GHIM ĐỈNH MÀN HÌNH (MOBILE-STICKY-TOP) */}
+        <div className="mobile-sticky-top d-print-none">
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <button className="btn btn-light text-dark btn-mobile-chip" onClick={handleExit}>
+              ← Thoát
+            </button>
+            <span className="fw-bold text-primary">
+              Đã làm: {answeredCount} / {questions.length}
+            </span>
+            <button
+              className="btn btn-light text-dark btn-mobile-chip"
+              onClick={toggleFullscreen}
+              title="Toàn màn hình"
+            >
+              {isFullscreen ? '↙️ Thu nhỏ' : '⛶ Phóng to'}
             </button>
           </div>
 
-          {/* BẢNG ĐIỀU HƯỚNG BÊN PHẢI */}
-          <div className="col-lg-4 d-print-none position-relative">
-            <div 
-              className="card shadow-sm border-0 shadow-lg" 
-              style={{ 
-                borderRadius: '24px',
-                position: window.innerWidth >= 992 ? 'fixed' : 'relative',
-                top: window.innerWidth >= 992 ? '100px' : 'auto',
-                width: window.innerWidth >= 992 ? 'inherit' : '100%',
-                maxWidth: window.innerWidth >= 992 ? '350px' : 'none'
-              }}
-            >
-              <div className="card-body p-4">
-                <h5 className="mb-3 text-center fw-bold text-dark">Bảng điều hướng</h5>
-                <p className="text-center text-muted small mb-3">Đã hoàn thành: <strong>{answeredCount} / {questions.length}</strong></p>
-                <div className="progress mb-4 shadow-sm" style={{ height: '8px', borderRadius: '10px' }}>
-                  <div className="progress-bar bg-success" role="progressbar" style={{ width: `${(answeredCount / questions.length) * 100}%` }}></div>
-                </div>
-                
-                <div className="d-flex flex-wrap gap-2 justify-content-center" style={{ maxHeight: '55dvh', overflowY: 'auto', paddingRight: '5px', paddingBottom: '20px' }}>
-                  {questions.map((q, idx) => {
-                    const isAnswered = q.userAnswer.trim() !== '';
-                    return (
-                      <button 
-                        key={idx} 
-                        className={`btn ${isAnswered ? 'btn-primary text-white shadow-sm border-primary' : 'bg-white text-dark border'} fw-bold transition-all hover-scale`} 
-                        style={{ width: '48px', height: '48px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }} 
-                        onClick={() => scrollToQuestion(idx)}
-                      >
-                        {idx + 1}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+          <div className="progress mb-2" style={{ height: '6px', borderRadius: '8px' }}>
+            <div
+              className="progress-bar bg-success"
+              role="progressbar"
+              style={{ width: `${(answeredCount / questions.length) * 100}%` }}
+            ></div>
           </div>
 
+          {/* THANH CUỘN NGANG CÂU HỎI */}
+          <div className="mobile-question-strip">
+            {questions.map((q, idx) => {
+              const isAnswered = q.userAnswer.trim() !== '';
+              return (
+                <button
+                  key={idx}
+                  className={`btn ${
+                    isAnswered ? 'btn-primary text-white border-primary' : 'bg-white text-dark border'
+                  }`}
+                  onClick={() => scrollToQuestion(idx)}
+                >
+                  {idx + 1}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* NỘI DUNG BÀI THI */}
+        <div>
+          {questions.map((q, idx) => (
+            <div
+              id={`test-question-${idx}`}
+              key={idx}
+              className="card shadow-sm border-0 mb-3 rounded-4 fade-in-slide"
+            >
+              <div className="card-body p-3 p-md-4">
+                <h5 className="mb-3 fw-bold d-flex align-items-center" style={{ lineHeight: '1.5' }}>
+                  <span
+                    className="badge bg-primary me-3 shadow-sm rounded-circle d-flex align-items-center justify-content-center"
+                    style={{ width: '36px', height: '36px', flexShrink: 0 }}
+                  >
+                    {idx + 1}
+                  </span>
+                  {q.questionText}
+                </h5>
+
+                {q.type === 'choice' ? (
+                  <div className="row g-2 mt-2">
+                    {q.options.map((opt, oIdx) => {
+                      const isSelected = q.userAnswer === opt;
+                      return (
+                        <div className="col-12 col-sm-6" key={oIdx}>
+                          <button
+                            className={`btn w-100 text-center p-3 fw-bold btn-touch shadow-sm ${
+                              isSelected
+                                ? 'bg-primary text-white border-primary'
+                                : 'bg-white text-dark border'
+                            }`}
+                            style={{ minHeight: '60px', borderWidth: '2px' }}
+                            onClick={() => handleAnswerChange(idx, opt)}
+                          >
+                            {opt}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="mt-3">
+                    <input
+                      type="text"
+                      className="form-control form-control-lg py-3 px-3 bg-light fw-bold d-print-none shadow-sm rounded-4 text-center"
+                      placeholder="Gõ đáp án chính xác vào đây..."
+                      value={q.userAnswer}
+                      onChange={(e) => handleAnswerChange(idx, e.target.value)}
+                      autoComplete="off"
+                      style={{ border: '2px solid #dee2e6' }}
+                    />
+                    <div className="print-blank-line d-none d-print-block"></div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* THANH CÔNG CỤ GHIM ĐÁY MÀN HÌNH (MOBILE-BOTTOM-BAR) */}
+        <div className="mobile-bottom-bar d-print-none">
+          <div className="container px-0" style={{ maxWidth: '900px' }}>
+            <div className="d-flex gap-2">
+              <button className="btn btn-light text-danger btn-mobile-chip" onClick={handleExit}>
+                ✖ Hủy
+              </button>
+              <button
+                className="btn btn-success btn-touch flex-grow-1 shadow-sm"
+                onClick={handleAttemptSubmit}
+              >
+                ✅ Nộp bài ngay ({answeredCount}/{questions.length})
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

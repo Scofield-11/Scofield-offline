@@ -49,7 +49,7 @@ function Flashcard({ vocab, autoPlay, contentType = 'vocab', isReversed = false,
     if (field === 'summary') return vocab.meaning;
     let text = vocab[field] || '';
     if (!text && (field === 'hanviet' || field === 'hiragana')) {
-      text = isFront ? vocab.word : vocab.meaning;
+      text = vocab.word;
     }
     return text;
   };
