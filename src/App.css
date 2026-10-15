@@ -588,3 +588,396 @@ input, textarea, select, .form-control, .form-select {
   .app-navigation, .d-print-none, .btn, .mobile-bottom-bar, .mobile-sticky-top { display: none !important; }
   .main-content { margin-left: 0 !important; padding: 0 !important; }
 }
+
+/* ==========================================================================
+   SET SELECTOR: TRIGGER BAR & BOTTOM SHEET / MODAL PICKER
+   ========================================================================== */
+
+/* 1. Thanh bấm chọn học phần (Trigger) */
+.set-selector-trigger {
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 12px;
+  background-color: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+}
+
+.set-selector-trigger:hover,
+.set-selector-trigger:focus {
+  border-color: var(--bs-primary);
+  background-color: #faf5ff;
+}
+
+.set-selector-trigger:active {
+  transform: scale(0.985);
+}
+
+.set-selector-trigger-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background-color: #f3e8ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.set-selector-trigger-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.set-selector-trigger-title {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.25;
+}
+
+.set-selector-trigger-sub {
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.set-selector-trigger-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.set-selector-count-pill {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.set-selector-chevron {
+  font-size: 0.9rem;
+  color: #64748b;
+  padding-right: 2px;
+}
+
+/* 2. Lớp phủ mờ & Khung Bottom Sheet (Mobile) / Modal (Desktop) */
+.set-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 11000;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn 0.18s ease-out;
+}
+
+.set-sheet-panel {
+  width: 100%;
+  max-width: 540px;
+  max-height: 82dvh;
+  background: #ffffff;
+  border-radius: 22px 22px 0 0;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px calc(env(safe-area-inset-bottom, 0px) + 12px) 14px;
+  box-shadow: 0 -10px 35px rgba(15, 23, 42, 0.18);
+  animation: sheetSlideUp 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (min-width: 768px) {
+  .set-sheet-backdrop {
+    align-items: center;
+    padding: 20px;
+  }
+  .set-sheet-panel {
+    border-radius: 20px;
+    max-height: 75vh;
+    padding: 16px;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
+  }
+}
+
+@keyframes sheetSlideUp {
+  from {
+    transform: translateY(40px);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.set-sheet-grabber {
+  width: 38px;
+  height: 4px;
+  border-radius: 999px;
+  background-color: #cbd5e1;
+  margin: 0 auto 8px auto;
+}
+
+.set-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+}
+
+/* 3. Segmented Control 3 ngôn ngữ */
+.set-sheet-segmented {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  background-color: #f1f5f9;
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+
+.set-seg-btn {
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 8px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.set-seg-btn.active {
+  background-color: #ffffff;
+  color: var(--bs-primary);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.set-seg-badge {
+  font-size: 0.68rem;
+  background-color: rgba(100, 116, 139, 0.14);
+  color: inherit;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.set-seg-btn.active .set-seg-badge {
+  background-color: #f3e8ff;
+  color: var(--bs-primary);
+}
+
+/* 4. Thanh tìm kiếm gọn trong Sheet */
+.set-sheet-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 11px;
+  padding: 0 10px;
+  margin-bottom: 10px;
+}
+
+.set-sheet-search:focus-within {
+  border-color: var(--bs-primary);
+  background-color: #ffffff;
+}
+
+.set-sheet-search-icon {
+  font-size: 0.85rem;
+  opacity: 0.6;
+  margin-right: 6px;
+}
+
+.set-sheet-search-input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  height: 36px;
+  font-size: 16px !important;
+  font-weight: 600;
+  color: #0f172a;
+  outline: none;
+}
+
+.set-sheet-search-clear {
+  border: none;
+  background: #e2e8f0;
+  color: #475569;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* 5. Danh sách cuộn & Nhóm Thư mục */
+.set-sheet-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.set-sheet-all-btn {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid #ddd6fe;
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  color: #5b21b6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.set-sheet-all-btn.selected {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border-color: #6d28d9;
+  color: #ffffff;
+}
+
+.set-sheet-all-btn.selected .set-selector-count-pill {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.set-folder-group {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.set-folder-header {
+  padding: 8px 10px;
+  background-color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.set-folder-header.selected {
+  background-color: #f3e8ff;
+}
+
+.set-folder-arrow {
+  font-size: 0.8rem;
+  color: #64748b;
+  width: 14px;
+  text-align: center;
+}
+
+.set-folder-pick-btn {
+  border: 1px solid #ddd6fe;
+  background-color: #ffffff;
+  color: var(--bs-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.set-folder-pick-btn.active {
+  background-color: var(--bs-primary);
+  color: #ffffff;
+  border-color: var(--bs-primary);
+}
+
+.set-folder-items {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid #f1f5f9;
+}
+
+.set-item-row {
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-bottom: 1px solid #f1f5f9;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 0.86rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.set-item-row:last-child {
+  border-bottom: none;
+}
+
+.set-item-row:active {
+  background-color: #f8fafc;
+}
+
+.set-item-row.selected {
+  background-color: #f5f3ff;
+  color: var(--bs-primary);
+}
+
+.set-item-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.set-item-row.selected .set-item-badge {
+  background-color: #ede9fe;
+  color: var(--bs-primary);
+  border-color: #ddd6fe;
+}
+
+.set-item-check {
+  font-weight: 800;
+  color: var(--bs-primary);
+  font-size: 0.9rem;
+}
