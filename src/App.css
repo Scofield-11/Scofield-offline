@@ -9,8 +9,23 @@
   --slate-text: #0f172a;
   --slate-muted: #64748b;
   --slate-border: #e2e8f0;
-  --sidebar-desktop: 256px;
-  --bottom-nav-height: 70px;
+  --sidebar-desktop: 210px;
+  --bottom-nav-height: 64px;
+}
+
+.stat-mini-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #334155;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+  white-space: nowrap;
 }
 
 body {

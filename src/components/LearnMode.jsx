@@ -391,26 +391,26 @@ function LearnMode() {
 
   if (!isStarted) {
     return (
-      <div className="container mt-5 fade-in-slide" style={{ maxWidth: '650px' }}>
-        <div className="card shadow-sm border-0 p-4 p-md-5 rounded-4 bg-white" style={{ borderRadius: '24px' }}>
-          <h3 className="text-center mb-5 fw-bold text-dark">Cài đặt Chế độ Học</h3>
+      <div className="container mt-3 fade-in-slide" style={{ maxWidth: '600px' }}>
+        <div className="card shadow-sm border-0 p-3 p-md-4 rounded-4 bg-white">
+          <h4 className="text-center mb-3 fw-bold text-dark">🧠 Chế độ Học SRS</h4>
           
-          <div className="mb-4">
-            <label className="form-label fw-bold text-muted mb-2">1. Chọn học phần muốn học:</label>
+          <div className="mb-3">
+            <label className="form-label fw-bold text-muted small mb-1">Học phần</label>
             <SetSelector 
               sets={sets} 
               selectedSetId={selectedSetId} setSelectedSetId={setSelectedSetId} 
             />
           </div>
 
-          <div className="mb-4 text-start">
-            <div className="form-check form-switch fs-6 d-flex align-items-center gap-3 bg-light p-3 rounded-4 border-0 shadow-sm">
-              <input className="form-check-input m-0 shadow-sm" type="checkbox" id="srsToggle" checked={onlyDue} onChange={(e) => setOnlyDue(e.target.checked)} style={{ cursor: 'pointer' }} />
-              <label className="form-check-label fw-bold text-dark m-0" htmlFor="srsToggle" style={{ cursor: 'pointer' }}>Chỉ ôn tập từ đến hạn (Cơ chế Spaced Repetition)</label>
+          <div className="mb-3 text-start">
+            <div className="form-check form-switch d-flex align-items-center gap-2 bg-light p-2 px-3 rounded-3">
+              <input className="form-check-input m-0" type="checkbox" id="srsToggle" checked={onlyDue} onChange={(e) => setOnlyDue(e.target.checked)} style={{ cursor: 'pointer' }} />
+              <label className="form-check-label fw-semibold text-dark small m-0" htmlFor="srsToggle" style={{ cursor: 'pointer' }}>Chỉ ôn các từ đến hạn (SRS)</label>
             </div>
           </div>
 
-          <div className="mb-5">
+          <div className="mb-3">
             <GameModeSelector
               hasFourFields={hasFourFields}
               currentContentType={currentContentType}
@@ -421,19 +421,16 @@ function LearnMode() {
               kanjiBack={kanjiBack}
               setKanjiBack={setKanjiBack}
               onSwap={handleSwap}
-              sectionLabel="Chọn kỹ năng rèn luyện"
+              sectionLabel="Kỹ năng"
             />
           </div>
 
-          <motion.button 
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.96 }}
-            className="btn btn-primary btn-lg w-100 fw-bold shadow-lg text-white" 
-            style={{ borderRadius: '14px', padding: '15px', backgroundColor: '#8a2be2', border: 'none' }} 
+          <button 
+            className="btn btn-primary btn-touch w-100" 
             onClick={handleStart}
           >
-            Bắt đầu vắt óc 🧠
-          </motion.button>
+            Bắt đầu học 🧠
+          </button>
         </div>
       </div>
     );

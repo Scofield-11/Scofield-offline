@@ -237,12 +237,12 @@ function FlashcardMode() {
 
   if (!isStarted) {
     return (
-      <div className="container mt-5 fade-in-slide" style={{ maxWidth: '700px' }}>
-        <div className="card shadow-sm border-0 p-4 p-md-5 rounded-4 bg-white" style={{ borderRadius: '24px' }}>
-          <h3 className="text-center mb-5 fw-bold text-dark" style={{ opacity: 0.8 }}>Thiết lập Flashcards</h3>
+      <div className="container mt-3 fade-in-slide" style={{ maxWidth: '600px' }}>
+        <div className="card shadow-sm border-0 p-3 p-md-4 rounded-4 bg-white">
+          <h4 className="text-center mb-3 fw-bold text-dark">🗂️ Thẻ nhớ Flashcards</h4>
           
-          <div className="mb-4">
-            <label className="form-label fw-bold text-muted mb-2">1. Chọn học phần muốn ôn:</label>
+          <div className="mb-3">
+            <label className="form-label fw-bold text-muted small mb-1">Học phần</label>
             <SetSelector 
               sets={sets} 
               selectedSetId={selectedSetId} 
@@ -250,7 +250,7 @@ function FlashcardMode() {
             />
           </div>
 
-          <div className="mb-5">
+          <div className="mb-3">
             <GameModeSelector
               hasFourFields={hasFourFields}
               currentContentType={currentContentType}
@@ -261,17 +261,14 @@ function FlashcardMode() {
               kanjiBack={kanjiBack}
               setKanjiBack={setKanjiBack}
               onSwap={handleSwap}
-              sectionLabel="Chọn chế độ lật thẻ"
+              sectionLabel="Mặt trước hiển thị"
               presets={[
                 {
                   id: 'recognition',
                   icon: '🧠',
                   iconBg: '#ede9fe',
-                  label: 'Nhận diện (Đọc hiểu)',
-                  getDesc: (f, b, type) => {
-                    const w = type === 'kanji' ? 'Hán tự' : 'Từ vựng';
-                    return `Nhìn ${w} ➔ Hiện toàn bộ thông tin`;
-                  },
+                  label: 'Từ vựng',
+                  getDesc: (f, b, type) => `${type === 'kanji' ? 'Hán tự' : 'Từ'} ➔ Chi tiết`,
                   frontKey: (type) => type === 'kanji' ? 'kanji' : 'word',
                   backKey: () => 'summary',
                   isActive: (f, b, type) => {
@@ -283,22 +280,18 @@ function FlashcardMode() {
                   id: 'recall',
                   icon: '🇻🇳',
                   iconBg: '#fef3c7',
-                  label: 'Hồi tưởng (Sản sinh)',
-                  getDesc: (f, b, type) => {
-                    return `Nhìn Ý nghĩa ➔ Hiện toàn bộ thông tin`;
-                  },
+                  label: 'Ý nghĩa',
+                  getDesc: () => 'Nghĩa ➔ Chi tiết',
                   frontKey: () => 'meaning',
                   backKey: () => 'summary',
-                  isActive: (f, b, type) => {
-                    return f === 'meaning' && b === 'summary';
-                  }
+                  isActive: (f, b) => f === 'meaning' && b === 'summary'
                 },
                 {
                   id: 'reading',
                   icon: '🗣️',
                   iconBg: '#dbeafe',
-                  label: 'Luyện đọc Âm',
-                  getDesc: () => 'Nhìn Phiên âm ➔ Hiện toàn bộ thông tin',
+                  label: 'Phiên âm',
+                  getDesc: () => 'Kana ➔ Chi tiết',
                   frontKey: () => 'hiragana',
                   backKey: () => 'summary',
                   isActive: (f, b) => f === 'hiragana' && b === 'summary'
@@ -307,23 +300,22 @@ function FlashcardMode() {
                   id: 'hanviet',
                   icon: '👑',
                   iconBg: '#fee2e2',
-                  label: 'Ôn tập Hán Việt',
-                  getDesc: () => 'Nhìn Hán Việt ➔ Hiện toàn bộ thông tin',
+                  label: 'Hán Việt',
+                  getDesc: () => 'Hán Việt ➔ Chi tiết',
                   frontKey: () => 'hanviet',
                   backKey: () => 'summary',
                   isActive: (f, b) => f === 'hanviet' && b === 'summary'
                 }
               ]}
               twoFieldPresets={[
-                { id: 'forward', icon: '🧠', iconBg: '#ede9fe', label: 'Học Toàn Diện', description: 'Nhìn Từ vựng ➔ Xem Ý nghĩa', reversedValue: false },
-                { id: 'backward', icon: '🇻🇳', iconBg: '#fef3c7', label: 'Hồi Tưởng', description: 'Nhìn Ý nghĩa ➔ Xem Từ vựng', reversedValue: true },
+                { id: 'forward', icon: '🧠', iconBg: '#ede9fe', label: 'Từ vựng', description: 'Từ ➔ Nghĩa', reversedValue: false },
+                { id: 'backward', icon: '🇻🇳', iconBg: '#fef3c7', label: 'Ý nghĩa', description: 'Nghĩa ➔ Từ', reversedValue: true },
               ]}
             />
           </div>
 
           <button 
-            className="btn btn-lg w-100 fw-bold shadow-lg text-white hover-scale" 
-            style={{ borderRadius: '14px', padding: '16px', backgroundColor: '#8a2be2', border: 'none' }} 
+            className="btn btn-primary btn-touch w-100" 
             onClick={handleStart}
           >
             Bắt đầu lật thẻ

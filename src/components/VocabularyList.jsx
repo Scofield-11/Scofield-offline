@@ -472,57 +472,14 @@ function VocabularyList() {
   if (loading) return <LoadingSkeleton />;
 
   return (
-    <div className="container-fluid mt-2 mx-auto px-2 px-md-3" style={{ maxWidth: '1000px' }}>
-      {/* THANH ĐIỀU KHIỂN CLOUD SYNC & BACKUP JSON */}
-      <div className="card border-0 rounded-4 p-2 px-3 mb-3 bg-white shadow-sm">
-        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2">
-          <div className="d-flex align-items-center gap-2">
-            <span className="badge chip-success rounded-pill px-2 py-1">☁️ Local-First + Cloud</span>
-            <span className="fw-bold text-dark small d-none d-sm-inline">
-              Tự động đồng bộ Supabase & Sao lưu JSON
-            </span>
-          </div>
-          <div className="d-flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="btn btn-mobile-chip chip-slate"
-              onClick={async () => {
-                const pulled = await autoPullFromCloud(true);
-                if (pulled) {
-                  fetchSets(false, true);
-                  toast.success('☁️ Đã kéo dữ liệu mới nhất từ Supabase!');
-                } else {
-                  const ok = await pushToSupabase();
-                  if (ok) toast.success('☁️ Đã đẩy toàn bộ dữ liệu lên Supabase!');
-                }
-              }}
-            >
-              ☁️ Đồng bộ Cloud
-            </button>
-            <button
-              type="button"
-              className="btn btn-mobile-chip chip-primary"
-              onClick={() => jsonInputRef.current?.click()}
-            >
-              📂 Nhập JSON
-            </button>
-            <button
-              type="button"
-              className="btn btn-mobile-chip btn-primary text-white"
-              onClick={handleBackupAllJson}
-            >
-              ⬇️ Xuất Backup
-            </button>
-          </div>
-        </div>
-        <input
-          type="file"
-          ref={jsonInputRef}
-          className="d-none"
-          accept=".json,application/json"
-          onChange={handleImportJsonChange}
-        />
-      </div>
+    <div className="container-fluid mt-1 mx-auto px-2 px-md-3" style={{ maxWidth: '1000px' }}>
+      <input
+        type="file"
+        ref={jsonInputRef}
+        className="d-none"
+        accept=".json,application/json"
+        onChange={handleImportJsonChange}
+      />
 
       <div id="add-vocab-section">
         <AddVocabularyForm
@@ -541,27 +498,8 @@ function VocabularyList() {
         />
       )}
 
-      {/* TIÊU ĐỀ THƯ VIỆN & BỘ LỌC */}
-      <div className="d-flex align-items-center justify-content-between gap-2 mb-3">
-        <h5 className="fw-bold m-0 text-dark">Thư viện học phần</h5>
-        <div className="d-flex align-items-center gap-2">
-          <select
-            className="form-select form-select-sm bg-white border shadow-sm rounded-pill fw-semibold text-secondary px-3"
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-            style={{ height: '36px', minWidth: '135px', fontSize: '0.82rem' }}
-          >
-            <option value="custom" disabled={customOrder.length === 0}>Kéo thả</option>
-            <option value="newest">Mới nhất</option>
-            <option value="oldest">Cũ nhất</option>
-            <option value="az">Tên A - Z</option>
-            <option value="za">Tên Z - A</option>
-          </select>
-        </div>
-      </div>
-
-      {/* THANH ĐƯỜNG DẪN THƯ MỤC */}
-      <div className="d-flex justify-content-between align-items-center mb-3 bg-white p-2 px-3 rounded-4 border flex-wrap gap-2">
+      {/* THANH CÔNG CỤ GỘP: THƯ MỤC + SẮP XẾP + SAO LƯU */}
+      <div className="d-flex justify-content-between align-items-center mb-3 bg-white p-2 px-3 rounded-4 border flex-wrap gap-2 shadow-sm">
         <div className="d-flex align-items-center flex-wrap gap-1">
           <button
             className={`btn btn-mobile-chip ${currentPath === '' ? 'btn-primary text-white' : 'chip-slate'}`}
@@ -585,11 +523,41 @@ function VocabularyList() {
                 </React.Fragment>
               );
             })}
+          <button className="btn btn-mobile-chip chip-primary ms-1" onClick={handleCreateFolder} title="Tạo thư mục mới">
+            📁+
+          </button>
         </div>
 
-        <button className="btn btn-mobile-chip chip-primary" onClick={handleCreateFolder}>
-          📁+ Thư mục
-        </button>
+        <div className="d-flex align-items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            className="btn btn-mobile-chip chip-slate"
+            onClick={() => jsonInputRef.current?.click()}
+            title="Nhập dữ liệu từ file JSON"
+          >
+            📂 Nhập
+          </button>
+          <button
+            type="button"
+            className="btn btn-mobile-chip chip-slate"
+            onClick={handleBackupAllJson}
+            title="Sao lưu toàn bộ ra file JSON"
+          >
+            ⬇️ Sao lưu
+          </button>
+          <select
+            className="form-select form-select-sm bg-light border-0 rounded-3 fw-semibold text-secondary px-2"
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+            style={{ height: '34px', width: 'auto', fontSize: '0.8rem' }}
+          >
+            <option value="custom" disabled={customOrder.length === 0}>Kéo thả</option>
+            <option value="newest">Mới nhất</option>
+            <option value="oldest">Cũ nhất</option>
+            <option value="az">A - Z</option>
+            <option value="za">Z - A</option>
+          </select>
+        </div>
       </div>
 
       {/* DANH SÁCH THƯ MỤC CON */}

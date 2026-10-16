@@ -249,29 +249,41 @@
    Responsive Breakpoints
    ═══════════════════════════════════ */
 
-/* Tất cả Smartphones (<= 767px) - Ép về 1 Cột duy nhất để tránh bị bóp méo */
+/* Smartphones (<= 767px) - Hiển thị 2 cột gọn gàng, hiện đại */
 @media (max-width: 767px) {
   .gms-grid-4, .gms-grid-2 {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
   }
 
   .gms-card {
-    padding: 0.875rem;
-    min-height: 56px;
+    padding: 0.625rem;
+    min-height: 52px;
+    border-radius: 14px;
+    gap: 0.5rem;
   }
 
   .gms-card-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
   }
 
   .gms-card-emoji {
-    font-size: 1.125rem;
+    font-size: 1rem;
+  }
+
+  .gms-card-title {
+    font-size: 0.78rem;
+  }
+
+  .gms-card-desc {
+    font-size: 0.65rem;
+    -webkit-line-clamp: 1;
   }
 
   .gms-swap-label {
-    max-width: 120px;
+    max-width: 110px;
   }
 }
 

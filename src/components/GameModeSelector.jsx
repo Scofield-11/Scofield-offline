@@ -19,26 +19,26 @@ import './GameModeSelector.css';
 // ── Cấu hình mặc định cho 4-field (JP/Kanji) ──
 const DEFAULT_FOUR_FIELD_PRESETS = [
   {
-    id: 'translate', icon: '🧠', iconBg: '#ede9fe', label: 'Luyện Dịch',
-    getDesc: (f, b, type) => { const w = type === 'kanji' ? 'Hán tự' : 'Từ vựng'; return f === 'meaning' && (b === 'word' || b === 'kanji') ? `Ý nghĩa ➔ ${w}` : `${w} ➔ Ý nghĩa`; },
+    id: 'translate', icon: '🧠', iconBg: '#ede9fe', label: 'Từ ➔ Nghĩa',
+    getDesc: (f, b, type) => { const w = type === 'kanji' ? 'Hán tự' : 'Từ'; return f === 'meaning' && (b === 'word' || b === 'kanji') ? `Nghĩa ➔ ${w}` : `${w} ➔ Nghĩa`; },
     frontKey: (type) => type === 'kanji' ? 'kanji' : 'word', backKey: () => 'meaning',
     isActive: (f, b, type) => { const w = type === 'kanji' ? 'kanji' : 'word'; return ((f === w) && b === 'meaning') || (f === 'meaning' && b === w); }
   },
   {
-    id: 'reading', icon: '🗣️', iconBg: '#fef3c7', label: 'Luyện Đọc',
-    getDesc: (f, b, type) => { const w = type === 'kanji' ? 'Hán tự' : 'Từ vựng'; return f === 'hiragana' && (b === 'word' || b === 'kanji') ? `Phiên âm ➔ ${w}` : `${w} ➔ Phiên âm`; },
+    id: 'reading', icon: '🗣️', iconBg: '#fef3c7', label: 'Cách đọc',
+    getDesc: (f, b, type) => { const w = type === 'kanji' ? 'Hán tự' : 'Từ'; return f === 'hiragana' && (b === 'word' || b === 'kanji') ? `Kana ➔ ${w}` : `${w} ➔ Kana`; },
     frontKey: (type) => type === 'kanji' ? 'kanji' : 'word', backKey: () => 'hiragana',
     isActive: (f, b, type) => { const w = type === 'kanji' ? 'kanji' : 'word'; return ((f === w) && b === 'hiragana') || (f === 'hiragana' && b === w); }
   },
   {
-    id: 'hanviet', icon: '👑', iconBg: '#fee2e2', label: 'Vua Hán Tự',
-    getDesc: (f, b) => f === 'meaning' && b === 'hanviet' ? 'Ý nghĩa ➔ Hán Việt' : 'Hán Việt ➔ Ý nghĩa',
+    id: 'hanviet', icon: '👑', iconBg: '#fee2e2', label: 'Hán Việt',
+    getDesc: (f, b) => f === 'meaning' && b === 'hanviet' ? 'Nghĩa ➔ Hán Việt' : 'Hán Việt ➔ Nghĩa',
     frontKey: () => 'hanviet', backKey: () => 'meaning',
     isActive: (f, b) => (f === 'hanviet' && b === 'meaning') || (f === 'meaning' && b === 'hanviet')
   },
   {
-    id: 'listening', icon: '🎧', iconBg: '#dbeafe', label: 'Nghe Hiểu',
-    getDesc: (f, b) => f === 'meaning' && b === 'hiragana' ? 'Ý nghĩa ➔ Phiên âm' : 'Phiên âm ➔ Ý nghĩa',
+    id: 'listening', icon: '🎧', iconBg: '#dbeafe', label: 'Phiên âm',
+    getDesc: (f, b) => f === 'meaning' && b === 'hiragana' ? 'Nghĩa ➔ Kana' : 'Kana ➔ Nghĩa',
     frontKey: () => 'hiragana', backKey: () => 'meaning',
     isActive: (f, b) => (f === 'hiragana' && b === 'meaning') || (f === 'meaning' && b === 'hiragana')
   }
@@ -50,16 +50,16 @@ const DEFAULT_TWO_FIELD_PRESETS = [
     id: 'forward',
     icon: '🇺🇸',
     iconBg: '#dbeafe',
-    label: 'Dịch thuật',
-    description: 'Nhìn Từ vựng ➔ Ý nghĩa',
+    label: 'Xuôi',
+    description: 'Từ ➔ Nghĩa',
     reversedValue: false,
   },
   {
     id: 'backward',
     icon: '🇻🇳',
     iconBg: '#fef3c7',
-    label: 'Hồi tưởng',
-    description: 'Nhìn Ý nghĩa ➔ Từ vựng',
+    label: 'Ngược',
+    description: 'Nghĩa ➔ Từ',
     reversedValue: true,
   }
 ];
