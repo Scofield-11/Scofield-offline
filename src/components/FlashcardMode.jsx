@@ -106,8 +106,8 @@ function FlashcardMode() {
     setCurrentIndex(0);
     setIsStarted(true);
     setIsFinished(false);
-    setIsSlideshow(false); 
-    if (!isFullscreen) toggleFullscreen();
+    setIsSlideshow(false);
+    if (window.innerWidth < 768 && !isFullscreen) toggleFullscreen();
   };
 
   const handleNext = useCallback(() => {

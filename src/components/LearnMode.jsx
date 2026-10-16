@@ -215,7 +215,7 @@ function LearnMode() {
     srsAnsweredRefs.current.clear();
     setIsStarted(true);
     setIsFinished(false);
-    if (!isFullscreen) toggleFullscreen();
+    if (window.innerWidth < 768 && !isFullscreen) toggleFullscreen();
   };
 
   const generateOptions = (currentWord, fullData) => {
@@ -450,11 +450,23 @@ function LearnMode() {
       <div className="mx-auto" style={{ maxWidth: '650px', width: '100%' }}>
         
         {!isFinished && (
-          <div className="mb-4">
+          <div className="card border-0 rounded-4 p-3 mb-4 bg-white shadow-sm">
             <div className="d-flex justify-content-between align-items-center mb-3">
-              <button className="btn btn-white rounded-circle shadow-sm border bg-white text-muted hover-scale transition-all" style={{ width: '42px', height: '42px' }} onClick={toggleFullscreen} title="Toàn màn hình (F)">
-                {isFullscreen ? '↙️' : '⛶'}
-              </button>
+              <div className="d-flex align-items-center gap-2">
+                <button
+                  className="btn btn-mobile-chip chip-slate"
+                  onClick={handleExit}
+                >
+                  ← Thoát
+                </button>
+                <button
+                  className="btn btn-icon-soft chip-primary"
+                  onClick={toggleFullscreen}
+                  title="Toàn màn hình"
+                >
+                  {isFullscreen ? '↙️' : '⛶'}
+                </button>
+              </div>
               
               {/* NÂNG CẤP THANH STREAK */}
               <div className="d-flex align-items-center gap-3 fw-bold text-muted">
@@ -483,7 +495,7 @@ function LearnMode() {
                         </motion.span> 
                         <span className="ms-1">{streak}</span>
                       </div>
-                      <div className="d-flex align-items-center gap-1 px-2" style={{ width: '70px' }}>
+                      <div className="d-none d-sm-flex align-items-center gap-1 px-2" style={{ width: '70px' }}>
                         {[...Array(5)].map((_, i) => {
                           const isActive = i < (streak > 0 ? ((streak - 1) % 5) + 1 : 0);
                           return (

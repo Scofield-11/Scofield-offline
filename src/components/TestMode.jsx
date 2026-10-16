@@ -323,7 +323,7 @@ function TestMode() {
     setQuestions(newQuestions);
     setIsTestStarted(true);
     setIsTestFinished(false);
-    if (!isFullscreen) toggleFullscreen();
+    if (window.innerWidth < 768 && !isFullscreen) toggleFullscreen();
   };
 
   const handleAnswerChange = (index, value) => {
@@ -601,35 +601,37 @@ function TestMode() {
             <div
               id={`test-question-${idx}`}
               key={idx}
-              className="card shadow-sm border-0 mb-3 rounded-4 fade-in-slide"
+              className="card border-0 mb-3 rounded-4 fade-in-slide test-question-card"
             >
               <div className="card-body p-3 p-md-4">
-                <h5 className="mb-3 fw-bold d-flex align-items-center" style={{ lineHeight: '1.5' }}>
-                  <span
-                    className="badge bg-primary me-3 shadow-sm rounded-circle d-flex align-items-center justify-content-center"
-                    style={{ width: '36px', height: '36px', flexShrink: 0 }}
-                  >
-                    {idx + 1}
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <span className="badge chip-primary rounded-pill px-3 py-1">
+                    Câu {idx + 1} / {questions.length}
                   </span>
+                  <span className="text-muted small fw-semibold">
+                    {q.type === 'choice' ? 'Chọn 1 đáp án đúng' : 'Điền đáp án'}
+                  </span>
+                </div>
+
+                <h4 className="my-3 fw-bold text-dark" style={{ lineHeight: '1.4' }}>
                   {q.questionText}
-                </h5>
+                </h4>
 
                 {q.type === 'choice' ? (
-                  <div className="row g-2 mt-2">
+                  <div className="row g-2 g-md-3 mt-1">
                     {q.options.map((opt, oIdx) => {
                       const isSelected = q.userAnswer === opt;
+                      const optionLabel = String.fromCharCode(65 + oIdx);
                       return (
                         <div className="col-12 col-sm-6" key={oIdx}>
                           <button
-                            className={`btn w-100 text-center p-3 fw-bold btn-touch shadow-sm ${
-                              isSelected
-                                ? 'bg-primary text-white border-primary'
-                                : 'bg-white text-dark border'
+                            className={`btn w-100 text-start p-3 fw-semibold test-option-btn ${
+                              isSelected ? 'selected' : ''
                             }`}
-                            style={{ minHeight: '60px', borderWidth: '2px' }}
                             onClick={() => handleAnswerChange(idx, opt)}
                           >
-                            {opt}
+                            <span className="test-option-badge">{optionLabel}</span>
+                            <span className="text-wrap flex-grow-1">{opt}</span>
                           </button>
                         </div>
                       );
