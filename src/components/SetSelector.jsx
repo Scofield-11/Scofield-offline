@@ -196,6 +196,37 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
       {isOpen &&
         ReactDOM.createPortal(
           <div className="set-sheet-backdrop" onClick={() => setIsOpen(false)}>
+            <style>{`
+              .set-sheet-panel {
+                display: flex !important;
+                flex-direction: column !important;
+                max-height: 85vh !important;
+                overflow: hidden !important;
+              }
+              .set-sheet-header,
+              .set-sheet-segmented,
+              .set-sheet-search,
+              .set-sheet-all-btn {
+                flex-shrink: 0 !important;
+              }
+              .set-sheet-list {
+                flex: 1 1 auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                overscroll-behavior: contain !important;
+              }
+              .set-folder-group {
+                flex-shrink: 0 !important;
+                overflow: visible !important;
+                max-height: none !important;
+              }
+              .set-folder-items {
+                max-height: none !important;
+                overflow: visible !important;
+              }
+            `}</style>
             <div
               className="set-sheet-panel"
               onClick={(e) => e.stopPropagation()}

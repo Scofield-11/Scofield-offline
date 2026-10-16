@@ -187,9 +187,14 @@ function TestMode() {
 
   const hasFourFields = (() => {
     if (currentContentType === 'kanji') return true;
-    if (String(selectedSetId) === 'lang_ja' || String(selectedSetId) === 'all_ja') return true;
+    if (String(selectedSetId).includes('ja') || String(selectedSetId).includes('kanji')) return true;
     if (targetSets.length > 0) {
-      return targetSets.some(s => s.vocabularies && s.vocabularies.some(v => v.hanviet || v.hiragana));
+      return targetSets.some(
+        (s) =>
+          s.language === 'ja' ||
+          s.type === 'kanji' ||
+          (s.vocabularies && s.vocabularies.some((v) => v.hanviet || v.hiragana))
+      );
     }
     return false;
   })();
@@ -486,6 +491,7 @@ function TestMode() {
     const rawText = wrongQs.map(q => `${q.questionText} | ${q.correctAnswer}`).join('\n');
     try {
       await api.post("/vocabularies/bulk-import", { title: title.trim(), raw_text: rawText });
+      await fetchSets(false, true);
       toast.success(`Đã tạo học phần: ${title}`);
     } catch (error) { toast.error("Lỗi khi tạo học phần ôn tập"); }
   };

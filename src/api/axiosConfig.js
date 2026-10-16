@@ -596,7 +596,9 @@ const handleRequest = async (method, url, payload = null) => {
 
     if (method === 'GET') {
       if (!targetSet) throw createApiError('Không tìm thấy học phần', 404);
-      const setVocabs = vocabs.filter((v) => Number(v.set_id) === setId);
+      const setVocabs = vocabs
+        .filter((v) => Number(v.set_id) === setId)
+        .map((v) => ({ ...v, kanji: v.kanji || v.word }));
       return {
         data: {
           ...targetSet,
@@ -608,6 +610,7 @@ const handleRequest = async (method, url, payload = null) => {
 
     if (method === 'DELETE') {
       if (!targetSet) throw createApiError('Không tìm thấy học phần', 404);
+      const testHistories = readTable(STORAGE_KEYS.TEST_HISTORIES);
       writeTable(
         STORAGE_KEYS.SETS,
         sets.filter((s) => Number(s.id) !== setId)
@@ -615,6 +618,10 @@ const handleRequest = async (method, url, payload = null) => {
       writeTable(
         STORAGE_KEYS.VOCABS,
         vocabs.filter((v) => Number(v.set_id) !== setId)
+      );
+      writeTable(
+        STORAGE_KEYS.TEST_HISTORIES,
+        testHistories.filter((h) => Number(h.set_id) !== setId && Number(h.setId) !== setId)
       );
       return { data: { message: 'Đã xóa học phần thành công' } };
     }
@@ -972,6 +979,7 @@ const handleRequest = async (method, url, payload = null) => {
         title: h.title,
         score: h.score,
         total: h.total,
+        created_at: h.created_at,
         date: formatDateShort(h.created_at),
         full_date: formatDateFull(h.created_at),
         wrongDetails: h.wrong_details || [],

@@ -61,10 +61,15 @@ function VocabularyList() {
     show: { opacity: 1, y: 0, transition: { duration: 0.22 } },
   };
 
-  const calculateProgress = (setId, vocabCount) => {
-    if (!vocabCount || vocabCount === 0) return 0;
+  const calculateProgress = (set, vocabCount) => {
+    if (!vocabCount || vocabCount === 0 || !set) return 0;
     const validTests = testHistories.filter(
-      (h) => Number(h.setId) === Number(setId) && Number(h.total) === Number(vocabCount)
+      (h) =>
+        h.setId !== null &&
+        h.setId !== undefined &&
+        Number(h.setId) === Number(set.id) &&
+        Number(h.total) === Number(vocabCount) &&
+        (!set.created_at || !h.created_at || new Date(h.created_at) >= new Date(set.created_at))
     );
     if (validTests.length === 0) return 0;
     const maxScore = Math.max(...validTests.map((h) => h.score));
@@ -111,7 +116,7 @@ function VocabularyList() {
       return {
         ...set,
         vocabularies: filteredVocabs,
-        progress: calculateProgress(set.id, set.vocab_count || filteredVocabs.length),
+        progress: calculateProgress(set, set.vocab_count || filteredVocabs.length),
       };
     });
 

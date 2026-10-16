@@ -47,9 +47,10 @@ function Flashcard({ vocab, autoPlay, contentType = 'vocab', isReversed = false,
 
   const getFallbackText = (field) => {
     if (field === 'summary') return vocab.meaning;
+    if (field === 'kanji' || field === 'word') return vocab.kanji || vocab.word || '';
     let text = vocab[field] || '';
     if (!text && (field === 'hanviet' || field === 'hiragana')) {
-      text = vocab.word;
+      text = vocab.word || vocab.kanji || '';
     }
     return text;
   };
@@ -98,7 +99,10 @@ function Flashcard({ vocab, autoPlay, contentType = 'vocab', isReversed = false,
       displayField = isFront ? 'word' : 'meaning';
     }
 
-    const val = vocab[displayField] || '';
+    const val =
+      displayField === 'kanji' || displayField === 'word'
+        ? vocab.kanji || vocab.word || ''
+        : vocab[displayField] || '';
     const isLong = val.length > 12;
 
     if (displayField === 'kanji' || displayField === 'word') {
