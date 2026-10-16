@@ -3,6 +3,8 @@ import api, {
   exportAllDataToJson,
   exportSingleItemToJson,
   importDataFromJson,
+  pushToSupabase,
+  autoPullFromCloud,
 } from '../api/axiosConfig';
 import AddVocabularyForm from './AddVocabularyForm';
 import SaveNoteModal from './SaveNoteModal';
@@ -468,14 +470,32 @@ function VocabularyList() {
 
   return (
     <div className="container-fluid mt-2 mx-auto px-2 px-md-3" style={{ maxWidth: '1000px' }}>
-      {/* THANH SAO LƯU OFFLINE GỌN GÀNG TRÊN 1 DÒNG */}
-      <div className="card border-0 rounded-4 p-2 px-3 mb-3 bg-white">
+      {/* THANH ĐIỀU KHIỂN CLOUD SYNC & BACKUP JSON */}
+      <div className="card border-0 rounded-4 p-2 px-3 mb-3 bg-white shadow-sm">
         <div className="d-flex flex-wrap justify-content-between align-items-center gap-2">
           <div className="d-flex align-items-center gap-2">
-            <span className="badge chip-success rounded-pill px-2 py-1">● Offline</span>
-            <span className="fw-bold text-dark small">Sao lưu & Khôi phục JSON</span>
+            <span className="badge chip-success rounded-pill px-2 py-1">☁️ Local-First + Cloud</span>
+            <span className="fw-bold text-dark small d-none d-sm-inline">
+              Tự động đồng bộ Supabase & Sao lưu JSON
+            </span>
           </div>
-          <div className="d-flex gap-2">
+          <div className="d-flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="btn btn-mobile-chip chip-slate"
+              onClick={async () => {
+                const pulled = await autoPullFromCloud(true);
+                if (pulled) {
+                  fetchSets(false, true);
+                  toast.success('☁️ Đã kéo dữ liệu mới nhất từ Supabase!');
+                } else {
+                  const ok = await pushToSupabase();
+                  if (ok) toast.success('☁️ Đã đẩy toàn bộ dữ liệu lên Supabase!');
+                }
+              }}
+            >
+              ☁️ Đồng bộ Cloud
+            </button>
             <button
               type="button"
               className="btn btn-mobile-chip chip-primary"

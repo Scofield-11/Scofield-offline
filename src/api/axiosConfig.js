@@ -1,22 +1,49 @@
 // ============================================================================
-// SCOFIELD LOCAL OFFLINE ENGINE (100% LOCALSTORAGE + JSON IMPORT/EXPORT)
-// Tương thích hoàn toàn với cấu trúc gọi Axios & FastAPI Backend cũ
+// SCOFIELD LOCAL-FIRST + SUPABASE CLOUD ENGINE (TABLE: sync_data)
 // ============================================================================
 
-// ============================================================================
-// SUPABASE CLOUD SYNC CONFIG (ZERO-LATENCY LOCAL-FIRST)
-// Bảng Supabase cần tạo: scofield_sync (sync_key: text PK, data: jsonb, updated_at: timestamptz)
-// ============================================================================
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'sb_publishable_DS7d-iSQGgksM7LpKyptzQ_YXgGtbZF';
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY || 'https://htnzlthwzclkstdwvwya.supabase.co/rest/v1/';
-const SYNC_KEY = 'my_secret_key';
-const SYNC_TABLE = 'scofield_sync';
+const SUPABASE_REST_URL = 'https://htnzlthwzclkstdwvwya.supabase.co/rest/v1/sync_data';
+const SUPABASE_PUB_KEY = 'sb_publishable_DS7d-iSQGgksM7LpKyptzQ_YXgGtbZF';
+const SUPABASE_SEC_KEY = 'sb_secret_O7fSZVJgpOygD4T08JK22A_fguUsNvC';
+const SYNC_USER_KEY = 'quanglevanqqq@gmail.com';
 
 const STORAGE_KEYS = {
   SETS: 'scofield_db_sets',
   VOCABS: 'scofield_db_vocabularies',
   TEST_HISTORIES: 'scofield_db_test_histories',
   UPDATED_AT: 'scofield_db_updated_at',
+};
+
+let currentSyncStatus = { state: 'idle', lastSynced: null, message: 'Sẵn sàng' };
+
+const notifySyncStatus = (state, message = '') => {
+  currentSyncStatus = {
+    state,
+    lastSynced: state === 'synced' ? new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : currentSyncStatus.lastSynced,
+    message,
+  };
+  window.dispatchEvent(new CustomEvent('scofield-sync-status', { detail: currentSyncStatus }));
+};
+
+export const getSyncStatus = () => currentSyncStatus;
+
+// Helper gọi Supabase tự động fallback sang Secret Key nếu bảng bật RLS chặn Publishable Key
+const supabaseFetch = async (url, options = {}) => {
+  const doCall = (apiKey) =>
+    fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: apiKey,
+        ...(options.headers || {}),
+      },
+    });
+
+  let res = await doCall(SUPABASE_PUB_KEY);
+  if (!res.ok && (res.status === 401 || res.status === 403 || res.status === 400)) {
+    res = await doCall(SUPABASE_SEC_KEY);
+  }
+  return res;
 };
 
 const readTable = (key) => {
@@ -33,78 +60,137 @@ const readTable = (key) => {
 
 let syncPushTimer = null;
 
-const pushToSupabase = async () => {
-  if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_URL') return;
+export const pushToSupabase = async () => {
+  notifySyncStatus('syncing', 'Đang đẩy lên Cloud...');
   try {
     const updatedAt = localStorage.getItem(STORAGE_KEYS.UPDATED_AT) || new Date().toISOString();
-    const payload = {
-      sync_key: SYNC_KEY,
-      updated_at: updatedAt,
-      data: {
-        sets: readTable(STORAGE_KEYS.SETS),
-        vocabularies: readTable(STORAGE_KEYS.VOCABS),
-        test_histories: readTable(STORAGE_KEYS.TEST_HISTORIES),
-      },
+    const backupPayload = {
+      sets: readTable(STORAGE_KEYS.SETS),
+      vocabularies: readTable(STORAGE_KEYS.VOCABS),
+      test_histories: readTable(STORAGE_KEYS.TEST_HISTORIES),
+      set_order: JSON.parse(localStorage.getItem('scofieldSetOrder') || '[]'),
     };
 
-    await fetch(`${SUPABASE_URL}/rest/v1/${SYNC_TABLE}?on_conflict=sync_key`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-        Prefer: 'resolution=merge-duplicates,return=minimal',
-      },
-      body: JSON.stringify(payload),
-    });
+    // 1. Kiểm tra bản ghi của user_key đã tồn tại chưa
+    const checkUrl = `${SUPABASE_REST_URL}?user_key=eq.${encodeURIComponent(SYNC_USER_KEY)}&select=user_key&limit=1`;
+    const checkRes = await supabaseFetch(checkUrl, { method: 'GET' });
+    if (!checkRes.ok) throw new Error(`HTTP ${checkRes.status}`);
+    const existing = await checkRes.json();
+
+    let writeRes;
+    if (Array.isArray(existing) && existing.length > 0) {
+      // Đã có -> PATCH cập nhật
+      writeRes = await supabaseFetch(
+        `${SUPABASE_REST_URL}?user_key=eq.${encodeURIComponent(SYNC_USER_KEY)}`,
+        {
+          method: 'PATCH',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify({
+            backup_json: backupPayload,
+            updated_at: updatedAt,
+          }),
+        }
+      );
+    } else {
+      // Chưa có -> POST tạo mới
+      writeRes = await supabaseFetch(SUPABASE_REST_URL, {
+        method: 'POST',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          user_key: SYNC_USER_KEY,
+          backup_json: backupPayload,
+          updated_at: updatedAt,
+        }),
+      });
+    }
+
+    if (!writeRes.ok) throw new Error(`Push thất bại (${writeRes.status})`);
+    notifySyncStatus('synced', 'Đã đồng bộ Cloud');
+    return true;
   } catch (err) {
-    console.warn('Cloud Sync Push tạm hoãn (Offline):', err.message);
+    console.warn('Cloud Sync Push lỗi:', err.message);
+    notifySyncStatus('error', 'Offline / Chờ mạng');
+    return false;
   }
 };
 
 const scheduleDebouncedPush = () => {
+  notifySyncStatus('syncing', 'Chờ lưu ngầm...');
   if (syncPushTimer) clearTimeout(syncPushTimer);
-  syncPushTimer = setTimeout(pushToSupabase, 1500);
+  syncPushTimer = setTimeout(() => {
+    pushToSupabase();
+  }, 1200);
 };
 
-export const autoPullFromCloud = async () => {
-  if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_URL') return false;
+export const autoPullFromCloud = async (forcePull = false) => {
+  notifySyncStatus('syncing', 'Đang kiểm tra Cloud...');
   try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/${SYNC_TABLE}?sync_key=eq.${encodeURIComponent(SYNC_KEY)}&select=data,updated_at&limit=1`,
-      {
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-        },
-      }
-    );
-    if (!res.ok) return false;
+    const queryUrl = `${SUPABASE_REST_URL}?user_key=eq.${encodeURIComponent(SYNC_USER_KEY)}&select=user_key,backup_json,updated_at&order=updated_at.desc&limit=1`;
+    const res = await supabaseFetch(queryUrl, { method: 'GET' });
+    if (!res.ok) throw new Error(`Pull HTTP ${res.status}`);
+
     const rows = await res.json();
-    if (!rows?.length || !rows[0].data) return false;
+    const localSets = readTable(STORAGE_KEYS.SETS);
+    const localVocabs = readTable(STORAGE_KEYS.VOCABS);
+
+    // Nếu trên Cloud chưa có bản ghi nào mà dưới máy đã có dữ liệu -> Đẩy ngay lên Cloud!
+    if (!rows || rows.length === 0 || !rows[0].backup_json) {
+      if (localSets.length > 0 || localVocabs.length > 0) {
+        await pushToSupabase();
+      } else {
+        notifySyncStatus('synced', 'Cloud sẵn sàng');
+      }
+      return false;
+    }
 
     const remote = rows[0];
-    const localUpdatedAt = localStorage.getItem(STORAGE_KEYS.UPDATED_AT);
-    const isRemoteNewer =
-      !localUpdatedAt || new Date(remote.updated_at) > new Date(localUpdatedAt);
+    const remoteData =
+      typeof remote.backup_json === 'string'
+        ? JSON.parse(remote.backup_json)
+        : remote.backup_json;
 
-    if (isRemoteNewer) {
-      const { sets = [], vocabularies = [], test_histories = [] } = remote.data;
+    const localUpdatedAt = localStorage.getItem(STORAGE_KEYS.UPDATED_AT);
+    const isLocalEmpty = localSets.length === 0 && localVocabs.length === 0;
+    const isRemoteNewer =
+      forcePull ||
+      isLocalEmpty ||
+      !localUpdatedAt ||
+      (remote.updated_at && new Date(remote.updated_at) > new Date(localUpdatedAt));
+
+    if (isRemoteNewer && remoteData) {
+      const { sets = [], vocabularies = [], test_histories = [], set_order } = remoteData;
       localStorage.setItem(STORAGE_KEYS.SETS, JSON.stringify(sets));
       localStorage.setItem(STORAGE_KEYS.VOCABS, JSON.stringify(vocabularies));
       localStorage.setItem(STORAGE_KEYS.TEST_HISTORIES, JSON.stringify(test_histories));
-      localStorage.setItem(STORAGE_KEYS.UPDATED_AT, remote.updated_at);
+      if (Array.isArray(set_order) && set_order.length > 0) {
+        localStorage.setItem('scofieldSetOrder', JSON.stringify(set_order));
+      }
+      localStorage.setItem(
+        STORAGE_KEYS.UPDATED_AT,
+        remote.updated_at || new Date().toISOString()
+      );
+      notifySyncStatus('synced', 'Đã tải dữ liệu mới');
       window.dispatchEvent(new Event('scofield-cloud-synced'));
       return true;
+    } else if (localUpdatedAt && remote.updated_at && new Date(localUpdatedAt) > new Date(remote.updated_at)) {
+      // Nếu bản dưới máy mới hơn bản trên Cloud -> Đẩy bản dưới máy lên Cloud
+      await pushToSupabase();
+      return false;
     }
+
+    notifySyncStatus('synced', 'Đã đồng bộ Cloud');
+    return false;
   } catch (err) {
-    console.warn('Cloud Sync Pull bỏ qua (Offline):', err.message);
+    console.warn('Cloud Sync Pull lỗi:', err.message);
+    notifySyncStatus('error', 'Chế độ Offline');
+    return false;
   }
-  return false;
 };
 
-// Tự động kiểm tra và kéo dữ liệu mới về ngay khi mở App
-autoPullFromCloud();
+// Tự động chạy khi khởi động App
+setTimeout(() => {
+  autoPullFromCloud();
+}, 100);
 
 const writeTable = (key, data) => {
   try {
