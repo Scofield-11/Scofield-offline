@@ -5,7 +5,7 @@ import { RefreshCw, Sun, Moon } from "lucide-react";
 import { getSyncStatus, autoPullFromCloud, pushToSupabase } from "../api/axiosConfig";
 import { toast } from "react-toastify";
 
-const NAV_SPRING = { type: "spring", stiffness: 420, damping: 32, mass: 0.7 };
+const NAV_SPRING = { type: "spring", stiffness: 280, damping: 28, mass: 0.6 };
 
 function Navbar() {
   const location = useLocation();

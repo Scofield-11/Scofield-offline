@@ -5,7 +5,7 @@ import { Star, Volume2, BookOpen, Edit3 } from 'lucide-react';
 import api from '../api/axiosConfig';
 import { toast } from 'react-toastify';
 
-const FLIP_SPRING = { type: 'spring', stiffness: 260, damping: 24, mass: 0.8 };
+const FLIP_SPRING = { type: 'spring', stiffness: 180, damping: 22, mass: 0.7 };
 
 function Flashcard({
   vocab,
@@ -229,7 +229,8 @@ function Flashcard({
       style={{ perspective: '1200px', x: dragX, rotate: rotateZ }}
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.7}
+      dragElastic={0.55}
+      dragTransition={{ bounceStiffness: 260, bounceDamping: 26 }}
       onDragStart={() => {
         isDraggingRef.current = true;
       }}

@@ -18,10 +18,9 @@ const PageWrapper = ({ children }) => {
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
       onAnimationComplete={() => {
         if (ref.current) {
           ref.current.style.transform = "none";
@@ -37,16 +36,14 @@ const PageWrapper = ({ children }) => {
 function AnimatedRoutes() {
   const location = useLocation();
   return (
-    <AnimatePresence mode="popLayout">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
-        <Route path="/flashcards" element={<PageWrapper><FlashcardMode /></PageWrapper>} />
-        <Route path="/learn" element={<PageWrapper><LearnMode /></PageWrapper>} />
-        <Route path="/test" element={<PageWrapper><TestMode /></PageWrapper>} />
-        <Route path="/match" element={<PageWrapper><MatchMode /></PageWrapper>} />
-        <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
-      </Routes>
-    </AnimatePresence>
+    <Routes location={location} key={location.pathname}>
+      <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
+      <Route path="/flashcards" element={<PageWrapper><FlashcardMode /></PageWrapper>} />
+      <Route path="/learn" element={<PageWrapper><LearnMode /></PageWrapper>} />
+      <Route path="/test" element={<PageWrapper><TestMode /></PageWrapper>} />
+      <Route path="/match" element={<PageWrapper><MatchMode /></PageWrapper>} />
+      <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
+    </Routes>
   );
 }
 

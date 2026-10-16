@@ -3,9 +3,9 @@ import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, X, Check } from 'lucide-react';
 
-const MODAL_SPRING = { type: 'spring', stiffness: 380, damping: 30, mass: 0.8 };
-const TAB_SPRING = { type: 'spring', stiffness: 420, damping: 32, mass: 0.7 };
-const ACCORDION_TRANSITION = { duration: 0.24, ease: [0.22, 1, 0.36, 1] };
+const MODAL_SPRING = { type: 'spring', stiffness: 280, damping: 28, mass: 0.7 };
+const TAB_SPRING = { type: 'spring', stiffness: 300, damping: 28, mass: 0.6 };
+const ACCORDION_TRANSITION = { duration: 0.26, ease: [0.16, 1, 0.3, 1] };
 
 function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
   const [isOpen, setIsOpen] = useState(false);

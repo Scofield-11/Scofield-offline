@@ -14,9 +14,9 @@ import GameModeSelector from './GameModeSelector';
 
 const CARD_VARIANTS = {
   enter: (dir) => ({
-    x: dir > 0 ? 70 : -70,
+    x: dir > 0 ? 48 : -48,
     opacity: 0,
-    scale: 0.94,
+    scale: 0.96,
   }),
   center: {
     x: 0,
@@ -24,9 +24,9 @@ const CARD_VARIANTS = {
     scale: 1,
   },
   exit: (dir) => ({
-    x: dir > 0 ? -90 : 90,
+    x: dir > 0 ? -48 : 48,
     opacity: 0,
-    scale: 0.92,
+    scale: 0.96,
   }),
 };
 
@@ -485,7 +485,7 @@ function FlashcardMode() {
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ type: 'spring', stiffness: 360, damping: 28, mass: 0.7 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className="w-100 h-100"
             >
               <Flashcard

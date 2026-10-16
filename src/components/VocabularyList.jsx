@@ -25,8 +25,8 @@ import { toast } from 'react-toastify';
 import LoadingSkeleton from './LoadingSkeleton';
 import EmptyState from './EmptyState';
 
-const ACCORDION_TRANSITION = { duration: 0.24, ease: [0.22, 1, 0.36, 1] };
-const MODAL_SPRING = { type: 'spring', stiffness: 380, damping: 30, mass: 0.8 };
+const ACCORDION_TRANSITION = { duration: 0.28, ease: [0.16, 1, 0.3, 1] };
+const MODAL_SPRING = { type: 'spring', stiffness: 280, damping: 26, mass: 0.7 };
 
 function SetReorderItem({ vocabSet, children }) {
   const dragControls = useDragControls();
@@ -34,8 +34,10 @@ function SetReorderItem({ vocabSet, children }) {
     <Reorder.Item
       value={vocabSet}
       id={String(vocabSet.id)}
+      layout="position"
       dragListener={false}
       dragControls={dragControls}
+      transition={{ type: 'spring', stiffness: 300, damping: 30, mass: 0.7 }}
       style={{ listStyle: 'none' }}
     >
       {children(dragControls)}
@@ -595,10 +597,9 @@ function VocabularyList() {
             <Download size={14} /> <span>Lưu</span>
           </button>
           <select
-            className="form-select form-select-sm bg-white border rounded-3 fw-semibold text-secondary px-2 shadow-none"
+            className="form-select form-select-sm bg-white border fw-semibold text-secondary shadow-none sort-select-custom"
             value={sortOption}
             onChange={(e) => setSortOption(e.target.value)}
-            style={{ height: '32px', width: 'auto', fontSize: '0.78rem' }}
           >
             <option value="custom" disabled={customOrder.length === 0}>Kéo thả</option>
             <option value="newest">Mới nhất</option>
@@ -793,10 +794,10 @@ function VocabularyList() {
 
                               {vocabSet.vocabularies?.map((vocab) => {
                                 const isJa = vocabSet.language !== 'en';
-                                const showRuby =
+                                const hasDistinctKana =
                                   isJa &&
                                   vocab.hiragana &&
-                                  vocab.hiragana.trim() &&
+                                  vocab.hiragana.trim() !== '' &&
                                   vocab.hiragana.trim() !== vocab.word.trim();
 
                                 return (
@@ -856,26 +857,23 @@ function VocabularyList() {
                                         </div>
                                       </div>
                                     ) : (
-                                      <div className="d-flex justify-content-between align-items-center gap-2">
+                                      <div className="d-flex justify-content-between align-items-center gap-2 py-1">
                                         <div style={{ minWidth: 0, flex: 1 }}>
-                                          <div className="d-flex align-items-baseline flex-wrap gap-2">
-                                            {showRuby ? (
-                                              <ruby className="fw-bold text-dark jp-ruby-list" style={{ fontSize: '1.05rem' }}>
-                                                {vocab.word}
-                                                <rt>{vocab.hiragana}</rt>
-                                              </ruby>
-                                            ) : (
-                                              <span className="fw-bold text-dark" style={{ fontSize: '1rem' }}>
-                                                {vocab.word}
-                                              </span>
+                                          <div className="d-flex align-items-center flex-wrap gap-2">
+                                            <span
+                                              className="vocab-word-main"
+                                              style={isJa ? { fontFamily: 'var(--font-jp-serif)' } : undefined}
+                                            >
+                                              {vocab.word}
+                                            </span>
+                                            {hasDistinctKana && (
+                                              <span className="vocab-kana-pill">{vocab.hiragana}</span>
                                             )}
-                                            {vocab.hanviet && (
-                                              <span className="small fw-bold text-primary">
-                                                [{vocab.hanviet}]
-                                              </span>
+                                            {vocab.hanviet && vocab.hanviet.trim() !== '' && (
+                                              <span className="vocab-hanviet-pill">{vocab.hanviet}</span>
                                             )}
                                           </div>
-                                          <div className="text-secondary small mt-1">{vocab.meaning}</div>
+                                          <div className="vocab-meaning-line">{vocab.meaning}</div>
                                         </div>
 
                                         <div className="d-flex align-items-center gap-1 flex-shrink-0">
