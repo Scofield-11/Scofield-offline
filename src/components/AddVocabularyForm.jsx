@@ -76,15 +76,17 @@ function AddVocabularyForm({ onAddSuccess, existingFolders = [], currentPath = '
     <div className="card border-0 rounded-4 mb-3">
       <div
         className="card-header bg-white py-2 px-3 border-0 d-flex justify-content-between align-items-center rounded-4"
-        style={{ cursor: 'pointer' }}
+        style={{ cursor: 'pointer', minHeight: '48px' }}
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="d-flex align-items-center gap-2">
-          <span className="btn-icon-soft chip-primary">{isExpanded ? '➖' : '➕'}</span>
-          <span className="fw-bold text-dark small">Thêm học phần mới</span>
+          <span className="btn-icon-soft chip-primary" style={{ width: '30px', height: '30px', minHeight: '30px' }}>
+            {isExpanded ? '➖' : '➕'}
+          </span>
+          <span className="fw-bold text-dark" style={{ fontSize: '0.9rem' }}>Tạo học phần mới</span>
         </div>
-        <span className="text-muted small fw-semibold">
-          {isExpanded ? 'Đóng ▲' : 'Mở ▼'}
+        <span className="btn-mobile-chip chip-slate">
+          {isExpanded ? 'Thu gọn ▲' : 'Mở ▾'}
         </span>
       </div>
 

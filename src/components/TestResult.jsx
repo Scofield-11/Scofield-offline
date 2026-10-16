@@ -28,17 +28,17 @@ function TestResult({ score, questions, onRestart, onCreateMistakeSet, onSaveNot
 
         <p className="fs-5 fw-bold text-muted mb-5">Bạn trả lời đúng <strong>{score.correct} / {score.total}</strong> câu</p>
         
-        <div className="d-flex flex-wrap justify-content-center gap-3 position-relative" style={{ zIndex: 2 }}>
-          <button className="btn btn-outline-primary px-4 py-3 fw-bold rounded-pill" onClick={onRestart}>
-            Làm bài test mới
+        <div className="d-flex flex-wrap justify-content-center gap-2 position-relative" style={{ zIndex: 2 }}>
+          <button className="btn btn-primary btn-touch px-4" onClick={onRestart}>
+            🔄 Làm đề mới
           </button>
           {wrongCount > 0 && (
-            <button className="btn btn-warning px-4 py-3 fw-bold text-white rounded-pill shadow-sm" onClick={onCreateMistakeSet}>
-              ✨ Tạo bộ ôn tập từ {wrongCount} câu sai
+            <button className="btn btn-warning btn-touch text-dark px-4" onClick={onCreateMistakeSet}>
+              ✨ Lưu {wrongCount} câu sai
             </button>
           )}
-          <button className="btn btn-light px-4 py-3 fw-bold rounded-pill border shadow-sm" onClick={() => window.print()}>
-            🖨️ In kết quả
+          <button className="btn btn-light btn-touch px-3" onClick={() => window.print()}>
+            🖨️ In
           </button>
         </div>
       </div>

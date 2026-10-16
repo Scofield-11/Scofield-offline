@@ -133,108 +133,169 @@ function Dashboard() {
       className="container-fluid mt-1 mb-3 mx-auto px-2 px-md-3 position-relative"
       style={{ maxWidth: '1000px', zIndex: 1030 }}
     >
-      <div className="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-between gap-2">
-        {/* THANH TÌM KIẾM TỐI GIẢN */}
-        <div className="position-relative flex-grow-1" ref={dropdownRef}>
-          <div className="dashboard-search-box d-flex align-items-center px-3 py-1">
-            <span className="pe-2">🔍</span>
-            <input
-              type="text"
-              className="form-control form-control-sm border-0 py-2 fw-semibold text-dark shadow-none bg-transparent"
-              placeholder="Tìm từ vựng, Hán tự, Hán Việt, nghĩa..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => {
-                if (searchResults.length > 0 || searchQuery.trim()) setShowDropdown(true);
-              }}
-            />
-            {searchQuery && (
-              <button
-                className="btn btn-sm text-muted border-0 py-0 px-2"
-                onClick={() => {
-                  setSearchQuery('');
-                  setShowDropdown(false);
+      {/* TẦNG 1: AURORA HERO SEARCH NHƯ BAN ĐẦU NHƯNG GỌN CHỮ */}
+      <div className="position-relative mb-3" style={{ zIndex: 1040 }}>
+        <div className="dashboard-hero-card p-3 p-md-4">
+          <div className="d-flex justify-content-between align-items-center gap-2 mb-3">
+            <div className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill dashboard-hero-badge">
+              <span>✨</span>
+              <span>{totalVocabCount} thẻ • {validSetsCount} bộ</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleQuickCloudSync}
+              className="cloud-pill-btn"
+              title="Bấm để đồng bộ ngay với Supabase"
+            >
+              <span
+                className={`sync-status-dot ${syncInfo.state === 'syncing' ? 'pulse' : ''}`}
+                style={{
+                  backgroundColor:
+                    syncInfo.state === 'syncing'
+                      ? '#fbbf24'
+                      : syncInfo.state === 'synced'
+                      ? '#34d399'
+                      : syncInfo.state === 'error'
+                      ? '#f87171'
+                      : '#cbd5e1',
                 }}
+              />
+              <span>
+                {syncInfo.state === 'syncing'
+                  ? 'Đang lưu...'
+                  : syncInfo.state === 'synced'
+                  ? `Cloud ${syncInfo.lastSynced ? `(${syncInfo.lastSynced})` : ''}`
+                  : 'Cloud Sync'}
+              </span>
+              <span>🔄</span>
+            </button>
+          </div>
+
+          <div ref={dropdownRef} className="position-relative">
+            <div className="dashboard-search-box d-flex align-items-center px-3 py-1">
+              <span className="pe-2 fs-5">🔍</span>
+              <input
+                type="text"
+                className="form-control border-0 py-2 fw-semibold text-dark shadow-none bg-transparent"
+                placeholder="Tra cứu từ vựng, Hán tự, Hán Việt, ý nghĩa..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => {
+                  if (searchResults.length > 0 || searchQuery.trim()) setShowDropdown(true);
+                }}
+              />
+              {searchQuery ? (
+                <button
+                  className="btn btn-sm text-muted border-0 py-1 px-2"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setShowDropdown(false);
+                  }}
+                >
+                  ✕
+                </button>
+              ) : (
+                <span className="d-none d-sm-inline-block search-kbd-hint">Tra nhanh</span>
+              )}
+            </div>
+
+            {showDropdown && (
+              <div
+                className="position-absolute w-100 bg-white rounded-4 mt-2 overflow-hidden text-start dashboard-search-dropdown"
+                style={{ zIndex: 2000, top: '100%', left: 0 }}
               >
-                ✕
-              </button>
+                <div
+                  style={{ maxHeight: 'min(340px, 46vh)', overflowY: 'auto' }}
+                  className="p-2"
+                >
+                  {isSearching ? (
+                    <div className="text-center p-4 text-muted small fw-bold">
+                      ⏳ Đang tìm kiếm...
+                    </div>
+                  ) : searchResults.length === 0 ? (
+                    <div className="text-center p-4 text-muted small fw-bold">
+                      📭 Không tìm thấy từ phù hợp
+                    </div>
+                  ) : (
+                    searchResults.map((item, idx) => {
+                      const parentSet = sets.find((s) => s.id === item.set_id);
+                      const setTitle = parentSet ? parentSet.title : 'Khác';
+                      return (
+                        <div key={idx} className="p-2 px-3 rounded-3 mb-1 dashboard-search-item">
+                          <div className="d-flex justify-content-between align-items-center gap-2">
+                            <div className="text-truncate">
+                              <span className="fw-bold text-dark fs-6">{item.word}</span>
+                              {item.hanviet && (
+                                <span className="ms-2 small fw-bold text-primary">
+                                  [{item.hanviet}]
+                                </span>
+                              )}
+                              {item.hiragana && (
+                                <span className="ms-2 small text-info fw-semibold">
+                                  {item.hiragana}
+                                </span>
+                              )}
+                            </div>
+                            <span
+                              className="badge chip-primary rounded-pill flex-shrink-0"
+                              style={{ fontSize: '0.7rem' }}
+                            >
+                              {setTitle}
+                            </span>
+                          </div>
+                          <div className="text-secondary small mt-1">{item.meaning}</div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
             )}
           </div>
+        </div>
+      </div>
 
-          {showDropdown && (
-            <div
-              className="position-absolute w-100 bg-white rounded-4 mt-2 overflow-hidden text-start dashboard-search-dropdown"
-              style={{ zIndex: 2000, top: '100%', left: 0 }}
-            >
-              <div style={{ maxHeight: 'min(320px, 45vh)', overflowY: 'auto' }} className="p-2">
-                {isSearching ? (
-                  <div className="text-center p-3 text-muted small fw-semibold">⏳ Đang tìm...</div>
-                ) : searchResults.length === 0 ? (
-                  <div className="text-center p-3 text-muted small fw-semibold">📭 Không có kết quả</div>
-                ) : (
-                  searchResults.map((item, idx) => {
-                    const parentSet = sets.find((s) => s.id === item.set_id);
-                    const setTitle = parentSet ? parentSet.title : 'Khác';
-                    return (
-                      <div key={idx} className="p-2 px-3 rounded-3 mb-1 dashboard-search-item">
-                        <div className="d-flex justify-content-between align-items-center gap-2">
-                          <div className="text-truncate">
-                            <span className="fw-bold text-dark">{item.word}</span>
-                            {item.hanviet && (
-                              <span className="ms-2 small fw-bold text-primary">[{item.hanviet}]</span>
-                            )}
-                            {item.hiragana && (
-                              <span className="ms-2 small text-info fw-semibold">{item.hiragana}</span>
-                            )}
-                          </div>
-                          <span className="badge chip-primary rounded-pill flex-shrink-0" style={{ fontSize: '0.68rem' }}>
-                            {setTitle}
-                          </span>
-                        </div>
-                        <div className="text-secondary small">{item.meaning}</div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+      {/* TẦNG 2: BENTO 4 Ô GỌN GÀNG, ÍT CHỮ */}
+      <div className="row g-2 align-items-stretch">
+        <div className="col-6 col-lg-3">
+          <div className="bento-stat-card h-100">
+            <div className="bento-icon-wrap bento-purple">🔥</div>
+            <div className="overflow-hidden">
+              <div className="bento-value">{currentStreak} ngày</div>
+              <div className="bento-sub">{todayTests} bài hôm nay</div>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* NHÓM CHỈ SỐ GỌN NHẸ */}
-        <div className="d-flex align-items-center gap-2 flex-wrap justify-content-between justify-content-md-end">
-          <div className="d-flex align-items-center gap-2">
-            <span className="stat-mini-pill" title={`${todayTests} bài test hôm nay`}>
-              🔥 <strong>{currentStreak}</strong> ngày
-            </span>
-            <span className="stat-mini-pill">
-              📚 <strong>{totalVocabCount}</strong> thẻ ({validSetsCount} bộ)
-            </span>
-          </div>
+        <div className="col-6 col-lg-3">
+          <Link to="/flashcards" className="bento-stat-card bento-interactive h-100 text-decoration-none">
+            <div className="bento-icon-wrap bento-indigo">🗂️</div>
+            <div className="overflow-hidden">
+              <div className="bento-value">Flashcards</div>
+              <div className="bento-sub">Lật thẻ 3D →</div>
+            </div>
+          </Link>
+        </div>
 
-          <button
-            type="button"
-            onClick={handleQuickCloudSync}
-            className="stat-mini-pill border-0"
-            style={{ cursor: 'pointer' }}
-            title="Đồng bộ Supabase Cloud"
-          >
-            <span
-              className={`sync-status-dot ${syncInfo.state === 'syncing' ? 'pulse' : ''}`}
-              style={{
-                backgroundColor:
-                  syncInfo.state === 'syncing'
-                    ? '#fbbf24'
-                    : syncInfo.state === 'synced'
-                    ? '#10b981'
-                    : syncInfo.state === 'error'
-                    ? '#ef4444'
-                    : '#94a3b8',
-              }}
-            />
-            <span>{syncInfo.state === 'syncing' ? 'Đang lưu...' : 'Cloud'}</span>
-            <span>🔄</span>
-          </button>
+        <div className="col-6 col-lg-3">
+          <Link to="/learn" className="bento-stat-card bento-interactive h-100 text-decoration-none">
+            <div className="bento-icon-wrap bento-emerald">🧠</div>
+            <div className="overflow-hidden">
+              <div className="bento-value">Học SRS</div>
+              <div className="bento-sub">Ghi nhớ sâu →</div>
+            </div>
+          </Link>
+        </div>
+
+        <div className="col-6 col-lg-3">
+          <Link to="/test" className="bento-stat-card bento-interactive h-100 text-decoration-none">
+            <div className="bento-icon-wrap bento-amber">⚡</div>
+            <div className="overflow-hidden">
+              <div className="bento-value">Kiểm tra</div>
+              <div className="bento-sub">Luyện phản xạ →</div>
+            </div>
+          </Link>
         </div>
       </div>
     </div>

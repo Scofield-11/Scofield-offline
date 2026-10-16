@@ -282,25 +282,40 @@ function MatchMode() {
 
   if (!isStarted) {
     return (
-      <div className="container mt-5 fade-in-slide" style={{ maxWidth: '500px' }}>
-        <div className="card shadow-sm border-0 p-4 rounded-4 bg-white">
-          <h3 className="text-center mb-4 fw-bold">Game Ghép Thẻ</h3>
+      <div className="container mt-3 fade-in-slide" style={{ maxWidth: '600px' }}>
+        <div className="card shadow-sm border-0 p-3 p-md-4 rounded-4 bg-white">
+          <h4 className="text-center mb-3 fw-bold text-dark">🎮 Ghép Thẻ Phản Xạ</h4>
+
           <div className="mb-3">
-            <label className="form-label fw-bold text-muted">Chế độ chơi:</label>
-            <div className="d-flex gap-2">
-              <button className={`btn w-50 fw-bold ${gameMode === 'normal' ? 'btn-primary' : 'btn-outline-secondary'}`} onClick={() => setGameMode('normal')}>Thường</button>
-              <button className={`btn w-50 fw-bold ${gameMode === 'challenge' ? 'btn-danger' : 'btn-outline-secondary'}`} onClick={() => setGameMode('challenge')}>Thử thách 60s</button>
+            <label className="form-label fw-bold text-muted small mb-1">Chế độ chơi</label>
+            <div className="set-sheet-segmented mb-0" style={{ gridTemplateColumns: '1fr 1fr' }}>
+              <button
+                type="button"
+                className={`set-seg-btn ${gameMode === 'normal' ? 'active' : ''}`}
+                onClick={() => setGameMode('normal')}
+              >
+                ⏱️ Tính giờ
+              </button>
+              <button
+                type="button"
+                className={`set-seg-btn ${gameMode === 'challenge' ? 'active' : ''}`}
+                onClick={() => setGameMode('challenge')}
+              >
+                🔥 Thử thách 60s
+              </button>
             </div>
           </div>
-          <div className="mb-4">
-            <label className="form-label fw-bold text-muted">Chọn học phần:</label>
-            <SetSelector 
-              sets={sets} 
-              selectedSetId={selectedSetId} setSelectedSetId={setSelectedSetId}
+
+          <div className="mb-3">
+            <label className="form-label fw-bold text-muted small mb-1">Học phần</label>
+            <SetSelector
+              sets={sets}
+              selectedSetId={selectedSetId}
+              setSelectedSetId={setSelectedSetId}
             />
           </div>
 
-          <div className="mb-4">
+          <div className="mb-3">
             <GameModeSelector
               hasFourFields={hasFourFields}
               currentContentType={currentContentType}
@@ -311,49 +326,73 @@ function MatchMode() {
               isReversed={isReversed}
               setIsReversed={setIsReversed}
               onSwap={handleSwap}
-              sectionLabel="Luật chơi (Game Rules)"
+              sectionLabel="Luật ghép"
               presets={[
                 {
-                  id: 'classic', icon: '🏛️', iconBg: '#ede9fe', label: 'Cổ điển',
-                  getDesc: (f, b, type) => { const w = type === 'kanji' ? 'Hán tự' : 'Từ vựng'; return f === 'meaning' && (b === 'word' || b === 'kanji') ? `Ý nghĩa ↔ ${w}` : `${w} ↔ Ý nghĩa`; },
+                  id: 'classic', icon: '🏛️', iconBg: '#ede9fe', label: 'Từ ↔ Nghĩa',
+                  getDesc: (f, b, type) => { const w = type === 'kanji' ? 'Hán tự' : 'Từ'; return f === 'meaning' && (b === 'word' || b === 'kanji') ? `Nghĩa ↔ ${w}` : `${w} ↔ Nghĩa`; },
                   frontKey: (type) => type === 'kanji' ? 'kanji' : 'word', backKey: () => 'meaning',
                   isActive: (f, b, type) => { const w = type === 'kanji' ? 'kanji' : 'word'; return ((f === w) && b === 'meaning') || (f === 'meaning' && b === w); }
                 },
                 {
-                  id: 'speed', icon: '⚡', iconBg: '#fef3c7', label: 'Đua Tốc Độ',
-                  getDesc: (f, b, type) => { const w = type === 'kanji' ? 'Hán tự' : 'Từ vựng'; return f === 'hiragana' && (b === 'word' || b === 'kanji') ? `Phiên âm ↔ ${w}` : `${w} ↔ Phiên âm`; },
+                  id: 'speed', icon: '⚡', iconBg: '#fef3c7', label: 'Từ ↔ Kana',
+                  getDesc: (f, b, type) => { const w = type === 'kanji' ? 'Hán tự' : 'Từ'; return f === 'hiragana' && (b === 'word' || b === 'kanji') ? `Kana ↔ ${w}` : `${w} ↔ Kana`; },
                   frontKey: (type) => type === 'kanji' ? 'kanji' : 'word', backKey: () => 'hiragana',
                   isActive: (f, b, type) => { const w = type === 'kanji' ? 'kanji' : 'word'; return ((f === w) && b === 'hiragana') || (f === 'hiragana' && b === w); }
                 },
                 {
-                  id: 'hanviet', icon: '👑', iconBg: '#fee2e2', label: 'Vua Hán Tự',
-                  getDesc: (f, b) => f === 'meaning' && b === 'hanviet' ? 'Ý nghĩa ↔ Hán Việt' : 'Hán Việt ↔ Ý nghĩa',
+                  id: 'hanviet', icon: '👑', iconBg: '#fee2e2', label: 'Hán Việt',
+                  getDesc: (f, b) => f === 'meaning' && b === 'hanviet' ? 'Nghĩa ↔ Hán Việt' : 'Hán Việt ↔ Nghĩa',
                   frontKey: () => 'hanviet', backKey: () => 'meaning',
                   isActive: (f, b) => (f === 'hanviet' && b === 'meaning') || (f === 'meaning' && b === 'hanviet')
                 },
                 {
-                  id: 'listening', icon: '🎧', iconBg: '#dbeafe', label: 'Nghe Hiểu',
-                  getDesc: (f, b) => f === 'meaning' && b === 'hiragana' ? 'Ý nghĩa ↔ Phiên âm' : 'Phiên âm ↔ Ý nghĩa',
+                  id: 'listening', icon: '🎧', iconBg: '#dbeafe', label: 'Kana ↔ Nghĩa',
+                  getDesc: (f, b) => f === 'meaning' && b === 'hiragana' ? 'Nghĩa ↔ Kana' : 'Kana ↔ Nghĩa',
                   frontKey: () => 'hiragana', backKey: () => 'meaning',
                   isActive: (f, b) => (f === 'hiragana' && b === 'meaning') || (f === 'meaning' && b === 'hiragana')
                 }
               ]}
               twoFieldPresets={[
-                { id: 'forward', icon: '🧠', iconBg: '#ede9fe', label: 'Cổ Điển', description: 'Từ vựng ↔ Ý nghĩa', reversedValue: false },
-                { id: 'backward', icon: '🇻🇳', iconBg: '#fef3c7', label: 'Hồi Tưởng', description: 'Ý nghĩa ↔ Từ vựng', reversedValue: true },
+                { id: 'forward', icon: '🧠', iconBg: '#ede9fe', label: 'Xuôi', description: 'Từ ↔ Nghĩa', reversedValue: false },
+                { id: 'backward', icon: '🇻🇳', iconBg: '#fef3c7', label: 'Ngược', description: 'Nghĩa ↔ Từ', reversedValue: true },
               ]}
             />
           </div>
 
-          <div className="mb-4">
-            <label className="form-label fw-bold text-muted">Độ khó (Số cặp thẻ):</label>
-            <input type="number" className="form-control bg-light border-0 fw-bold text-center text-dark" value={difficulty} min={2} onChange={(e) => setDifficulty(parseInt(e.target.value) || 2)} />
+          <div className="mb-3">
+            <label className="form-label fw-bold text-muted small mb-1">Số cặp thẻ</label>
+            <div className="d-flex gap-2">
+              {[4, 6, 8, 10].map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  className={`btn btn-mobile-chip flex-fill ${difficulty === num ? 'btn-primary text-white' : 'chip-slate'}`}
+                  onClick={() => setDifficulty(num)}
+                >
+                  {num} cặp
+                </button>
+              ))}
+            </div>
           </div>
 
-          {gameMode === 'normal' && bestTime !== null && <div className="alert alert-info text-center fw-bold shadow-sm border-0 mb-4 rounded-3">🏆 Kỷ lục tốc độ: {bestTime} giây</div>}
-          {gameMode === 'challenge' && highScore !== null && <div className="alert alert-warning text-center fw-bold shadow-sm border-0 mb-4 rounded-3">🏆 Điểm cao nhất: {highScore} điểm</div>}
-          
-          <button className={`btn btn-lg w-100 fw-bold shadow-sm ${gameMode === 'challenge' ? 'btn-danger' : 'btn-primary'}`} onClick={startGame}>Bắt đầu chơi</button>
+          {gameMode === 'normal' && bestTime !== null && (
+            <div className="chip-primary text-center fw-bold py-2 px-3 mb-3 rounded-3 small">
+              🏆 Kỷ lục: {bestTime} giây
+            </div>
+          )}
+          {gameMode === 'challenge' && highScore !== null && (
+            <div className="chip-warning text-center fw-bold py-2 px-3 mb-3 rounded-3 small">
+              🏆 Điểm cao nhất: {highScore} điểm
+            </div>
+          )}
+
+          <button
+            className={`btn btn-touch w-100 ${gameMode === 'challenge' ? 'btn-danger text-white' : 'btn-primary'}`}
+            onClick={startGame}
+          >
+            Bắt đầu chơi 🚀
+          </button>
         </div>
       </div>
     );

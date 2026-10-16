@@ -498,11 +498,49 @@ function VocabularyList() {
         />
       )}
 
-      {/* THANH CÔNG CỤ GỘP: THƯ MỤC + SẮP XẾP + SAO LƯU */}
-      <div className="d-flex justify-content-between align-items-center mb-3 bg-white p-2 px-3 rounded-4 border flex-wrap gap-2 shadow-sm">
-        <div className="d-flex align-items-center flex-wrap gap-1">
+      {/* THANH TIÊU ĐỀ & CÔNG CỤ (1 HÀNG THẲNG TẮP TRÊN MOBILE & PC) */}
+      <div className="d-flex align-items-center justify-content-between gap-2 mb-2 px-1">
+        <span className="fw-bold text-dark" style={{ fontSize: '0.95rem' }}>
+          Thư viện ({displaySets.length})
+        </span>
+
+        <div className="d-flex align-items-center gap-1 flex-shrink-0">
           <button
-            className={`btn btn-mobile-chip ${currentPath === '' ? 'btn-primary text-white' : 'chip-slate'}`}
+            type="button"
+            className="btn btn-mobile-chip chip-slate"
+            onClick={() => jsonInputRef.current?.click()}
+            title="Nhập file JSON"
+          >
+            📂 Nhập
+          </button>
+          <button
+            type="button"
+            className="btn btn-mobile-chip chip-slate"
+            onClick={handleBackupAllJson}
+            title="Sao lưu file JSON"
+          >
+            ⬇️ Lưu
+          </button>
+          <select
+            className="form-select form-select-sm bg-white border rounded-3 fw-semibold text-secondary px-2 shadow-none"
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+            style={{ height: '32px', width: 'auto', fontSize: '0.78rem' }}
+          >
+            <option value="custom" disabled={customOrder.length === 0}>Kéo thả</option>
+            <option value="newest">Mới nhất</option>
+            <option value="oldest">Cũ nhất</option>
+            <option value="az">A - Z</option>
+            <option value="za">Z - A</option>
+          </select>
+        </div>
+      </div>
+
+      {/* THANH ĐƯỜNG DẪN THƯ MỤC (CUỘN NGANG MƯỢT, KHÔNG BỊ RỚT DÒNG LỘN XỘN) */}
+      <div className="d-flex align-items-center justify-content-between gap-2 mb-3 bg-white p-2 px-3 rounded-4 border shadow-sm">
+        <div className="d-flex align-items-center gap-1 overflow-auto no-scrollbar flex-grow-1">
+          <button
+            className={`btn btn-mobile-chip flex-shrink-0 ${currentPath === '' ? 'btn-primary text-white' : 'chip-slate'}`}
             onClick={() => setCurrentPath('')}
           >
             🏠 Gốc
@@ -513,9 +551,9 @@ function VocabularyList() {
               const isLast = idx === arr.length - 1;
               return (
                 <React.Fragment key={idx}>
-                  <span className="text-muted small px-1">/</span>
+                  <span className="text-muted small px-1 flex-shrink-0">/</span>
                   <button
-                    className={`btn btn-mobile-chip ${isLast ? 'btn-primary text-white' : 'chip-slate'}`}
+                    className={`btn btn-mobile-chip flex-shrink-0 ${isLast ? 'btn-primary text-white' : 'chip-slate'}`}
                     onClick={() => setCurrentPath(pathToHere)}
                   >
                     {part}
@@ -523,41 +561,15 @@ function VocabularyList() {
                 </React.Fragment>
               );
             })}
-          <button className="btn btn-mobile-chip chip-primary ms-1" onClick={handleCreateFolder} title="Tạo thư mục mới">
-            📁+
-          </button>
         </div>
 
-        <div className="d-flex align-items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            className="btn btn-mobile-chip chip-slate"
-            onClick={() => jsonInputRef.current?.click()}
-            title="Nhập dữ liệu từ file JSON"
-          >
-            📂 Nhập
-          </button>
-          <button
-            type="button"
-            className="btn btn-mobile-chip chip-slate"
-            onClick={handleBackupAllJson}
-            title="Sao lưu toàn bộ ra file JSON"
-          >
-            ⬇️ Sao lưu
-          </button>
-          <select
-            className="form-select form-select-sm bg-light border-0 rounded-3 fw-semibold text-secondary px-2"
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-            style={{ height: '34px', width: 'auto', fontSize: '0.8rem' }}
-          >
-            <option value="custom" disabled={customOrder.length === 0}>Kéo thả</option>
-            <option value="newest">Mới nhất</option>
-            <option value="oldest">Cũ nhất</option>
-            <option value="az">A - Z</option>
-            <option value="za">Z - A</option>
-          </select>
-        </div>
+        <button
+          className="btn btn-mobile-chip chip-primary flex-shrink-0"
+          onClick={handleCreateFolder}
+          title="Tạo thư mục mới"
+        >
+          + Thư mục
+        </button>
       </div>
 
       {/* DANH SÁCH THƯ MỤC CON */}
@@ -572,18 +584,17 @@ function VocabularyList() {
               >
                 <div className="d-flex align-items-center justify-content-between gap-2">
                   <div className="d-flex align-items-center gap-2 overflow-hidden">
-                    <span className="fs-4">📁</span>
+                    <span className="fs-5">📁</span>
                     <span className="fw-bold text-dark text-truncate small" title={folderName}>
                       {folderName}
                     </span>
                   </div>
                   <button
-                    className="btn-icon-soft chip-danger"
-                    style={{ width: '28px', height: '28px', minHeight: '28px' }}
+                    className="folder-del-btn"
                     onClick={(e) => handleDeleteFolder(e, folderName)}
                     title="Xóa thư mục"
                   >
-                    🗑️
+                    ✕
                   </button>
                 </div>
               </div>
