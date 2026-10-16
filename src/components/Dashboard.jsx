@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, RefreshCw, X, Flame, Sun, Moon, Volume2 } from 'lucide-react';
 import api, { getSyncStatus, autoPullFromCloud, pushToSupabase } from '../api/axiosConfig';
 import { VocabContext } from '../context/VocabContext';
 import { toast } from 'react-toastify';
@@ -11,16 +13,56 @@ function Dashboard() {
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   const [todayTests, setTodayTests] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [last7DaysActive, setLast7DaysActive] = useState([false, false, false, false, false, false, false]);
+  const [dueCount, setDueCount] = useState(0);
   const [syncInfo, setSyncInfo] = useState(getSyncStatus());
+  const [theme, setTheme] = useState(() => localStorage.getItem('scofield_theme') || 'light');
 
   useEffect(() => {
     const handleStatus = (e) => setSyncInfo(e.detail);
+    const handleTheme = (e) => {
+      if (e.detail) setTheme(e.detail);
+    };
     window.addEventListener('scofield-sync-status', handleStatus);
-    return () => window.removeEventListener('scofield-sync-status', handleStatus);
+    window.addEventListener('scofield-theme-change', handleTheme);
+    return () => {
+      window.removeEventListener('scofield-sync-status', handleStatus);
+      window.removeEventListener('scofield-theme-change', handleTheme);
+    };
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    document.documentElement.setAttribute('data-theme', nextTheme);
+    localStorage.setItem('scofield_theme', nextTheme);
+    window.dispatchEvent(new CustomEvent('scofield-theme-change', { detail: nextTheme }));
+  };
+
+  const speakWord = (item) => {
+    if (!item?.word || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(item.word);
+    const hasJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(item.word);
+    utterance.lang = item.language === 'en' && !hasJapanese ? 'en-US' : 'ja-JP';
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  };
 
   const totalVocabCount = React.useMemo(() => {
     return (sets || [])
@@ -33,6 +75,13 @@ function Dashboard() {
   }, [sets]);
 
   useEffect(() => {
+    api
+      .get('/stats/global')
+      .then((res) => {
+        setDueCount(res.data?.dueCount || 0);
+      })
+      .catch(console.error);
+
     api
       .get('/test-history?skip=0&limit=100')
       .then((res) => {
@@ -50,6 +99,15 @@ function Dashboard() {
 
         const today = new Date();
         const tzTodayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+        const dots = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          dots.push(activeDates.includes(dStr));
+        }
+        setLast7DaysActive(dots);
 
         const tTests = history.filter((item) => {
           const match = item.date?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
@@ -133,49 +191,73 @@ function Dashboard() {
       className="container-fluid mt-1 mb-3 mx-auto px-2 px-md-3 position-relative"
       style={{ maxWidth: '1000px', zIndex: 1030 }}
     >
-      {/* TẦNG 1: AURORA HERO SEARCH NHƯ BAN ĐẦU NHƯNG GỌN CHỮ */}
       <div className="position-relative mb-3" style={{ zIndex: 1040 }}>
         <div className="dashboard-hero-card p-3 p-md-4">
           <div className="d-flex justify-content-between align-items-center gap-2 mb-3">
             <div className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill dashboard-hero-badge">
-              <span>✨</span>
+              <Sparkles size={14} />
               <span>{totalVocabCount} thẻ • {validSetsCount} bộ</span>
             </div>
 
-            <button
-              type="button"
-              onClick={handleQuickCloudSync}
-              className="cloud-pill-btn"
-              title="Bấm để đồng bộ ngay với Supabase"
-            >
-              <span
-                className={`sync-status-dot ${syncInfo.state === 'syncing' ? 'pulse' : ''}`}
-                style={{
-                  backgroundColor:
-                    syncInfo.state === 'syncing'
-                      ? '#fbbf24'
-                      : syncInfo.state === 'synced'
-                      ? '#34d399'
-                      : syncInfo.state === 'error'
-                      ? '#f87171'
-                      : '#cbd5e1',
-                }}
-              />
-              <span>
-                {syncInfo.state === 'syncing'
-                  ? 'Đang lưu...'
-                  : syncInfo.state === 'synced'
-                  ? `Cloud ${syncInfo.lastSynced ? `(${syncInfo.lastSynced})` : ''}`
-                  : 'Cloud Sync'}
-              </span>
-              <span>🔄</span>
-            </button>
+            <div className="d-flex align-items-center gap-2">
+              <button
+                type="button"
+                onClick={handleQuickCloudSync}
+                className="cloud-pill-btn"
+                title="Bấm để đồng bộ ngay với Supabase"
+              >
+                <span
+                  className={`sync-status-dot ${syncInfo.state === 'syncing' ? 'pulse' : ''}`}
+                  style={{
+                    backgroundColor:
+                      syncInfo.state === 'syncing'
+                        ? '#fbbf24'
+                        : syncInfo.state === 'synced'
+                        ? '#34d399'
+                        : syncInfo.state === 'error'
+                        ? '#f87171'
+                        : '#cbd5e1',
+                  }}
+                />
+                <span>
+                  {syncInfo.state === 'syncing'
+                    ? 'Đang lưu...'
+                    : syncInfo.state === 'synced'
+                    ? `Cloud ${syncInfo.lastSynced ? `(${syncInfo.lastSynced})` : ''}`
+                    : 'Cloud Sync'}
+                </span>
+                <RefreshCw
+                  size={13}
+                  className={syncInfo.state === 'syncing' ? 'spin-anim' : ''}
+                />
+              </button>
+
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.9, rotate: 25 }}
+                onClick={toggleTheme}
+                className="cloud-pill-btn d-lg-none px-2"
+                title={theme === 'dark' ? 'Chế độ Sáng' : 'Chế độ Tối'}
+                aria-label="Đổi giao diện Sáng/Tối"
+              >
+                <motion.span
+                  key={theme}
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 380, damping: 24, mass: 0.6 }}
+                  className="d-flex align-items-center"
+                >
+                  {theme === 'dark' ? <Sun size={15} color="#fde047" /> : <Moon size={15} />}
+                </motion.span>
+              </motion.button>
+            </div>
           </div>
 
           <div ref={dropdownRef} className="position-relative">
             <div className="dashboard-search-box d-flex align-items-center px-3 py-1">
               <span className="pe-2 fs-5">🔍</span>
               <input
+                ref={searchInputRef}
                 type="text"
                 className="form-control border-0 py-2 fw-semibold text-dark shadow-none bg-transparent"
                 placeholder="Tra cứu từ vựng, Hán tự, Hán Việt, ý nghĩa..."
@@ -193,77 +275,95 @@ function Dashboard() {
                     setShowDropdown(false);
                   }}
                 >
-                  ✕
+                  <X size={16} />
                 </button>
               ) : (
-                <span className="d-none d-sm-inline-block search-kbd-hint">Tra nhanh</span>
+                <span className="d-none d-sm-inline-block search-kbd-hint">Ctrl K</span>
               )}
             </div>
 
-            {showDropdown && (
-              <div
-                className="position-absolute w-100 bg-white rounded-4 mt-2 overflow-hidden text-start dashboard-search-dropdown"
-                style={{ zIndex: 2000, top: '100%', left: 0 }}
-              >
-                <div
-                  style={{ maxHeight: 'min(340px, 46vh)', overflowY: 'auto' }}
-                  className="p-2"
+            <AnimatePresence>
+              {showDropdown && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                  className="position-absolute w-100 bg-white rounded-4 mt-2 overflow-hidden text-start dashboard-search-dropdown"
+                  style={{ zIndex: 2000, top: '100%', left: 0 }}
                 >
-                  {isSearching ? (
-                    <div className="text-center p-4 text-muted small fw-bold">
-                      ⏳ Đang tìm kiếm...
-                    </div>
-                  ) : searchResults.length === 0 ? (
-                    <div className="text-center p-4 text-muted small fw-bold">
-                      📭 Không tìm thấy từ phù hợp
-                    </div>
-                  ) : (
-                    searchResults.map((item, idx) => {
-                      const parentSet = sets.find((s) => s.id === item.set_id);
-                      const setTitle = parentSet ? parentSet.title : 'Khác';
-                      return (
-                        <div key={idx} className="p-2 px-3 rounded-3 mb-1 dashboard-search-item">
-                          <div className="d-flex justify-content-between align-items-center gap-2">
-                            <div className="text-truncate">
-                              <span className="fw-bold text-dark fs-6">{item.word}</span>
-                              {item.hanviet && (
-                                <span className="ms-2 small fw-bold text-primary">
-                                  [{item.hanviet}]
-                                </span>
-                              )}
-                              {item.hiragana && (
-                                <span className="ms-2 small text-info fw-semibold">
-                                  {item.hiragana}
-                                </span>
-                              )}
+                  <div
+                    style={{ maxHeight: 'min(340px, 46vh)', overflowY: 'auto' }}
+                    className="p-2"
+                  >
+                    {isSearching ? (
+                      <div className="text-center p-4 text-muted small fw-bold">
+                        ⏳ Đang tìm kiếm...
+                      </div>
+                    ) : searchResults.length === 0 ? (
+                      <div className="text-center p-4 text-muted small fw-bold">
+                        📭 Không tìm thấy từ phù hợp
+                      </div>
+                    ) : (
+                      searchResults.map((item, idx) => {
+                        const parentSet = sets.find((s) => s.id === item.set_id);
+                        const setTitle = parentSet ? parentSet.title : 'Khác';
+                        return (
+                          <div
+                            key={idx}
+                            className="p-2 px-3 rounded-3 mb-1 dashboard-search-item"
+                            onClick={() => speakWord(item)}
+                            title="Bấm để nghe phát âm"
+                          >
+                            <div className="d-flex justify-content-between align-items-center gap-2">
+                              <div className="text-truncate d-flex align-items-center gap-2">
+                                <span className="fw-bold text-dark fs-6">{item.word}</span>
+                                {item.hanviet && (
+                                  <span className="small fw-bold text-primary">
+                                    [{item.hanviet}]
+                                  </span>
+                                )}
+                                {item.hiragana && (
+                                  <span className="small text-info fw-semibold">
+                                    {item.hiragana}
+                                  </span>
+                                )}
+                                <Volume2 size={14} className="text-muted flex-shrink-0" />
+                              </div>
+                              <span
+                                className="badge chip-primary rounded-pill flex-shrink-0"
+                                style={{ fontSize: '0.7rem' }}
+                              >
+                                {setTitle}
+                              </span>
                             </div>
-                            <span
-                              className="badge chip-primary rounded-pill flex-shrink-0"
-                              style={{ fontSize: '0.7rem' }}
-                            >
-                              {setTitle}
-                            </span>
+                            <div className="text-secondary small mt-1">{item.meaning}</div>
                           </div>
-                          <div className="text-secondary small mt-1">{item.meaning}</div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            )}
+                        );
+                      })
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
 
-      {/* TẦNG 2: BENTO 4 Ô GỌN GÀNG, ÍT CHỮ */}
       <div className="row g-2 align-items-stretch">
         <div className="col-6 col-lg-3">
           <div className="bento-stat-card h-100">
-            <div className="bento-icon-wrap bento-purple">🔥</div>
-            <div className="overflow-hidden">
+            <div className="bento-icon-wrap bento-purple">
+              <Flame size={22} />
+            </div>
+            <div className="overflow-hidden flex-grow-1">
               <div className="bento-value">{currentStreak} ngày</div>
               <div className="bento-sub">{todayTests} bài hôm nay</div>
+              <div className="streak-dots-row" title="7 ngày gần nhất">
+                {last7DaysActive.map((active, i) => (
+                  <span key={i} className={`streak-dot ${active ? 'active' : ''}`} />
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -281,9 +381,18 @@ function Dashboard() {
         <div className="col-6 col-lg-3">
           <Link to="/learn" className="bento-stat-card bento-interactive h-100 text-decoration-none">
             <div className="bento-icon-wrap bento-emerald">🧠</div>
-            <div className="overflow-hidden">
-              <div className="bento-value">Học SRS</div>
-              <div className="bento-sub">Ghi nhớ sâu →</div>
+            <div className="overflow-hidden flex-grow-1">
+              <div className="d-flex align-items-center justify-content-between gap-1">
+                <span className="bento-value">Học SRS</span>
+                {dueCount > 0 && (
+                  <span className="due-badge-pulse" title="Số thẻ đến hạn ôn tập">
+                    {dueCount}
+                  </span>
+                )}
+              </div>
+              <div className="bento-sub">
+                {dueCount > 0 ? `${dueCount} từ đến hạn →` : 'Ghi nhớ sâu →'}
+              </div>
             </div>
           </Link>
         </div>

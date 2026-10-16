@@ -388,13 +388,13 @@ function KanjiDictionary() {
                           <div className="row align-items-center g-3 text-center text-md-start">
                             
                             <div className="col-12 col-md-3 border-end-md">
-                              <div className="fw-bold text-dark" style={{ fontSize: '2rem', fontFamily: '"Yu Mincho", "MS Mincho", serif' }}>
+                              <div className="fw-bold text-dark" style={{ fontSize: '2rem', fontFamily: 'var(--font-jp-serif)' }}>
                                 {item.kanji}
                               </div>
                             </div>
                             
                             <div className="col-12 col-md-3">
-                              <div className="fw-bold" style={{ color: '#8a2be2', fontSize: '1.2rem', letterSpacing: '1px' }}>
+                              <div className="fw-bold text-primary" style={{ fontSize: '1.2rem', letterSpacing: '1px' }}>
                                 {item.hanviet}
                               </div>
                             </div>

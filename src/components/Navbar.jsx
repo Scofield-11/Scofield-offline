@@ -1,17 +1,37 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { RefreshCw, Sun, Moon } from "lucide-react";
 import { getSyncStatus, autoPullFromCloud, pushToSupabase } from "../api/axiosConfig";
 import { toast } from "react-toastify";
+
+const NAV_SPRING = { type: "spring", stiffness: 420, damping: 32, mass: 0.7 };
 
 function Navbar() {
   const location = useLocation();
   const [syncInfo, setSyncInfo] = useState(getSyncStatus());
+  const [theme, setTheme] = useState(() => localStorage.getItem("scofield_theme") || "light");
 
   useEffect(() => {
     const handleStatus = (e) => setSyncInfo(e.detail);
+    const handleTheme = (e) => {
+      if (e.detail) setTheme(e.detail);
+    };
     window.addEventListener("scofield-sync-status", handleStatus);
-    return () => window.removeEventListener("scofield-sync-status", handleStatus);
+    window.addEventListener("scofield-theme-change", handleTheme);
+    return () => {
+      window.removeEventListener("scofield-sync-status", handleStatus);
+      window.removeEventListener("scofield-theme-change", handleTheme);
+    };
   }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    document.documentElement.setAttribute("data-theme", nextTheme);
+    localStorage.setItem("scofield_theme", nextTheme);
+    window.dispatchEvent(new CustomEvent("scofield-theme-change", { detail: nextTheme }));
+  };
 
   const handleManualSync = async () => {
     const pulled = await autoPullFromCloud(false);
@@ -65,33 +85,76 @@ function Navbar() {
               to={item.path}
               className={`nav-link-custom ${isActive ? "active" : ""}`}
             >
-              <span className="nav-icon-wrapper">
+              {isActive && (
+                <motion.div
+                  layoutId="activeNavPill"
+                  className="nav-active-pill"
+                  transition={NAV_SPRING}
+                />
+              )}
+              <span className="nav-icon-wrapper position-relative" style={{ zIndex: 2 }}>
                 <span className="nav-icon">{item.icon}</span>
               </span>
-              <span className="d-none d-lg-inline nav-text">{item.label}</span>
-              <span className="d-lg-none mobile-label">{item.label}</span>
-              {isActive && <span className="nav-active-dot d-lg-none" />}
+              <span className="d-none d-lg-inline nav-text position-relative" style={{ zIndex: 2 }}>
+                {item.label}
+              </span>
+              <span className="d-lg-none mobile-label position-relative" style={{ zIndex: 2 }}>
+                {item.label}
+              </span>
+              {isActive && (
+                <motion.span
+                  layoutId="activeNavDot"
+                  className="nav-active-dot d-lg-none"
+                  transition={NAV_SPRING}
+                />
+              )}
             </Link>
           );
         })}
       </div>
 
-      <button
-        type="button"
-        className="btn nav-sync-btn d-none d-lg-flex align-items-center justify-content-between mt-auto w-100"
-        onClick={handleManualSync}
-        disabled={syncInfo.state === "syncing"}
-        title={syncInfo.message || "Đồng bộ dữ liệu"}
-      >
-        <span className="d-flex align-items-center gap-2">
-          <span
-            className={`sync-status-dot ${syncInfo.state === "syncing" ? "pulse" : ""}`}
-            style={{ backgroundColor: getDotColor() }}
+      <div className="d-none d-lg-flex align-items-center gap-2 mt-auto w-100">
+        <button
+          type="button"
+          className="btn nav-sync-btn d-flex align-items-center justify-content-between flex-grow-1"
+          onClick={handleManualSync}
+          disabled={syncInfo.state === "syncing"}
+          title={syncInfo.message || "Đồng bộ dữ liệu"}
+        >
+          <span className="d-flex align-items-center gap-2 text-truncate">
+            <span
+              className={`sync-status-dot ${syncInfo.state === "syncing" ? "pulse" : ""}`}
+              style={{ backgroundColor: getDotColor() }}
+            />
+            <span className="text-truncate">
+              {syncInfo.state === "syncing" ? "Đang lưu..." : "Cloud Sync"}
+            </span>
+          </span>
+          <RefreshCw
+            size={14}
+            className={syncInfo.state === "syncing" ? "spin-anim flex-shrink-0" : "flex-shrink-0"}
           />
-          <span>{syncInfo.state === "syncing" ? "Đang lưu..." : "Cloud Sync"}</span>
-        </span>
-        <span>🔄</span>
-      </button>
+        </button>
+
+        <motion.button
+          type="button"
+          whileTap={{ scale: 0.9, rotate: 25 }}
+          className="btn nav-theme-btn d-flex align-items-center justify-content-center flex-shrink-0"
+          onClick={toggleTheme}
+          title={theme === "dark" ? "Chuyển sang chế độ Sáng" : "Chuyển sang chế độ Tối"}
+          aria-label="Toggle theme"
+        >
+          <motion.div
+            key={theme}
+            initial={{ rotate: -90, opacity: 0, scale: 0.6 }}
+            animate={{ rotate: 0, opacity: 1, scale: 1 }}
+            transition={{ type: "spring", stiffness: 380, damping: 24, mass: 0.6 }}
+            className="d-flex align-items-center justify-content-center"
+          >
+            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+          </motion.div>
+        </motion.button>
+      </div>
     </nav>
   );
 }

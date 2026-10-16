@@ -63,11 +63,11 @@ function SaveNoteModal({ vocab, sets, onClose, onSaveSuccess }) {
   return (
     <div className="modal d-flex align-items-center justify-content-center fade-in" style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1060, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
       <div className="card border-0 shadow-lg rounded-4 p-4" style={{ width: '90%', maxWidth: '400px' }}>
-        <h5 className="fw-bold mb-3" style={{ color: '#8a2be2' }}>📓 Lưu vào Note</h5>
+        <h5 className="fw-bold mb-3 text-primary">📓 Lưu vào Note</h5>
         <div className="bg-light p-3 rounded-3 mb-4 text-center shadow-sm">
           <div className="fw-bold fs-5 text-dark">{vocab.word}</div>
           {vocab.hanviet && vocab.hanviet.trim() && (
-            <div className="small fw-bold mt-1" style={{ color: '#8a2be2' }}>{vocab.hanviet}</div>
+            <div className="small fw-bold mt-1 text-primary">{vocab.hanviet}</div>
           )}
           {vocab.hiragana && vocab.hiragana.trim() && (
             <div className="small fw-bold text-info mt-1">{vocab.hiragana}</div>
@@ -92,7 +92,7 @@ function SaveNoteModal({ vocab, sets, onClose, onSaveSuccess }) {
 
           <div className="d-flex gap-2 mt-4">
             <button type="button" className="btn btn-secondary w-50 fw-bold rounded-3" onClick={onClose} disabled={isSaving}>Hủy</button>
-            <button type="submit" className="btn w-50 fw-bold text-white rounded-3 hover-scale" style={{ backgroundColor: '#8a2be2' }} disabled={isSaving}>{isSaving ? 'Đang lưu...' : 'Lưu lại'}</button>
+            <button type="submit" className="btn btn-primary w-50 fw-bold text-white rounded-3" disabled={isSaving}>{isSaving ? 'Đang lưu...' : 'Lưu lại'}</button>
           </div>
         </form>
       </div>

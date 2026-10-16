@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer } from "react-toastify";
 import { AnimatePresence, motion } from "framer-motion";
-import 'react-toastify/dist/ReactToastify.css';
+import "react-toastify/dist/ReactToastify.css";
 
 import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
@@ -13,34 +13,31 @@ import MatchMode from "./components/MatchMode";
 import NotFound from "./pages/NotFound";
 import { VocabProvider } from "./context/VocabContext";
 
-// Component bọc từng trang để tạo hiệu ứng
 const PageWrapper = ({ children }) => {
   const ref = useRef(null);
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 15 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -15 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
       onAnimationComplete={() => {
-                // Gỡ bỏ transform và will-change sau khi hiệu ứng kết thúc để mở khóa position: sticky
-                if (ref.current) {
-                  ref.current.style.transform = "none";
-                  ref.current.style.willChange = "auto";
-                }
-              }}
+        if (ref.current) {
+          ref.current.style.transform = "none";
+          ref.current.style.willChange = "auto";
+        }
+      }}
     >
       {children}
     </motion.div>
   );
 };
 
-// Component xử lý hiệu ứng khi đổi Route
 function AnimatedRoutes() {
   const location = useLocation();
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="popLayout">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
         <Route path="/flashcards" element={<PageWrapper><FlashcardMode /></PageWrapper>} />
@@ -54,7 +51,22 @@ function AnimatedRoutes() {
 }
 
 function App() {
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("scofield_theme") || "light";
+  });
 
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("scofield_theme", theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const handleThemeEvent = (e) => {
+      if (e.detail) setTheme(e.detail);
+    };
+    window.addEventListener("scofield-theme-change", handleThemeEvent);
+    return () => window.removeEventListener("scofield-theme-change", handleThemeEvent);
+  }, []);
 
   return (
     <VocabProvider>
@@ -62,7 +74,7 @@ function App() {
         <div className="app-layout">
           <Navbar />
           <main className="main-content">
-            <div className="container-fluid py-4" style={{ maxWidth: '1200px' }}>
+            <div className="container-fluid py-4" style={{ maxWidth: "1200px" }}>
               <AnimatedRoutes />
             </div>
           </main>
@@ -77,8 +89,8 @@ function App() {
           pauseOnFocusLoss={false}
           draggable
           pauseOnHover={false}
-          theme="colored"
-          style={{ top: 'env(safe-area-inset-top, 12px)', zIndex: 20000 }}
+          theme={theme === "dark" ? "dark" : "colored"}
+          style={{ top: "env(safe-area-inset-top, 12px)", zIndex: 20000 }}
         />
       </BrowserRouter>
     </VocabProvider>

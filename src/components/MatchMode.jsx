@@ -7,6 +7,7 @@ import api from '../api/axiosConfig';
 import SetSelector from './SetSelector';
 import GameModeSelector from './GameModeSelector';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Maximize2, Minimize2 } from 'lucide-react';
 
 function MatchMode() {
   const { sets, setSets, loading, fetchSets } = useContext(VocabContext);
@@ -417,8 +418,8 @@ function MatchMode() {
       <div className="mx-auto" style={{ maxWidth: '900px', width: '100%' }}>
         
         <div className="d-flex justify-content-between align-items-center mb-4">
-          <button className="btn btn-light rounded-circle shadow-sm border-0" onClick={toggleFullscreen} title="Toàn màn hình">
-            {isFullscreen ? '↙️' : '⛶'}
+          <button className="btn-icon-soft chip-slate" onClick={toggleFullscreen} title="Toàn màn hình">
+            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
 
           <h4 className="fw-bold m-0 text-center flex-grow-1">
@@ -426,7 +427,7 @@ function MatchMode() {
             <span className={gameMode === 'challenge' && timeElapsed <= 10 ? 'text-danger shake d-inline-block' : 'text-primary'}>{timeElapsed}s</span>
           </h4>
           
-          <button className="btn btn-outline-secondary fw-bold shadow-sm" onClick={() => setShowExitModal(true)}>Thoát</button>
+          <button className="btn btn-mobile-chip chip-slate" onClick={() => setShowExitModal(true)}>Thoát</button>
         </div>
 
         {gameMode === 'challenge' && (
@@ -437,7 +438,7 @@ function MatchMode() {
               </h4>
               {combo > 1 && (
                 <div className="position-relative">
-                  <span className="badge rounded-pill bg-danger fs-5 px-3 py-2 fade-in shadow-sm streak-glow">
+                  <span className="badge rounded-pill bg-danger fs-5 px-3 py-2 shadow-sm streak-glow">
                     Combo x{combo} 🔥
                   </span>
                   <div className="position-absolute top-100 start-50 translate-middle-x mt-2 w-100 overflow-hidden rounded-pill" style={{ height: '6px', backgroundColor: 'rgba(220,53,69,0.2)' }}>
@@ -450,56 +451,78 @@ function MatchMode() {
         )}
 
         {isFinished ? (
-          <div className="card shadow-lg border-0 p-5 mt-4 rounded-4 fade-in-slide mx-auto bg-white" style={{ maxWidth: '600px' }}>
+          <div className="card shadow-lg border-0 p-5 mt-4 rounded-4 mx-auto bg-white" style={{ maxWidth: '600px' }}>
             <h2 className="text-success fw-bold mb-3">🎉 Tuyệt vời!</h2>
             {gameMode === 'normal' ? (
               <p className="fs-5 text-muted mb-4">Bạn đã hoàn thành trong <strong className="text-dark">{timeElapsed} giây</strong>.</p>
             ) : (
               <p className="fs-5 text-muted mb-4">Tổng điểm của bạn: <strong className="text-danger fs-3">{score}</strong></p>
             )}
-            <button className={`btn btn-lg mt-2 fw-bold w-100 shadow-sm ${gameMode === 'challenge' ? 'btn-danger' : 'btn-primary'}`} onClick={startGame}>Chơi lại</button>
+            <button className={`btn btn-touch mt-2 fw-bold w-100 ${gameMode === 'challenge' ? 'btn-danger text-white' : 'btn-primary'}`} onClick={startGame}>Chơi lại</button>
           </div>
         ) : (
           <motion.div 
             animate={isWrongMatch ? { x: [-10, 10, -10, 10, 0], transition: { duration: 0.4 } } : {}}
             className={`row g-3 px-2 ${isWrongMatch ? 'screen-flash-error rounded-4' : ''}`}
           >
-            {cards.map(card => {
+            {cards.map((card, index) => {
               const isSelected = selectedCards.some(c => c.id === card.id) && !successCards.includes(card.id);
               const isMatched = matchedIds.includes(card.matchId);
               const isError = errorCards.includes(card.id);
               const isSuccess = successCards.includes(card.id);
-              
-              if (isMatched) {
-                return (
-                  <div className="col-6 col-md-4 col-lg-3" key={card.id}>
-                    <div className="card border-0 bg-transparent match-card-ratio" style={{ opacity: 0, cursor: 'default' }}></div>
-                  </div>
-                );
-              }
 
               let cardClasses = 'bg-white text-dark';
-              let cardStyles = { cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid transparent' };
-              
+              let cardStyles = {
+                cursor: isMatched ? 'default' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px solid var(--surface-border)',
+                pointerEvents: isMatched ? 'none' : 'auto',
+              };
+
               if (window.innerWidth > 768) {
                 cardStyles.minHeight = '120px';
               }
 
-              if (isSelected) { cardClasses = 'bg-primary text-white'; cardStyles.border = '3px solid var(--bs-primary)'; }
-              else if (isError) { cardClasses = 'bg-danger text-white'; cardStyles.border = '3px solid #dc3545'; }
-              else if (isSuccess) { cardClasses = 'match-card-matched'; cardStyles.border = '3px solid #28a745'; }
+              if (isSelected) {
+                cardClasses = 'bg-primary text-white';
+                cardStyles.border = '3px solid var(--brand-primary)';
+              } else if (isError) {
+                cardClasses = 'bg-danger text-white';
+                cardStyles.border = '3px solid #ef4444';
+              } else if (isSuccess) {
+                cardClasses = 'match-card-matched';
+                cardStyles.border = '3px solid #10b981';
+              }
 
               return (
                 <div className="col-6 col-md-4 col-lg-3 d-flex" key={card.id}>
-                  <motion.div 
-                    animate={isError ? { scale: [1, 1.05, 0.95, 1], transition: { duration: 0.3 } } : {}}
-                    whileHover={!isSelected && !isSuccess && !isError ? { scale: 1.02 } : {}}
-                    whileTap={!isSelected && !isSuccess && !isError ? { scale: 0.95 } : {}}
-                    className={`card w-100 shadow-sm transition-all rounded-4 match-card-ratio ${cardClasses}`} 
-                    style={cardStyles} 
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.75, y: 15 }}
+                    animate={
+                      isMatched
+                        ? { scale: 0.7, opacity: 0, filter: 'blur(6px)', y: 0 }
+                        : isSuccess
+                        ? { opacity: 1, scale: 1.06, y: 0, filter: 'blur(0px)' }
+                        : isError
+                        ? { opacity: 1, scale: [1, 1.05, 0.95, 1], y: 0 }
+                        : { opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }
+                    }
+                    transition={
+                      isMatched || isSuccess || isError
+                        ? { type: 'spring', stiffness: 380, damping: 26, mass: 0.7 }
+                        : { delay: index * 0.025, type: 'spring', stiffness: 400, damping: 25 }
+                    }
+                    whileHover={!isSelected && !isSuccess && !isError && !isMatched ? { scale: 1.02 } : {}}
+                    whileTap={!isSelected && !isSuccess && !isError && !isMatched ? { scale: 0.95 } : {}}
+                    className={`card w-100 rounded-4 match-card-ratio ${cardClasses}`}
+                    style={cardStyles}
                     onClick={() => handleCardClick(card)}
                   >
-                    <div className="card-body d-flex align-items-center justify-content-center p-3 text-wrap text-center w-100" style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{card.text}</div>
+                    <div className="card-body d-flex align-items-center justify-content-center p-3 text-wrap text-center w-100" style={{ fontSize: '1.15rem', fontWeight: 700 }}>
+                      {card.text}
+                    </div>
                   </motion.div>
                 </div>
               );

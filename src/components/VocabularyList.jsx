@@ -1,10 +1,21 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
+import {
+  ChevronDown,
+  Plus,
+  Trash2,
+  Edit3,
+  BookMarked,
+  X,
+  FolderOpen,
+  Download,
+  GripVertical,
+  Volume2,
+} from 'lucide-react';
 import api, {
   exportAllDataToJson,
   exportSingleItemToJson,
   importDataFromJson,
-  pushToSupabase,
-  autoPullFromCloud,
   scheduleDebouncedPush,
 } from '../api/axiosConfig';
 import AddVocabularyForm from './AddVocabularyForm';
@@ -13,19 +24,33 @@ import { VocabContext } from '../context/VocabContext';
 import { toast } from 'react-toastify';
 import LoadingSkeleton from './LoadingSkeleton';
 import EmptyState from './EmptyState';
-import { motion } from 'framer-motion';
+
+const ACCORDION_TRANSITION = { duration: 0.24, ease: [0.22, 1, 0.36, 1] };
+const MODAL_SPRING = { type: 'spring', stiffness: 380, damping: 30, mass: 0.8 };
+
+function SetReorderItem({ vocabSet, children }) {
+  const dragControls = useDragControls();
+  return (
+    <Reorder.Item
+      value={vocabSet}
+      id={String(vocabSet.id)}
+      dragListener={false}
+      dragControls={dragControls}
+      style={{ listStyle: 'none' }}
+    >
+      {children(dragControls)}
+    </Reorder.Item>
+  );
+}
 
 function VocabularyList() {
   const { sets, setSets, loading, fetchSets, hasMore } = useContext(VocabContext);
 
   const [expandedSetId, setExpandedSetId] = useState(null);
-  const [viewMode, setViewMode] = useState('list');
   const [currentPath, setCurrentPath] = useState('');
   const [customFolders, setCustomFolders] = useState([]);
   const jsonInputRef = useRef(null);
 
-  const [draggedSetId, setDraggedSetId] = useState(null);
-  const [dragOverSetId, setDragOverSetId] = useState(null);
   const [customOrder, setCustomOrder] = useState(
     () => JSON.parse(localStorage.getItem('scofieldSetOrder')) || []
   );
@@ -36,6 +61,10 @@ function VocabularyList() {
     const order = JSON.parse(localStorage.getItem('scofieldSetOrder')) || [];
     return order.length > 0 ? 'custom' : 'newest';
   });
+
+  // Inline Dialog State (thay thế window.prompt & window.confirm)
+  const [dialogState, setDialogState] = useState(null);
+  const [folderInputName, setFolderInputName] = useState('');
 
   useEffect(() => {
     fetchSets();
@@ -55,13 +84,15 @@ function VocabularyList() {
       .catch(console.error);
   }, [sets]);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { staggerChildren: 0.04 } },
-  };
-  const itemVariants = {
-    hidden: { opacity: 0, y: 12 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.22 } },
+  const speakVocab = (e, vocab, setLang) => {
+    e.stopPropagation();
+    if (!vocab?.word || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(vocab.word);
+    const hasJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(vocab.word);
+    utterance.lang = (vocab.language === 'en' || setLang === 'en') && !hasJapanese ? 'en-US' : 'ja-JP';
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
   };
 
   const calculateProgress = (set, vocabCount) => {
@@ -78,9 +109,6 @@ function VocabularyList() {
     const maxScore = Math.max(...validTests.map((h) => h.score));
     return Math.round((maxScore / vocabCount) * 100);
   };
-
-  let displaySets = [];
-  let displayFolders = [];
 
   const allExistingFolders = Array.from(
     new Set([...sets.map((s) => s.folder_path).filter((p) => p), ...customFolders])
@@ -105,9 +133,9 @@ function VocabularyList() {
   });
 
   customFolders.forEach((path) => checkPathForFolders(path));
-  displayFolders = Array.from(subfolders);
+  const displayFolders = Array.from(subfolders);
 
-  displaySets = currentLevelSets
+  const displaySets = currentLevelSets
     .filter((set) => !set.title.startsWith('_Thư mục:'))
     .map((set) => {
       let filteredVocabs = set.vocabularies ? [...set.vocabularies] : [];
@@ -137,6 +165,16 @@ function VocabularyList() {
     return b.id - a.id;
   });
 
+  const handleReorderSets = (newOrderedSets) => {
+    const newIds = newOrderedSets.map((s) => s.id);
+    const mergedOrder = [...new Set([...newIds, ...customOrder])];
+    setCustomOrder(mergedOrder);
+    localStorage.setItem('scofieldSetOrder', JSON.stringify(mergedOrder));
+    localStorage.setItem('scofield_db_updated_at', new Date().toISOString());
+    scheduleDebouncedPush();
+    if (sortOption !== 'custom') setSortOption('custom');
+  };
+
   const [editingVocabId, setEditingVocabId] = useState(null);
   const [editWord, setEditWord] = useState('');
   const [editHanviet, setEditHanviet] = useState('');
@@ -149,7 +187,6 @@ function VocabularyList() {
   const [newMeaning, setNewMeaning] = useState('');
 
   const toggleSet = async (setId) => {
-    if (viewMode === 'grid') setViewMode('list');
     if (expandedSetId === setId) {
       setExpandedSetId(null);
       setAddingToSetId(null);
@@ -177,65 +214,80 @@ function VocabularyList() {
     setAddingToSetId(null);
   };
 
-  const handleCreateFolder = async () => {
-    const newFolder = window.prompt('Nhập tên thư mục con mới:');
-    if (newFolder && newFolder.trim()) {
-      const folderName = newFolder.trim();
-      const fullPath = currentPath ? `${currentPath}/${folderName}` : folderName;
-
-      if (!customFolders.includes(fullPath) && !allExistingFolders.includes(fullPath)) {
-        try {
-          await api.post('/vocabularies/bulk-import', {
-            title: `_Thư mục: ${folderName}_`,
-            raw_text: ' ',
-            folder_path: fullPath,
-          });
-          setCustomFolders([...customFolders, fullPath]);
-          toast.success(`Đã tạo thư mục: ${folderName}`);
-          fetchSets(false, true);
-        } catch (error) {
-          toast.error('Lỗi khi tạo thư mục!');
-        }
-      } else {
-        toast.warning('Thư mục này đã tồn tại!');
-      }
-    }
+  const openCreateFolderModal = () => {
+    setFolderInputName('');
+    setDialogState({ type: 'createFolder' });
   };
 
-  const handleDeleteFolder = async (e, folderName) => {
+  const confirmCreateFolder = async (e) => {
+    e.preventDefault();
+    const folderName = folderInputName.trim();
+    if (!folderName) return;
+    const fullPath = currentPath ? `${currentPath}/${folderName}` : folderName;
+
+    if (!customFolders.includes(fullPath) && !allExistingFolders.includes(fullPath)) {
+      try {
+        await api.post('/vocabularies/bulk-import', {
+          title: `_Thư mục: ${folderName}_`,
+          raw_text: ' ',
+          folder_path: fullPath,
+        });
+        setCustomFolders([...customFolders, fullPath]);
+        toast.success(`Đã tạo thư mục: ${folderName}`);
+        fetchSets(false, true);
+      } catch (error) {
+        toast.error('Lỗi khi tạo thư mục!');
+      }
+    } else {
+      toast.warning('Thư mục này đã tồn tại!');
+    }
+    setDialogState(null);
+  };
+
+  const handleDeleteFolder = (e, folderName) => {
     e.stopPropagation();
+    setDialogState({ type: 'deleteFolder', folderName });
+  };
+
+  const confirmDeleteFolder = async () => {
+    const folderName = dialogState?.folderName;
+    if (!folderName) return;
     const targetPath = currentPath ? `${currentPath}/${folderName}` : folderName;
 
-    if (window.confirm(`Xóa thư mục "${folderName}" sẽ xóa toàn bộ học phần bên trong?`)) {
-      try {
-        const setsToDelete = sets.filter(
-          (s) =>
-            s.folder_path === targetPath ||
-            (s.folder_path && s.folder_path.startsWith(targetPath + '/'))
-        );
-        await Promise.all(setsToDelete.map((s) => api.delete(`/sets/${s.id}`)));
-        setCustomFolders((prev) =>
-          prev.filter((p) => p !== targetPath && !p.startsWith(targetPath + '/'))
-        );
-        toast.success(`Đã xóa thư mục: ${folderName}`);
-        fetchSets(false, true);
-      } catch (error) {
-        toast.error('Có lỗi xảy ra khi xóa thư mục!');
-      }
+    try {
+      const setsToDelete = sets.filter(
+        (s) =>
+          s.folder_path === targetPath ||
+          (s.folder_path && s.folder_path.startsWith(targetPath + '/'))
+      );
+      await Promise.all(setsToDelete.map((s) => api.delete(`/sets/${s.id}`)));
+      setCustomFolders((prev) =>
+        prev.filter((p) => p !== targetPath && !p.startsWith(targetPath + '/'))
+      );
+      toast.success(`Đã xóa thư mục: ${folderName}`);
+      fetchSets(false, true);
+    } catch (error) {
+      toast.error('Có lỗi xảy ra khi xóa thư mục!');
     }
+    setDialogState(null);
   };
 
-  const handleDeleteSet = async (e, setId, setTitle) => {
+  const handleDeleteSet = (e, setId, setTitle) => {
     e.stopPropagation();
-    if (window.confirm(`Xóa học phần "${setTitle}"?`)) {
-      try {
-        await api.delete(`/sets/${setId}`);
-        toast.success('Đã xóa học phần!');
-        fetchSets(false, true);
-      } catch (error) {
-        toast.error('Xóa thất bại!');
-      }
+    setDialogState({ type: 'deleteSet', setId, setTitle });
+  };
+
+  const confirmDeleteSet = async () => {
+    const { setId } = dialogState || {};
+    if (!setId) return;
+    try {
+      await api.delete(`/sets/${setId}`);
+      toast.success('Đã xóa học phần!');
+      fetchSets(false, true);
+    } catch (error) {
+      toast.error('Xóa thất bại!');
     }
+    setDialogState(null);
   };
 
   const refreshSet = async (setId) => {
@@ -257,16 +309,21 @@ function VocabularyList() {
     }
   };
 
-  const handleDeleteVocab = async (vocabId, setId) => {
-    if (window.confirm('Xóa từ vựng này?')) {
-      try {
-        await api.delete(`/vocabularies/${vocabId}`);
-        toast.success('Đã xóa từ vựng!');
-        refreshSet(setId);
-      } catch (error) {
-        toast.error('Lỗi xóa từ vựng');
-      }
+  const handleDeleteVocab = (vocabId, setId, word) => {
+    setDialogState({ type: 'deleteVocab', vocabId, setId, word });
+  };
+
+  const confirmDeleteVocab = async () => {
+    const { vocabId, setId } = dialogState || {};
+    if (!vocabId) return;
+    try {
+      await api.delete(`/vocabularies/${vocabId}`);
+      toast.success('Đã xóa từ vựng!');
+      refreshSet(setId);
+    } catch (error) {
+      toast.error('Lỗi xóa từ vựng');
     }
+    setDialogState(null);
   };
 
   const handleEditClick = (vocab) => {
@@ -319,64 +376,6 @@ function VocabularyList() {
     } catch (error) {
       toast.error('Lỗi thêm từ vựng!');
     }
-  };
-
-  const handleDragStart = (e, id) => {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', id.toString());
-    setTimeout(() => setDraggedSetId(id), 0);
-  };
-
-  const handleDrag = (e) => {
-    const threshold = 120;
-    const speed = 25;
-    if (e.clientY === 0) return;
-    if (e.clientY < threshold) window.scrollBy(0, -speed);
-    else if (window.innerHeight - e.clientY < threshold) window.scrollBy(0, speed);
-  };
-
-  const handleDragOver = (e, targetId) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (dragOverSetId !== targetId) setDragOverSetId(targetId);
-  };
-
-  const handleDrop = (e, targetId) => {
-    e.preventDefault();
-    setDragOverSetId(null);
-    const draggedIdStr = e.dataTransfer.getData('text/plain');
-    if (!draggedIdStr) {
-      setDraggedSetId(null);
-      return;
-    }
-
-    const draggedId = parseInt(draggedIdStr, 10);
-    if (draggedId === targetId) {
-      setDraggedSetId(null);
-      return;
-    }
-
-    const currentIds = displaySets.map((s) => s.id);
-    const draggedIdx = currentIds.indexOf(draggedId);
-    const targetIdx = currentIds.indexOf(targetId);
-
-    if (draggedIdx !== -1 && targetIdx !== -1) {
-      const newOrderedIds = [...currentIds];
-      newOrderedIds.splice(draggedIdx, 1);
-      newOrderedIds.splice(targetIdx, 0, draggedId);
-      const mergedOrder = [...new Set([...newOrderedIds, ...customOrder])];
-      setCustomOrder(mergedOrder);
-      localStorage.setItem('scofieldSetOrder', JSON.stringify(mergedOrder));
-      localStorage.setItem('scofield_db_updated_at', new Date().toISOString());
-      scheduleDebouncedPush();
-      setSortOption('custom');
-    }
-    setDraggedSetId(null);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedSetId(null);
-    setDragOverSetId(null);
   };
 
   const handleDownloadSet = async (e, set, format) => {
@@ -458,9 +457,7 @@ function VocabularyList() {
     if (!file) return;
     try {
       const { addedSets, addedVocabs } = await importDataFromJson(file, 'merge');
-      toast.success(
-        `Nhập JSON: +${addedSets} học phần (${addedVocabs} từ)!`
-      );
+      toast.success(`Nhập JSON: +${addedSets} học phần (${addedVocabs} từ)!`);
       fetchSets(false, true);
     } catch (err) {
       toast.error(err.message || 'File JSON không đúng định dạng!');
@@ -481,6 +478,83 @@ function VocabularyList() {
         onChange={handleImportJsonChange}
       />
 
+      {/* INLINE MODAL THAY THẾ PROMPT / CONFIRM */}
+      <AnimatePresence>
+        {dialogState && (
+          <motion.div
+            className="set-sheet-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+            onClick={() => setDialogState(null)}
+          >
+            <motion.div
+              className="card border-0 shadow-lg rounded-4 p-4"
+              style={{ width: '92%', maxWidth: '380px' }}
+              initial={{ opacity: 0, scale: 0.92, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 10 }}
+              transition={MODAL_SPRING}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {dialogState.type === 'createFolder' ? (
+                <form onSubmit={confirmCreateFolder}>
+                  <h6 className="fw-bold text-dark mb-3">📁 Tạo thư mục con mới</h6>
+                  <input
+                    type="text"
+                    className="form-control mb-3 fw-semibold"
+                    placeholder="Nhập tên thư mục..."
+                    value={folderInputName}
+                    onChange={(e) => setFolderInputName(e.target.value)}
+                    autoFocus
+                    required
+                  />
+                  <div className="d-flex gap-2 justify-content-end">
+                    <button type="button" className="btn btn-mobile-chip chip-slate" onClick={() => setDialogState(null)}>
+                      Hủy
+                    </button>
+                    <button type="submit" className="btn btn-mobile-chip btn-primary text-white">
+                      Tạo ngay
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div>
+                  <h6 className="fw-bold text-danger mb-2">Xác nhận xóa</h6>
+                  <p className="text-secondary small mb-3">
+                    {dialogState.type === 'deleteFolder' &&
+                      `Xóa thư mục "${dialogState.folderName}" sẽ xóa toàn bộ học phần bên trong?`}
+                    {dialogState.type === 'deleteSet' &&
+                      `Bạn có chắc muốn xóa học phần "${dialogState.setTitle}"?`}
+                    {dialogState.type === 'deleteVocab' &&
+                      `Xóa từ vựng "${dialogState.word || ''}" khỏi học phần này?`}
+                  </p>
+                  <div className="d-flex gap-2 justify-content-end">
+                    <button type="button" className="btn btn-mobile-chip chip-slate" onClick={() => setDialogState(null)}>
+                      Hủy
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-mobile-chip chip-danger"
+                      onClick={
+                        dialogState.type === 'deleteFolder'
+                          ? confirmDeleteFolder
+                          : dialogState.type === 'deleteSet'
+                          ? confirmDeleteSet
+                          : confirmDeleteVocab
+                      }
+                    >
+                      <Trash2 size={14} /> Xóa
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div id="add-vocab-section">
         <AddVocabularyForm
           onAddSuccess={() => fetchSets(false, true)}
@@ -498,7 +572,6 @@ function VocabularyList() {
         />
       )}
 
-      {/* THANH TIÊU ĐỀ & CÔNG CỤ (1 HÀNG THẲNG TẮP TRÊN MOBILE & PC) */}
       <div className="d-flex align-items-center justify-content-between gap-2 mb-2 px-1">
         <span className="fw-bold text-dark" style={{ fontSize: '0.95rem' }}>
           Thư viện ({displaySets.length})
@@ -511,7 +584,7 @@ function VocabularyList() {
             onClick={() => jsonInputRef.current?.click()}
             title="Nhập file JSON"
           >
-            📂 Nhập
+            <FolderOpen size={14} /> <span>Nhập</span>
           </button>
           <button
             type="button"
@@ -519,7 +592,7 @@ function VocabularyList() {
             onClick={handleBackupAllJson}
             title="Sao lưu file JSON"
           >
-            ⬇️ Lưu
+            <Download size={14} /> <span>Lưu</span>
           </button>
           <select
             className="form-select form-select-sm bg-white border rounded-3 fw-semibold text-secondary px-2 shadow-none"
@@ -536,7 +609,6 @@ function VocabularyList() {
         </div>
       </div>
 
-      {/* THANH ĐƯỜNG DẪN THƯ MỤC (CUỘN NGANG MƯỢT, KHÔNG BỊ RỚT DÒNG LỘN XỘN) */}
       <div className="d-flex align-items-center justify-content-between gap-2 mb-3 bg-white p-2 px-3 rounded-4 border shadow-sm">
         <div className="d-flex align-items-center gap-1 overflow-auto no-scrollbar flex-grow-1">
           <button
@@ -565,16 +637,15 @@ function VocabularyList() {
 
         <button
           className="btn btn-mobile-chip chip-primary flex-shrink-0"
-          onClick={handleCreateFolder}
+          onClick={openCreateFolderModal}
           title="Tạo thư mục mới"
         >
-          + Thư mục
+          <Plus size={14} /> <span>Thư mục</span>
         </button>
       </div>
 
-      {/* DANH SÁCH THƯ MỤC CON */}
       {displayFolders.length > 0 && (
-        <div className="row g-2 mb-3 fade-in">
+        <div className="row g-2 mb-3">
           {displayFolders.map((folderName) => (
             <div key={folderName} className="col-6 col-md-4 col-lg-3">
               <div
@@ -594,7 +665,7 @@ function VocabularyList() {
                     onClick={(e) => handleDeleteFolder(e, folderName)}
                     title="Xóa thư mục"
                   >
-                    ✕
+                    <X size={14} />
                   </button>
                 </div>
               </div>
@@ -603,7 +674,6 @@ function VocabularyList() {
         </div>
       )}
 
-      {/* DANH SÁCH HỌC PHẦN */}
       {sets.length === 0 ? (
         <EmptyState
           title="Thư viện trống"
@@ -612,297 +682,316 @@ function VocabularyList() {
       ) : displaySets.length === 0 && displayFolders.length === 0 ? (
         <div className="text-center text-muted my-5 fw-semibold">Thư mục này hiện đang trống.</div>
       ) : (
-        <motion.div variants={containerVariants} initial="hidden" animate="show">
+        <Reorder.Group
+          axis="y"
+          values={displaySets}
+          onReorder={handleReorderSets}
+          as="div"
+          className="p-0 m-0"
+        >
           {displaySets.map((vocabSet) => {
-            const isDragged = draggedSetId === vocabSet.id;
-            const isDragOver = dragOverSetId === vocabSet.id && !isDragged;
             const isExpanded = expandedSetId === vocabSet.id;
 
             return (
-              <motion.div
-                variants={itemVariants}
-                key={vocabSet.id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, vocabSet.id)}
-                onDrag={(e) => handleDrag(e)}
-                onDragOver={(e) => handleDragOver(e, vocabSet.id)}
-                onDrop={(e) => handleDrop(e, vocabSet.id)}
-                onDragEnd={handleDragEnd}
-              >
-                <div
-                  className="card smooth-list-item overflow-hidden"
-                  style={{
-                    opacity: isDragged ? 0.4 : 1,
-                    border: isDragOver ? '2px dashed var(--bs-primary)' : undefined,
-                  }}
-                >
-                  {/* HEADER HỌC PHẦN GỌN GÀNG */}
-                  <div
-                    className="p-3 d-flex flex-column gap-2"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => toggleSet(vocabSet.id)}
-                  >
-                    <div className="d-flex justify-content-between align-items-center gap-2">
-                      <div className="d-flex align-items-center flex-wrap gap-2" style={{ minWidth: 0, flex: 1 }}>
-                        <h6 className="mb-0 fw-bold text-dark text-break">{vocabSet.title}</h6>
-                        <span className="badge bg-light text-secondary border rounded-pill">
-                          {vocabSet.vocab_count} thẻ
-                        </span>
-                        <span className="badge chip-primary rounded-pill">
-                          {vocabSet.type === 'kanji' ? '⛩️ KANJI' : vocabSet.language === 'en' ? '🇬🇧 EN' : '🇯🇵 JA'}
-                        </span>
+              <SetReorderItem key={vocabSet.id} vocabSet={vocabSet}>
+                {(dragControls) => (
+                  <div className="card smooth-list-item overflow-hidden">
+                    <div
+                      className="p-3 d-flex flex-column gap-2"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => toggleSet(vocabSet.id)}
+                    >
+                      <div className="d-flex justify-content-between align-items-center gap-2">
+                        <div className="d-flex align-items-center flex-wrap gap-2" style={{ minWidth: 0, flex: 1 }}>
+                          <span
+                            className="drag-handle-grip"
+                            onPointerDown={(e) => {
+                              e.stopPropagation();
+                              dragControls.start(e);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            title="Giữ để kéo sắp xếp"
+                          >
+                            <GripVertical size={16} />
+                          </span>
+                          <h6 className="mb-0 fw-bold text-dark text-break">{vocabSet.title}</h6>
+                          <span className="badge bg-light text-secondary border rounded-pill">
+                            {vocabSet.vocab_count} thẻ
+                          </span>
+                          <span className="badge chip-primary rounded-pill">
+                            {vocabSet.type === 'kanji' ? '⛩️ KANJI' : vocabSet.language === 'en' ? '🇬🇧 EN' : '🇯🇵 JA'}
+                          </span>
+                        </div>
+
+                        <div className="d-flex align-items-center gap-2 flex-shrink-0">
+                          {vocabSet.progress > 0 && (
+                            <span className="badge chip-success rounded-pill">{vocabSet.progress}%</span>
+                          )}
+                          <span className="btn-icon-soft chip-slate">
+                            <motion.span
+                              animate={{ rotate: isExpanded ? 180 : 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="d-inline-flex align-items-center"
+                            >
+                              <ChevronDown size={16} />
+                            </motion.span>
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="d-flex align-items-center gap-2 flex-shrink-0">
-                        {vocabSet.progress > 0 && (
-                          <span className="badge chip-success rounded-pill">{vocabSet.progress}%</span>
-                        )}
-                        <span className="btn-icon-soft chip-slate">
-                          {isExpanded ? '▲' : '▼'}
-                        </span>
+                      <div className="progress rounded-pill bg-light" style={{ height: '5px' }}>
+                        <div
+                          className="progress-bar bg-success rounded-pill"
+                          style={{ width: `${vocabSet.progress}%` }}
+                        ></div>
                       </div>
                     </div>
 
-                    {/* Thanh tiến độ mỏng tinh tế */}
-                    <div className="progress rounded-pill bg-light" style={{ height: '5px' }}>
-                      <div
-                        className="progress-bar bg-success rounded-pill"
-                        style={{ width: `${vocabSet.progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {/* NỘI DUNG KHI MỞ RỘNG HỌC PHẦN */}
-                  {isExpanded && (
-                    <div className="px-3 pb-3 pt-1 border-top bg-white fade-in">
-                      {/* Thanh công cụ 4 nút nhỏ gọn (34px) */}
-                      <div className="action-row-4col my-2">
-                        <button
-                          className="btn btn-mobile-chip chip-primary"
-                          onClick={(e) => handleDownloadSet(e, vocabSet, 'json')}
+                    <AnimatePresence initial={false}>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={ACCORDION_TRANSITION}
+                          style={{ overflow: 'hidden' }}
                         >
-                          📦 JSON
-                        </button>
-                        <button
-                          className="btn btn-mobile-chip chip-slate"
-                          onClick={(e) => handleDownloadSet(e, vocabSet, 'txt')}
-                        >
-                          📄 TXT
-                        </button>
-                        <button
-                          className="btn btn-mobile-chip chip-success"
-                          onClick={(e) => handleDownloadSet(e, vocabSet, 'csv')}
-                        >
-                          📊 Excel
-                        </button>
-                        <button
-                          className="btn btn-mobile-chip chip-danger"
-                          onClick={(e) => handleDeleteSet(e, vocabSet.id, vocabSet.title)}
-                        >
-                          🗑️ Xóa bộ
-                        </button>
-                      </div>
+                          <div className="px-3 pb-3 pt-1 border-top bg-white">
+                            <div className="action-row-4col my-2">
+                              <button
+                                className="btn btn-mobile-chip chip-primary"
+                                onClick={(e) => handleDownloadSet(e, vocabSet, 'json')}
+                              >
+                                <Download size={13} /> <span>JSON</span>
+                              </button>
+                              <button
+                                className="btn btn-mobile-chip chip-slate"
+                                onClick={(e) => handleDownloadSet(e, vocabSet, 'txt')}
+                              >
+                                <Download size={13} /> <span>TXT</span>
+                              </button>
+                              <button
+                                className="btn btn-mobile-chip chip-success"
+                                onClick={(e) => handleDownloadSet(e, vocabSet, 'csv')}
+                              >
+                                <Download size={13} /> <span>Excel</span>
+                              </button>
+                              <button
+                                className="btn btn-mobile-chip chip-danger"
+                                onClick={(e) => handleDeleteSet(e, vocabSet.id, vocabSet.title)}
+                              >
+                                <Trash2 size={13} /> <span>Xóa bộ</span>
+                              </button>
+                            </div>
 
-                      {/* Danh sách từ vựng bên trong */}
-                      <div className="mt-2">
-                        {vocabSet.vocabularies?.length === 0 && addingToSetId !== vocabSet.id && (
-                          <div className="text-center py-3 text-muted small fst-italic smooth-list-item-inner">
-                            Chưa có từ vựng nào trong bộ này.
-                          </div>
-                        )}
+                            <div className="mt-2">
+                              {vocabSet.vocabularies?.length === 0 && addingToSetId !== vocabSet.id && (
+                                <div className="text-center py-3 text-muted small fst-italic smooth-list-item-inner">
+                                  Chưa có từ vựng nào trong bộ này.
+                                </div>
+                              )}
 
-                        {vocabSet.vocabularies?.map((vocab) => {
-                          const hasExtra =
-                            (vocab.hanviet && vocab.hanviet.trim()) ||
-                            (vocab.hiragana && vocab.hiragana.trim());
-                          const isJa = vocabSet.language !== 'en';
+                              {vocabSet.vocabularies?.map((vocab) => {
+                                const isJa = vocabSet.language !== 'en';
+                                const showRuby =
+                                  isJa &&
+                                  vocab.hiragana &&
+                                  vocab.hiragana.trim() &&
+                                  vocab.hiragana.trim() !== vocab.word.trim();
 
-                          return (
-                            <div key={vocab.id} className="smooth-list-item-inner p-2 px-3">
-                              {editingVocabId === vocab.id ? (
-                                <div className="d-flex flex-column gap-2 py-1">
-                                  <input
-                                    type="text"
-                                    className="form-control form-control-sm bg-white"
-                                    value={editWord}
-                                    onChange={(e) => setEditWord(e.target.value)}
-                                    autoFocus
-                                    placeholder="Từ vựng / Chữ Hán"
-                                  />
-                                  {isJa && (
-                                    <div className="row g-2">
-                                      <div className="col-6">
+                                return (
+                                  <div key={vocab.id} className="smooth-list-item-inner p-2 px-3">
+                                    {editingVocabId === vocab.id ? (
+                                      <div className="d-flex flex-column gap-2 py-1">
                                         <input
                                           type="text"
                                           className="form-control form-control-sm bg-white"
-                                          value={editHanviet}
-                                          onChange={(e) => setEditHanviet(e.target.value)}
-                                          placeholder="Hán Việt"
+                                          value={editWord}
+                                          onChange={(e) => setEditWord(e.target.value)}
+                                          autoFocus
+                                          placeholder="Từ vựng / Chữ Hán"
                                         />
-                                      </div>
-                                      <div className="col-6">
+                                        {isJa && (
+                                          <div className="row g-2">
+                                            <div className="col-6">
+                                              <input
+                                                type="text"
+                                                className="form-control form-control-sm bg-white"
+                                                value={editHanviet}
+                                                onChange={(e) => setEditHanviet(e.target.value)}
+                                                placeholder="Hán Việt"
+                                              />
+                                            </div>
+                                            <div className="col-6">
+                                              <input
+                                                type="text"
+                                                className="form-control form-control-sm bg-white"
+                                                value={editHiragana}
+                                                onChange={(e) => setEditHiragana(e.target.value)}
+                                                placeholder="Cách đọc"
+                                              />
+                                            </div>
+                                          </div>
+                                        )}
                                         <input
                                           type="text"
                                           className="form-control form-control-sm bg-white"
-                                          value={editHiragana}
-                                          onChange={(e) => setEditHiragana(e.target.value)}
-                                          placeholder="Cách đọc"
+                                          value={editMeaning}
+                                          onChange={(e) => setEditMeaning(e.target.value)}
+                                          placeholder="Ý nghĩa"
                                         />
+                                        <div className="d-flex gap-2 justify-content-end">
+                                          <button
+                                            className="btn btn-mobile-chip chip-slate"
+                                            onClick={() => setEditingVocabId(null)}
+                                          >
+                                            Hủy
+                                          </button>
+                                          <button
+                                            className="btn btn-mobile-chip btn-primary text-white"
+                                            onClick={() => handleSaveEdit(vocab.id, vocabSet.id)}
+                                          >
+                                            💾 Lưu
+                                          </button>
+                                        </div>
                                       </div>
+                                    ) : (
+                                      <div className="d-flex justify-content-between align-items-center gap-2">
+                                        <div style={{ minWidth: 0, flex: 1 }}>
+                                          <div className="d-flex align-items-baseline flex-wrap gap-2">
+                                            {showRuby ? (
+                                              <ruby className="fw-bold text-dark jp-ruby-list" style={{ fontSize: '1.05rem' }}>
+                                                {vocab.word}
+                                                <rt>{vocab.hiragana}</rt>
+                                              </ruby>
+                                            ) : (
+                                              <span className="fw-bold text-dark" style={{ fontSize: '1rem' }}>
+                                                {vocab.word}
+                                              </span>
+                                            )}
+                                            {vocab.hanviet && (
+                                              <span className="small fw-bold text-primary">
+                                                [{vocab.hanviet}]
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="text-secondary small mt-1">{vocab.meaning}</div>
+                                        </div>
+
+                                        <div className="d-flex align-items-center gap-1 flex-shrink-0">
+                                          <button
+                                            className="btn-icon-soft chip-slate"
+                                            onClick={(e) => speakVocab(e, vocab, vocabSet.language)}
+                                            title="Nghe phát âm"
+                                          >
+                                            <Volume2 size={15} />
+                                          </button>
+                                          <button
+                                            className="btn-icon-soft chip-primary"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setNoteModalVocab(vocab);
+                                            }}
+                                            title="Lưu vào Sổ tay"
+                                          >
+                                            <BookMarked size={15} />
+                                          </button>
+                                          <button
+                                            className="btn-icon-soft chip-slate"
+                                            onClick={() => handleEditClick(vocab)}
+                                            title="Sửa"
+                                          >
+                                            <Edit3 size={15} />
+                                          </button>
+                                          <button
+                                            className="btn-icon-soft chip-danger"
+                                            onClick={() => handleDeleteVocab(vocab.id, vocabSet.id, vocab.word)}
+                                            title="Xóa"
+                                          >
+                                            <Trash2 size={15} />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+
+                              {addingToSetId === vocabSet.id ? (
+                                <div className="smooth-list-item-inner p-3 mt-2 border-primary">
+                                  <div className="d-flex flex-column gap-2">
+                                    <input
+                                      type="text"
+                                      className="form-control form-control-sm bg-white"
+                                      value={newWord}
+                                      onChange={(e) => setNewWord(e.target.value)}
+                                      autoFocus
+                                      placeholder="Từ vựng mới"
+                                    />
+                                    {vocabSet.language !== 'en' && (
+                                      <div className="row g-2">
+                                        <div className="col-6">
+                                          <input
+                                            type="text"
+                                            className="form-control form-control-sm bg-white"
+                                            value={newHanviet}
+                                            onChange={(e) => setNewHanviet(e.target.value)}
+                                            placeholder="Hán Việt"
+                                          />
+                                        </div>
+                                        <div className="col-6">
+                                          <input
+                                            type="text"
+                                            className="form-control form-control-sm bg-white"
+                                            value={newHiragana}
+                                            onChange={(e) => setNewHiragana(e.target.value)}
+                                            placeholder="Cách đọc"
+                                          />
+                                        </div>
+                                      </div>
+                                    )}
+                                    <input
+                                      type="text"
+                                      className="form-control form-control-sm bg-white"
+                                      value={newMeaning}
+                                      onChange={(e) => setNewMeaning(e.target.value)}
+                                      placeholder="Ý nghĩa"
+                                    />
+                                    <div className="d-flex gap-2 justify-content-end mt-1">
+                                      <button
+                                        className="btn btn-mobile-chip chip-slate"
+                                        onClick={() => setAddingToSetId(null)}
+                                      >
+                                        Hủy
+                                      </button>
+                                      <button
+                                        className="btn btn-mobile-chip btn-primary text-white"
+                                        onClick={() => handleSaveNew(vocabSet.id)}
+                                      >
+                                        💾 Lưu thẻ
+                                      </button>
                                     </div>
-                                  )}
-                                  <input
-                                    type="text"
-                                    className="form-control form-control-sm bg-white"
-                                    value={editMeaning}
-                                    onChange={(e) => setEditMeaning(e.target.value)}
-                                    placeholder="Ý nghĩa"
-                                  />
-                                  <div className="d-flex gap-2 justify-content-end">
-                                    <button
-                                      className="btn btn-mobile-chip chip-slate"
-                                      onClick={() => setEditingVocabId(null)}
-                                    >
-                                      Hủy
-                                    </button>
-                                    <button
-                                      className="btn btn-mobile-chip btn-primary text-white"
-                                      onClick={() => handleSaveEdit(vocab.id, vocabSet.id)}
-                                    >
-                                      💾 Lưu
-                                    </button>
                                   </div>
                                 </div>
                               ) : (
-                                <div className="d-flex justify-content-between align-items-center gap-2">
-                                  <div style={{ minWidth: 0, flex: 1 }}>
-                                    <div className="d-flex align-items-baseline flex-wrap gap-2">
-                                      <span className="fw-bold text-dark" style={{ fontSize: '1rem' }}>
-                                        {vocab.word}
-                                      </span>
-                                      {hasExtra && (
-                                        <>
-                                          {vocab.hanviet && (
-                                            <span className="small fw-bold text-primary">
-                                              [{vocab.hanviet}]
-                                            </span>
-                                          )}
-                                          {vocab.hiragana && (
-                                            <span className="small text-info fw-semibold">
-                                              {vocab.hiragana}
-                                            </span>
-                                          )}
-                                        </>
-                                      )}
-                                    </div>
-                                    <div className="text-secondary small mt-1">{vocab.meaning}</div>
-                                  </div>
-
-                                  {/* 3 nút Icon nhỏ gọn 34x34px nằm ngang */}
-                                  <div className="d-flex align-items-center gap-1 flex-shrink-0">
-                                    <button
-                                      className="btn-icon-soft chip-primary"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setNoteModalVocab(vocab);
-                                      }}
-                                      title="Lưu vào Sổ tay"
-                                    >
-                                      📓
-                                    </button>
-                                    <button
-                                      className="btn-icon-soft chip-slate"
-                                      onClick={() => handleEditClick(vocab)}
-                                      title="Sửa"
-                                    >
-                                      ✏️
-                                    </button>
-                                    <button
-                                      className="btn-icon-soft chip-danger"
-                                      onClick={() => handleDeleteVocab(vocab.id, vocabSet.id)}
-                                      title="Xóa"
-                                    >
-                                      🗑️
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-
-                        {addingToSetId === vocabSet.id ? (
-                          <div className="smooth-list-item-inner p-3 mt-2 border-primary">
-                            <div className="d-flex flex-column gap-2">
-                              <input
-                                type="text"
-                                className="form-control form-control-sm bg-white"
-                                value={newWord}
-                                onChange={(e) => setNewWord(e.target.value)}
-                                autoFocus
-                                placeholder="Từ vựng mới"
-                              />
-                              {vocabSet.language !== 'en' && (
-                                <div className="row g-2">
-                                  <div className="col-6">
-                                    <input
-                                      type="text"
-                                      className="form-control form-control-sm bg-white"
-                                      value={newHanviet}
-                                      onChange={(e) => setNewHanviet(e.target.value)}
-                                      placeholder="Hán Việt"
-                                    />
-                                  </div>
-                                  <div className="col-6">
-                                    <input
-                                      type="text"
-                                      className="form-control form-control-sm bg-white"
-                                      value={newHiragana}
-                                      onChange={(e) => setNewHiragana(e.target.value)}
-                                      placeholder="Cách đọc"
-                                    />
-                                  </div>
-                                </div>
-                              )}
-                              <input
-                                type="text"
-                                className="form-control form-control-sm bg-white"
-                                value={newMeaning}
-                                onChange={(e) => setNewMeaning(e.target.value)}
-                                placeholder="Ý nghĩa"
-                              />
-                              <div className="d-flex gap-2 justify-content-end mt-1">
                                 <button
-                                  className="btn btn-mobile-chip chip-slate"
-                                  onClick={() => setAddingToSetId(null)}
+                                  className="btn btn-mobile-chip chip-primary w-100 mt-2 py-2"
+                                  onClick={() => handleAddClick(vocabSet.id)}
                                 >
-                                  Hủy
+                                  <Plus size={15} /> <span>Thêm từ vựng mới</span>
                                 </button>
-                                <button
-                                  className="btn btn-mobile-chip btn-primary text-white"
-                                  onClick={() => handleSaveNew(vocabSet.id)}
-                                >
-                                  💾 Lưu thẻ
-                                </button>
-                              </div>
+                              )}
                             </div>
                           </div>
-                        ) : (
-                          <button
-                            className="btn btn-mobile-chip chip-primary w-100 mt-2 py-2"
-                            onClick={() => handleAddClick(vocabSet.id)}
-                          >
-                            ➕ Thêm từ vựng mới
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </SetReorderItem>
             );
           })}
-        </motion.div>
+        </Reorder.Group>
       )}
 
       {hasMore && sets.length > 0 && (

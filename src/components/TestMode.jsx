@@ -3,10 +3,14 @@ import { VocabContext } from '../context/VocabContext';
 import { toast } from 'react-toastify';
 import confetti from 'canvas-confetti';
 import api from '../api/axiosConfig';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BookMarked, Maximize2, Minimize2 } from 'lucide-react';
 import TestSetup from './TestSetup';
 import TestResult from './TestResult';
 import ExamHistoryTable from './ExamHistoryTable';
 import SaveNoteModal from './SaveNoteModal';
+
+const MODAL_SPRING = { type: 'spring', stiffness: 380, damping: 30, mass: 0.8 };
 
 function TestMode() {
   const { sets, setSets, loading, fetchSets } = useContext(VocabContext);
@@ -49,6 +53,7 @@ function TestMode() {
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef(null);
+  const questionStripRef = useRef(null);
 
   const [showExitModal, setShowExitModal] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
@@ -331,6 +336,16 @@ function TestMode() {
     const updatedQuestions = [...questions];
     updatedQuestions[index].userAnswer = value;
     setQuestions(updatedQuestions);
+
+    // Tự động cuộn thanh .mobile-question-strip sao cho ô idx + 1 nằm giữa
+    if (questionStripRef.current) {
+      const stripEl = questionStripRef.current;
+      const btnEl = stripEl.children[index];
+      if (btnEl) {
+        const scrollLeft = btnEl.offsetLeft - stripEl.clientWidth / 2 + btnEl.clientWidth / 2;
+        stripEl.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+      }
+    }
   };
 
   const handleAttemptSubmit = () => {
@@ -431,11 +446,9 @@ function TestMode() {
                 <div className="d-flex justify-content-between align-items-start mb-3">
                   <h5 className="mb-0 text-dark fw-bold">{q.question}</h5>
                   {q.vocabId && (
-                    <button className="btn btn-light rounded-circle shadow-sm border-0 fs-5 d-flex align-items-center justify-content-center transition-all hover-scale ms-3 text-nowrap" style={{ width: '40px', height: '40px', color: '#8a2be2', flexShrink: 0 }} onClick={async () => {
-                      // Tìm từ vựng trong tất cả các Sets hiện có
+                    <button className="btn-icon-soft chip-primary ms-3 flex-shrink-0" onClick={async () => {
                       let vocab = sets.flatMap(s => s.vocabularies || []).find(v => v.id === q.vocabId);
                       if (!vocab) {
-                        // Nếu chưa tải detail của set đó, phải gọi API
                         try {
                            const res = await api.get(`/sets/${q.setId || selectedSetId}`);
                            vocab = res.data.vocabularies.find(v => v.id === q.vocabId);
@@ -443,7 +456,7 @@ function TestMode() {
                       }
                       if (vocab) setNoteModalVocab(vocab);
                     }} title="Lưu vào Note">
-                      📓
+                      <BookMarked size={16} />
                     </button>
                   )}
                 </div>
@@ -498,14 +511,14 @@ function TestMode() {
 
   if (isTestFinished) {
     return (
-      <div className={`container-fluid py-4 transition-all ${isFullscreen ? 'bg-light mobile-fullscreen pt-4' : ''}`} ref={containerRef} style={isFullscreen ? { minHeight: '100vh', overflowY: 'auto' } : {}}>
+      <div className={`container-fluid py-4 ${isFullscreen ? 'bg-light mobile-fullscreen pt-4' : ''}`} ref={containerRef} style={isFullscreen ? { minHeight: '100vh', overflowY: 'auto' } : {}}>
         {noteModalVocab && <SaveNoteModal vocab={noteModalVocab} sets={sets} onClose={() => setNoteModalVocab(null)} onSaveSuccess={() => fetchSets(false, true)} />}
         <div className="d-flex justify-content-between align-items-center mx-auto mb-4 d-print-none" style={{ maxWidth: '800px' }}>
-          <button className="btn btn-outline-secondary fw-bold rounded-pill shadow-sm px-4 hover-bg-light transition-all" onClick={() => { setIsTestStarted(false); setIsTestFinished(false); window.scrollTo(0,0); }}>
+          <button className="btn btn-mobile-chip chip-slate px-3" onClick={() => { setIsTestStarted(false); setIsTestFinished(false); window.scrollTo(0,0); }}>
             ← Đóng kết quả
           </button>
-          <button className="btn btn-light rounded-circle shadow-sm border-0 hover-bg-light transition-all" onClick={toggleFullscreen} title="Toàn màn hình (F)">
-            {isFullscreen ? '↙️' : '⛶'}
+          <button className="btn-icon-soft chip-slate" onClick={toggleFullscreen} title="Toàn màn hình (F)">
+            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
         </div>
         <TestResult score={score} questions={questions} onRestart={() => { setIsTestStarted(false); setIsTestFinished(false); window.scrollTo(0,0); }} onCreateMistakeSet={handleCreateMistakeSet} onSaveNote={(vocabId) => {
@@ -519,38 +532,73 @@ function TestMode() {
   const answeredCount = questions.filter(q => q.userAnswer.trim() !== '').length;
 
   return (
-    <div className={`container-fluid py-4 transition-all ${isFullscreen ? 'bg-light overflow-auto mobile-fullscreen' : ''}`} ref={containerRef} style={isFullscreen ? { minHeight: '100vh' } : {}}>
+    <div className={`container-fluid py-4 ${isFullscreen ? 'bg-light overflow-auto mobile-fullscreen' : ''}`} ref={containerRef} style={isFullscreen ? { minHeight: '100vh' } : {}}>
       
       {/* MODAL XÁC NHẬN THOÁT */}
-      {showExitModal && (
-        <div className="modal d-flex align-items-center justify-content-center fade-in" style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
-          <div className="card border-0 shadow-lg rounded-4 p-4 text-center" style={{ width: '90%', maxWidth: '400px' }}>
-            <h4 className="fw-bold text-danger mb-3">Cảnh báo</h4>
-            <p className="text-dark mb-4 fs-5">Bạn đang làm bài kiểm tra. Nếu thoát, kết quả hiện tại sẽ bị hủy và không được lưu lại. Bạn có chắc chắn muốn thoát?</p>
-            <div className="d-flex gap-3">
-              <button className="btn btn-danger fw-bold w-50 py-2 rounded-3" onClick={confirmExit}>Hủy bài thi</button>
-              <button className="btn btn-secondary fw-bold w-50 py-2 rounded-3" onClick={() => setShowExitModal(false)}>Tiếp tục làm bài</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showExitModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+            className="set-sheet-backdrop"
+            style={{ zIndex: 9999 }}
+            onClick={() => setShowExitModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={MODAL_SPRING}
+              className="card border-0 shadow-lg rounded-4 p-4 text-center"
+              style={{ width: '90%', maxWidth: '400px' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h4 className="fw-bold text-danger mb-3">Cảnh báo</h4>
+              <p className="text-dark mb-4 fs-6">Bạn đang làm bài kiểm tra. Nếu thoát, kết quả hiện tại sẽ bị hủy. Bạn có chắc chắn muốn thoát?</p>
+              <div className="d-flex gap-3">
+                <button className="btn btn-danger btn-touch fw-bold w-50 py-2 rounded-3" onClick={confirmExit}>Hủy bài thi</button>
+                <button className="btn btn-light btn-touch fw-bold w-50 py-2 rounded-3" onClick={() => setShowExitModal(false)}>Tiếp tục</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* MODAL XÁC NHẬN NỘP BÀI */}
-      {showSubmitModal && (
-        <div className="modal d-flex align-items-center justify-content-center fade-in" style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
-          <div className="card border-0 shadow-lg rounded-4 p-4 text-center" style={{ width: '90%', maxWidth: '400px' }}>
-            <h4 className="fw-bold text-primary mb-3">Nộp bài</h4>
-            <p className="text-dark mb-4 fs-5">Bạn đã hoàn thành <strong className="text-success">{answeredCount}/{questions.length}</strong> câu. Bạn có chắc chắn muốn kết thúc bài thi?</p>
-            <div className="d-flex gap-3">
-              <button className="btn btn-secondary fw-bold w-50 py-2 rounded-3" onClick={() => setShowSubmitModal(false)}>Hủy</button>
-              <button className="btn btn-primary fw-bold w-50 py-2 rounded-3" onClick={confirmSubmitTest}>Kết thúc bài thi</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showSubmitModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+            className="set-sheet-backdrop"
+            style={{ zIndex: 9999 }}
+            onClick={() => setShowSubmitModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={MODAL_SPRING}
+              className="card border-0 shadow-lg rounded-4 p-4 text-center"
+              style={{ width: '90%', maxWidth: '400px' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h4 className="fw-bold text-primary mb-3">Nộp bài</h4>
+              <p className="text-dark mb-4 fs-6">Bạn đã hoàn thành <strong className="text-success">{answeredCount}/{questions.length}</strong> câu. Bạn có chắc chắn muốn kết thúc bài thi?</p>
+              <div className="d-flex gap-3">
+                <button className="btn btn-light btn-touch fw-bold w-50 py-2 rounded-3" onClick={() => setShowSubmitModal(false)}>Hủy</button>
+                <button className="btn btn-primary btn-touch fw-bold w-50 py-2 rounded-3" onClick={confirmSubmitTest}>Nộp bài</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="mx-auto has-mobile-bottom-bar" style={{ maxWidth: '900px' }}>
-        {/* THANH TRẠNG THÁI GHIM ĐỈNH MÀN HÌNH (MOBILE-STICKY-TOP) */}
         <div className="mobile-sticky-top d-print-none">
           <div className="d-flex justify-content-between align-items-center mb-2">
             <button className="btn btn-light text-dark btn-mobile-chip" onClick={handleExit}>
@@ -564,7 +612,8 @@ function TestMode() {
               onClick={toggleFullscreen}
               title="Toàn màn hình"
             >
-              {isFullscreen ? '↙️ Thu nhỏ' : '⛶ Phóng to'}
+              {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+              <span>{isFullscreen ? 'Thu nhỏ' : 'Phóng to'}</span>
             </button>
           </div>
 
@@ -576,8 +625,7 @@ function TestMode() {
             ></div>
           </div>
 
-          {/* THANH CUỘN NGANG CÂU HỎI */}
-          <div className="mobile-question-strip">
+          <div className="mobile-question-strip" ref={questionStripRef}>
             {questions.map((q, idx) => {
               const isAnswered = q.userAnswer.trim() !== '';
               return (

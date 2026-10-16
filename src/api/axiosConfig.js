@@ -602,7 +602,11 @@ const handleRequest = async (method, url, payload = null) => {
   // 1. STATS & SEARCH
   if (method === 'GET' && pathname === '/stats/global') {
     const vocabs = readTable(STORAGE_KEYS.VOCABS);
-    return { data: { total: vocabs.length } };
+    const now = new Date();
+    const dueCount = vocabs.filter(
+      (v) => v.next_review && new Date(v.next_review) <= now
+    ).length;
+    return { data: { total: vocabs.length, dueCount } };
   }
 
   if (method === 'GET' && pathname === '/search') {

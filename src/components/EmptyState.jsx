@@ -8,7 +8,7 @@ function EmptyState({ title = "Chưa có dữ liệu", message = "Hãy thêm m�
         height="100" 
         viewBox="0 0 24 24" 
         fill="none" 
-        stroke="#863bff" 
+        stroke="var(--brand-primary)" 
         strokeWidth="1.2"
         strokeLinecap="round" 
         strokeLinejoin="round" 
