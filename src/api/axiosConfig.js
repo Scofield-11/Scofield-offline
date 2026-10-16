@@ -19,7 +19,10 @@ let currentSyncStatus = { state: 'idle', lastSynced: null, message: 'Sẵn sàng
 const notifySyncStatus = (state, message = '') => {
   currentSyncStatus = {
     state,
-    lastSynced: state === 'synced' ? new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : currentSyncStatus.lastSynced,
+    lastSynced:
+      state === 'synced'
+        ? new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+        : currentSyncStatus.lastSynced,
     message,
   };
   window.dispatchEvent(new CustomEvent('scofield-sync-status', { detail: currentSyncStatus }));
@@ -27,7 +30,6 @@ const notifySyncStatus = (state, message = '') => {
 
 export const getSyncStatus = () => currentSyncStatus;
 
-// Helper gọi Supabase tự động fallback sang Secret Key nếu bảng bật RLS chặn Publishable Key
 const supabaseFetch = async (url, options = {}) => {
   const doCall = (apiKey) =>
     fetch(url, {
@@ -35,6 +37,7 @@ const supabaseFetch = async (url, options = {}) => {
       headers: {
         'Content-Type': 'application/json',
         apikey: apiKey,
+        Authorization: `Bearer ${apiKey}`,
         ...(options.headers || {}),
       },
     });
@@ -71,7 +74,6 @@ export const pushToSupabase = async () => {
       set_order: JSON.parse(localStorage.getItem('scofieldSetOrder') || '[]'),
     };
 
-    // 1. Kiểm tra bản ghi của user_key đã tồn tại chưa
     const checkUrl = `${SUPABASE_REST_URL}?user_key=eq.${encodeURIComponent(SYNC_USER_KEY)}&select=user_key&limit=1`;
     const checkRes = await supabaseFetch(checkUrl, { method: 'GET' });
     if (!checkRes.ok) throw new Error(`HTTP ${checkRes.status}`);
@@ -79,7 +81,6 @@ export const pushToSupabase = async () => {
 
     let writeRes;
     if (Array.isArray(existing) && existing.length > 0) {
-      // Đã có -> PATCH cập nhật
       writeRes = await supabaseFetch(
         `${SUPABASE_REST_URL}?user_key=eq.${encodeURIComponent(SYNC_USER_KEY)}`,
         {
@@ -92,7 +93,6 @@ export const pushToSupabase = async () => {
         }
       );
     } else {
-      // Chưa có -> POST tạo mới
       writeRes = await supabaseFetch(SUPABASE_REST_URL, {
         method: 'POST',
         headers: { Prefer: 'return=minimal' },
@@ -114,7 +114,7 @@ export const pushToSupabase = async () => {
   }
 };
 
-const scheduleDebouncedPush = () => {
+export const scheduleDebouncedPush = () => {
   notifySyncStatus('syncing', 'Chờ lưu ngầm...');
   if (syncPushTimer) clearTimeout(syncPushTimer);
   syncPushTimer = setTimeout(() => {
@@ -133,7 +133,6 @@ export const autoPullFromCloud = async (forcePull = false) => {
     const localSets = readTable(STORAGE_KEYS.SETS);
     const localVocabs = readTable(STORAGE_KEYS.VOCABS);
 
-    // Nếu trên Cloud chưa có bản ghi nào mà dưới máy đã có dữ liệu -> Đẩy ngay lên Cloud!
     if (!rows || rows.length === 0 || !rows[0].backup_json) {
       if (localSets.length > 0 || localVocabs.length > 0) {
         await pushToSupabase();
@@ -172,8 +171,11 @@ export const autoPullFromCloud = async (forcePull = false) => {
       notifySyncStatus('synced', 'Đã tải dữ liệu mới');
       window.dispatchEvent(new Event('scofield-cloud-synced'));
       return true;
-    } else if (localUpdatedAt && remote.updated_at && new Date(localUpdatedAt) > new Date(remote.updated_at)) {
-      // Nếu bản dưới máy mới hơn bản trên Cloud -> Đẩy bản dưới máy lên Cloud
+    } else if (
+      localUpdatedAt &&
+      remote.updated_at &&
+      new Date(localUpdatedAt) > new Date(remote.updated_at)
+    ) {
       await pushToSupabase();
       return false;
     }
@@ -187,7 +189,6 @@ export const autoPullFromCloud = async (forcePull = false) => {
   }
 };
 
-// Tự động chạy khi khởi động App
 setTimeout(() => {
   autoPullFromCloud();
 }, 100);
@@ -205,10 +206,12 @@ const writeTable = (key, data) => {
 
 const getNextId = (items) => {
   if (!items || items.length === 0) return 1;
-  return items.reduce((max, item) => {
-    const idNum = Number(item.id) || 0;
-    return idNum > max ? idNum : max;
-  }, 0) + 1;
+  return (
+    items.reduce((max, item) => {
+      const idNum = Number(item.id) || 0;
+      return idNum > max ? idNum : max;
+    }, 0) + 1
+  );
 };
 
 const createApiError = (detail, status = 400) => {
@@ -232,7 +235,6 @@ const formatDateFull = (isoStr) => {
   return `${hh}:${min} - ${formatDateShort(isoStr)}`;
 };
 
-// Hàm bóc tách CSV chuẩn (hỗ trợ dấu ngoặc kép)
 const parseCsvText = (csvText) => {
   const rows = [];
   let currentRow = [];
@@ -280,8 +282,13 @@ const parseCsvText = (csvText) => {
   return rows;
 };
 
-// Logic tạo Set kèm danh sách từ vựng (giống hệt crud.create_set_with_vocabularies)
-const createSetWithVocabulariesLocal = (title, rawText, folderPath = '', language = 'ja', setType = 'vocab') => {
+const createSetWithVocabulariesLocal = (
+  title,
+  rawText,
+  folderPath = '',
+  language = 'ja',
+  setType = 'vocab'
+) => {
   const cleanTitle = (title || '').trim();
   if (!cleanTitle) {
     throw createApiError('Tên học phần không được để trống');
@@ -301,7 +308,6 @@ const createSetWithVocabulariesLocal = (title, rawText, folderPath = '', languag
     created_at: nowIso,
   };
 
-  // Cho phép tạo học phần rỗng để giữ chỗ cho Thư mục (_Thư mục: ..._)
   if (!rawText || !String(rawText).trim()) {
     sets.push(newSet);
     writeTable(STORAGE_KEYS.SETS, sets);
@@ -317,7 +323,7 @@ const createSetWithVocabulariesLocal = (title, rawText, folderPath = '', languag
   lines.forEach((line, idx) => {
     const lineClean = line.trim();
     if (!lineClean) return;
-    if (lineClean.startsWith('---') || lineClean.startswith?.('**') || lineClean.startsWith('**')) return;
+    if (lineClean.startsWith('---') || lineClean.startsWith('**')) return;
 
     if (lineClean.includes('|')) {
       const parts = lineClean.split('|').map((p) => p.trim());
@@ -334,7 +340,7 @@ const createSetWithVocabulariesLocal = (title, rawText, folderPath = '', languag
 
         if (!rawKanji && rawHiragana) {
           word = rawHiragana;
-          hiragana = '';
+          hiragana = rawHiragana;
           hanviet = rawHanviet;
         } else {
           word = rawKanji;
@@ -343,7 +349,7 @@ const createSetWithVocabulariesLocal = (title, rawText, folderPath = '', languag
         }
       } else if (parts.length === 3) {
         word = parts[0] ? parts[0] : parts[1];
-        hiragana = parts[0] ? parts[1] : '';
+        hiragana = parts[1] || '';
         hanviet = '';
         meaning = parts[2];
       } else if (parts.length === 2) {
@@ -404,7 +410,6 @@ const triggerJsonDownload = (dataObj, filename) => {
   URL.revokeObjectURL(url);
 };
 
-// 1. Xuất toàn bộ dữ liệu (Backup tổng)
 export const exportAllDataToJson = () => {
   const payload = {
     version: '2.0-offline-pwa',
@@ -418,7 +423,6 @@ export const exportAllDataToJson = () => {
   return payload;
 };
 
-// 2. Xuất 1 Học phần đơn lẻ
 export const exportSingleItemToJson = (itemType, itemId) => {
   if (itemType === 'set') {
     const sets = readTable(STORAGE_KEYS.SETS);
@@ -438,7 +442,6 @@ export const exportSingleItemToJson = (itemType, itemId) => {
   }
 };
 
-// 3. Nhập JSON thông minh (Hỗ trợ file backup tổng, mảng nhiều học phần, hoặc 1 học phần đơn lẻ)
 export const importDataFromJson = async (fileOrObject, mode = 'merge') => {
   let parsed;
   if (typeof fileOrObject === 'string') {
@@ -511,7 +514,6 @@ export const importDataFromJson = async (fileOrObject, mode = 'merge') => {
     return newId;
   };
 
-  // Trường hợp 1: File Backup tổng
   if (Array.isArray(parsed.sets) || Array.isArray(parsed.vocabularies)) {
     const setIdMap = {};
     const externalVocabsBySet = {};
@@ -552,23 +554,21 @@ export const importDataFromJson = async (fileOrObject, mode = 'merge') => {
         });
       });
     }
-  }
-  // Trường hợp 2: File JSON xuất đơn lẻ 1 Học phần
-  else if (parsed.single_type === 'set' && parsed.set) {
+  } else if (parsed.single_type === 'set' && parsed.set) {
     insertOneSetObject(parsed.set);
-  }
-  // Trường hợp 3: Đối tượng đơn lẻ 1 Học phần trực tiếp
-  else if (!Array.isArray(parsed) && parsed.title) {
+  } else if (!Array.isArray(parsed) && parsed.title) {
     insertOneSetObject(parsed);
-  }
-  // Trường hợp 4: Mảng các học phần hoặc mảng từ vựng
-  else if (Array.isArray(parsed) && parsed.length > 0) {
+  } else if (Array.isArray(parsed) && parsed.length > 0) {
     const first = parsed[0];
     if (first.title && (Array.isArray(first.vocabularies) || Array.isArray(first.kanjis))) {
       parsed.forEach((s) => insertOneSetObject(s));
     } else if (first.word || first.kanji || first.meaning) {
       insertOneSetObject(
-        { title: `Học phần JSON (${new Date().toLocaleDateString('vi-VN')})`, language: 'ja', type: 'vocab' },
+        {
+          title: `Học phần JSON (${new Date().toLocaleDateString('vi-VN')})`,
+          language: 'ja',
+          type: 'vocab',
+        },
         parsed
       );
     }
@@ -588,7 +588,9 @@ export const importDataFromJson = async (fileOrObject, mode = 'merge') => {
 // ============================================================================
 
 const parseUrlAndQuery = (rawUrl) => {
-  const clean = rawUrl.startsWith('http') ? new URL(rawUrl).pathname + new URL(rawUrl).search : rawUrl;
+  const clean = rawUrl.startsWith('http')
+    ? new URL(rawUrl).pathname + new URL(rawUrl).search
+    : rawUrl;
   const [pathname, queryString] = clean.split('?');
   const params = new URLSearchParams(queryString || '');
   return { pathname, params };
@@ -597,9 +599,7 @@ const parseUrlAndQuery = (rawUrl) => {
 const handleRequest = async (method, url, payload = null) => {
   const { pathname, params } = parseUrlAndQuery(url);
 
-  // --------------------------------------------------------------------------
   // 1. STATS & SEARCH
-  // --------------------------------------------------------------------------
   if (method === 'GET' && pathname === '/stats/global') {
     const vocabs = readTable(STORAGE_KEYS.VOCABS);
     return { data: { total: vocabs.length } };
@@ -621,9 +621,7 @@ const handleRequest = async (method, url, payload = null) => {
     return { data: results };
   }
 
-  // --------------------------------------------------------------------------
   // 2. SETS & VOCABULARIES
-  // --------------------------------------------------------------------------
   if (method === 'GET' && pathname === '/sets') {
     const skip = parseInt(params.get('skip') || '0', 10);
     const limit = parseInt(params.get('limit') || '1000', 10);
@@ -891,9 +889,7 @@ const handleRequest = async (method, url, payload = null) => {
     }
   }
 
-  // --------------------------------------------------------------------------
   // 3. KANJI SETS & KANJIS
-  // --------------------------------------------------------------------------
   if (method === 'GET' && pathname === '/kanji-sets') {
     const sets = readTable(STORAGE_KEYS.SETS).filter((s) => s.type === 'kanji');
     const vocabs = readTable(STORAGE_KEYS.VOCABS);
@@ -1009,9 +1005,7 @@ const handleRequest = async (method, url, payload = null) => {
     }
   }
 
-  // --------------------------------------------------------------------------
   // 4. TEST HISTORIES
-  // --------------------------------------------------------------------------
   if (pathname === '/test-history') {
     if (method === 'POST') {
       const histories = readTable(STORAGE_KEYS.TEST_HISTORIES);

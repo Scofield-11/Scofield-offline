@@ -5,6 +5,7 @@ import api, {
   importDataFromJson,
   pushToSupabase,
   autoPullFromCloud,
+  scheduleDebouncedPush,
 } from '../api/axiosConfig';
 import AddVocabularyForm from './AddVocabularyForm';
 import SaveNoteModal from './SaveNoteModal';
@@ -366,6 +367,8 @@ function VocabularyList() {
       const mergedOrder = [...new Set([...newOrderedIds, ...customOrder])];
       setCustomOrder(mergedOrder);
       localStorage.setItem('scofieldSetOrder', JSON.stringify(mergedOrder));
+      localStorage.setItem('scofield_db_updated_at', new Date().toISOString());
+      scheduleDebouncedPush();
       setSortOption('custom');
     }
     setDraggedSetId(null);
