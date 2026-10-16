@@ -452,9 +452,9 @@ function VocabularyList() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const { addedSets, addedVocabs, addedExams } = await importDataFromJson(file, 'merge');
+      const { addedSets, addedVocabs } = await importDataFromJson(file, 'merge');
       toast.success(
-        `Nhập JSON: +${addedSets} học phần (${addedVocabs} từ), +${addedExams} đề thi!`
+        `Nhập JSON: +${addedSets} học phần (${addedVocabs} từ)!`
       );
       fetchSets(false, true);
     } catch (err) {

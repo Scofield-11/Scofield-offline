@@ -47,6 +47,15 @@ export const VocabProvider = ({ children }) => {
     }
   }, []);
 
+  React.useEffect(() => {
+    const handleCloudSynced = () => {
+      fetchSets(false, true);
+      fetchGlobalStats();
+    };
+    window.addEventListener('scofield-cloud-synced', handleCloudSynced);
+    return () => window.removeEventListener('scofield-cloud-synced', handleCloudSynced);
+  }, [fetchSets, fetchGlobalStats]);
+
   return (
     <VocabContext.Provider value={{ 
       sets, setSets, 

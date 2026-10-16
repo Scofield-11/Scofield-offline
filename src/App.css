@@ -56,14 +56,14 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
   position: fixed;
   top: 0;
   left: 0;
-  background: linear-gradient(180deg, #7c3aed 0%, #5b21b6 100%);
+  background: linear-gradient(180deg, #7c3aed 0%, #4c1d95 100%);
   color: white;
   z-index: 1050;
   display: flex;
   flex-direction: column;
   padding: 24px 12px;
-  box-shadow: 4px 0 24px rgba(15, 23, 42, 0.06);
-  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s ease;
+  box-shadow: 4px 0 24px rgba(15, 23, 42, 0.08);
+  transition: width 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), padding 0.25s ease;
   overflow-x: hidden;
   white-space: nowrap;
 }
@@ -71,40 +71,51 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
 .app-navigation:hover {
   width: var(--sidebar-expanded);
   padding: 24px 18px;
-  box-shadow: 12px 0 32px rgba(15, 23, 42, 0.14);
+  box-shadow: 12px 0 36px rgba(15, 23, 42, 0.16);
 }
 
-.nav-text,
-.progress-wrapper {
+.nav-menu {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 6px;
+}
+
+.nav-text {
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.18s ease;
 }
 
-.app-navigation:hover .nav-text,
-.app-navigation:hover .progress-wrapper {
+.app-navigation:hover .nav-text {
   opacity: 1;
   visibility: visible;
-  transition-delay: 0.06s;
+  transition-delay: 0.05s;
 }
 
 .nav-link-custom {
+  position: relative;
   display: flex;
   align-items: center;
   padding: 12px 10px;
   color: rgba(255, 255, 255, 0.78);
   text-decoration: none;
-  border-radius: 14px;
+  border-radius: 16px;
   font-weight: 600;
   font-size: 0.95rem;
-  transition: all 0.2s ease;
-  margin-bottom: 6px;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.nav-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .nav-icon {
   font-size: 1.3rem;
-  min-width: 34px;
-  text-align: center;
   line-height: 1;
 }
 
@@ -113,54 +124,95 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
 }
 
 .nav-link-custom:hover {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: rgba(255, 255, 255, 0.14);
   color: #ffffff;
+}
+
+.nav-link-custom:active {
+  transform: scale(0.92);
 }
 
 .nav-link-custom.active {
   background-color: #ffffff;
   color: var(--bs-primary) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14);
 }
 
-/* Bottom Navigation Mobile: Glassmorphism sáng, mỏng gọn */
+/* ==========================================================================
+   MOBILE GLASSMORPHISM FLOATING DOCK (NỔI LƠ LỬNG, KÍNH MỜ, SPRING BOUNCE)
+   ========================================================================== */
+@keyframes dockSpringBounce {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    transform: translateY(-7px) scale(1.18);
+  }
+  65% {
+    transform: translateY(1px) scale(0.96);
+  }
+  100% {
+    transform: translateY(-2px) scale(1.06);
+  }
+}
+
 @media (max-width: 991px) {
   .main-content {
     margin-left: 0;
-    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 16px);
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
   }
 
   .app-navigation,
   .app-navigation:hover {
-    width: 100%;
-    height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
     top: auto;
-    bottom: 0;
+    left: 50%;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    width: calc(100% - 28px);
+    max-width: 430px;
+    height: 68px;
+    padding: 6px 8px;
+    border-radius: 26px;
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(22px) saturate(190%);
+    -webkit-backdrop-filter: blur(22px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    box-shadow:
+      0 14px 34px -6px rgba(15, 23, 42, 0.14),
+      0 4px 14px -2px rgba(124, 58, 237, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
     flex-direction: row;
-    justify-content: space-between;
     align-items: center;
-    padding: 4px 6px calc(env(safe-area-inset-bottom, 0px) + 4px) 6px;
-    border-radius: 20px 20px 0 0;
-    background: rgba(255, 255, 255, 0.94);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-top: 1px solid rgba(226, 232, 240, 0.9);
-    box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.06);
+    justify-content: space-between;
+    overflow: visible;
+  }
+
+  .nav-menu {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+    gap: 4px;
   }
 
   .nav-link-custom,
   .app-navigation:hover .nav-link-custom {
     flex: 1 1 0;
     min-width: 0;
+    height: 100%;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 2px;
-    padding: 6px 2px;
+    gap: 3px;
+    padding: 6px 4px;
     margin-bottom: 0;
-    border-radius: 12px;
-    color: var(--slate-muted);
-    transform: none !important;
+    border-radius: 20px;
+    color: #64748b;
+    transition:
+      background-color 0.25s ease,
+      color 0.25s ease,
+      transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .nav-link-custom:hover {
@@ -168,15 +220,28 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
     color: var(--bs-primary);
   }
 
+  .nav-link-custom:active {
+    transform: scale(0.88) !important;
+  }
+
   .nav-link-custom.active {
-    background-color: var(--primary-soft);
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.14) 0%, rgba(109, 40, 217, 0.08) 100%);
     color: var(--bs-primary) !important;
-    box-shadow: none;
+    box-shadow: inset 0 0 0 1px rgba(124, 58, 237, 0.18);
+  }
+
+  .nav-link-custom.active .nav-icon-wrapper {
+    animation: dockSpringBounce 0.48s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  .nav-icon-wrapper {
+    min-width: auto;
+    height: 24px;
   }
 
   .nav-icon {
-    font-size: 1.2rem;
-    min-width: auto;
+    font-size: 1.25rem;
+    filter: drop-shadow(0 2px 4px rgba(15, 23, 42, 0.06));
   }
 
   .nav-text {
@@ -184,13 +249,30 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
   }
 
   .mobile-label {
-    font-size: 0.65rem;
+    font-size: 0.66rem;
     font-weight: 700;
+    letter-spacing: -0.01em;
     display: block;
     line-height: 1.1;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
+    transition: transform 0.25s ease, color 0.25s ease;
+  }
+
+  .nav-link-custom.active .mobile-label {
+    font-weight: 800;
+    color: var(--bs-primary);
+  }
+
+  .nav-active-dot {
+    position: absolute;
+    bottom: 4px;
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+    box-shadow: 0 0 8px rgba(124, 58, 237, 0.6);
   }
 }
 

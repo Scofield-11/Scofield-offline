@@ -10,8 +10,7 @@ function Breadcrumbs() {
     '/flashcards': 'Ôn tập Flashcards',
     '/learn': 'Chế độ Học (SRS)',
     '/test': 'Kiểm tra năng lực',
-    '/match': 'Trò chơi Ghép thẻ',
-    '/exam': 'Thi trắc nghiệm tổng hợp'
+    '/match': 'Trò chơi Ghép thẻ'
   };
 
   const currentTitle = routeNames[location.pathname];

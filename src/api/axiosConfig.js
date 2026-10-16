@@ -3,12 +3,20 @@
 // Tương thích hoàn toàn với cấu trúc gọi Axios & FastAPI Backend cũ
 // ============================================================================
 
+// ============================================================================
+// SUPABASE CLOUD SYNC CONFIG (ZERO-LATENCY LOCAL-FIRST)
+// Bảng Supabase cần tạo: scofield_sync (sync_key: text PK, data: jsonb, updated_at: timestamptz)
+// ============================================================================
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'sb_publishable_DS7d-iSQGgksM7LpKyptzQ_YXgGtbZF';
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY || 'https://htnzlthwzclkstdwvwya.supabase.co/rest/v1/';
+const SYNC_KEY = 'my_secret_key';
+const SYNC_TABLE = 'scofield_sync';
+
 const STORAGE_KEYS = {
   SETS: 'scofield_db_sets',
   VOCABS: 'scofield_db_vocabularies',
-  EXAMS: 'scofield_db_exams',
-  EXAM_HISTORIES: 'scofield_db_exam_histories',
   TEST_HISTORIES: 'scofield_db_test_histories',
+  UPDATED_AT: 'scofield_db_updated_at',
 };
 
 const readTable = (key) => {
@@ -23,9 +31,86 @@ const readTable = (key) => {
   }
 };
 
+let syncPushTimer = null;
+
+const pushToSupabase = async () => {
+  if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_URL') return;
+  try {
+    const updatedAt = localStorage.getItem(STORAGE_KEYS.UPDATED_AT) || new Date().toISOString();
+    const payload = {
+      sync_key: SYNC_KEY,
+      updated_at: updatedAt,
+      data: {
+        sets: readTable(STORAGE_KEYS.SETS),
+        vocabularies: readTable(STORAGE_KEYS.VOCABS),
+        test_histories: readTable(STORAGE_KEYS.TEST_HISTORIES),
+      },
+    };
+
+    await fetch(`${SUPABASE_URL}/rest/v1/${SYNC_TABLE}?on_conflict=sync_key`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        Prefer: 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    console.warn('Cloud Sync Push tạm hoãn (Offline):', err.message);
+  }
+};
+
+const scheduleDebouncedPush = () => {
+  if (syncPushTimer) clearTimeout(syncPushTimer);
+  syncPushTimer = setTimeout(pushToSupabase, 1500);
+};
+
+export const autoPullFromCloud = async () => {
+  if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_URL') return false;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/${SYNC_TABLE}?sync_key=eq.${encodeURIComponent(SYNC_KEY)}&select=data,updated_at&limit=1`,
+      {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+      }
+    );
+    if (!res.ok) return false;
+    const rows = await res.json();
+    if (!rows?.length || !rows[0].data) return false;
+
+    const remote = rows[0];
+    const localUpdatedAt = localStorage.getItem(STORAGE_KEYS.UPDATED_AT);
+    const isRemoteNewer =
+      !localUpdatedAt || new Date(remote.updated_at) > new Date(localUpdatedAt);
+
+    if (isRemoteNewer) {
+      const { sets = [], vocabularies = [], test_histories = [] } = remote.data;
+      localStorage.setItem(STORAGE_KEYS.SETS, JSON.stringify(sets));
+      localStorage.setItem(STORAGE_KEYS.VOCABS, JSON.stringify(vocabularies));
+      localStorage.setItem(STORAGE_KEYS.TEST_HISTORIES, JSON.stringify(test_histories));
+      localStorage.setItem(STORAGE_KEYS.UPDATED_AT, remote.updated_at);
+      window.dispatchEvent(new Event('scofield-cloud-synced'));
+      return true;
+    }
+  } catch (err) {
+    console.warn('Cloud Sync Pull bỏ qua (Offline):', err.message);
+  }
+  return false;
+};
+
+// Tự động kiểm tra và kéo dữ liệu mới về ngay khi mở App
+autoPullFromCloud();
+
 const writeTable = (key, data) => {
   try {
     localStorage.setItem(key, JSON.stringify(data));
+    localStorage.setItem(STORAGE_KEYS.UPDATED_AT, new Date().toISOString());
+    scheduleDebouncedPush();
   } catch (e) {
     console.error(`Lỗi ghi localStorage [${key}]:`, e);
     throw createApiError('Bộ nhớ trình duyệt đã đầy! Hãy xuất file JSON để sao lưu.', 500);
@@ -216,36 +301,8 @@ const createSetWithVocabulariesLocal = (title, rawText, folderPath = '', languag
   return { importedCount, errors, set: newSet };
 };
 
-// Logic kiểm tra và tách câu hỏi Exam (6 cột cách nhau bởi dấu |)
-const parseExamQuestionsFromRaw = (rawText) => {
-  if (!rawText || !String(rawText).trim()) {
-    throw createApiError('Nội dung bài thi không được để trống');
-  }
-  const lines = String(rawText).trim().split('\n');
-  const questions = [];
-  let qId = 1;
-
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    const parts = line.split('|').map((p) => p.trim());
-    if (parts.length === 6) {
-      questions.push({
-        id: qId++,
-        question: parts[0],
-        options: [parts[1], parts[2], parts[3], parts[4]],
-        correct_ans: parseInt(parts[5], 10) || 1,
-      });
-    }
-  }
-
-  if (questions.length < 1) {
-    throw createApiError('Bài thi phải có tối thiểu 1 câu hỏi hợp lệ (có đủ 6 phần cách nhau bởi dấu |)');
-  }
-  return questions;
-};
-
 // ============================================================================
-// BỘ HÀM NHẬP / XUẤT DỮ LIỆU BẰNG FILE JSON (YÊU CẦU 1.2)
+// BỘ HÀM NHẬP / XUẤT DỮ LIỆU BẰNG FILE JSON
 // ============================================================================
 
 const triggerJsonDownload = (dataObj, filename) => {
@@ -268,8 +325,6 @@ export const exportAllDataToJson = () => {
     exported_at: new Date().toISOString(),
     sets: readTable(STORAGE_KEYS.SETS),
     vocabularies: readTable(STORAGE_KEYS.VOCABS),
-    exams: readTable(STORAGE_KEYS.EXAMS),
-    exam_histories: readTable(STORAGE_KEYS.EXAM_HISTORIES),
     test_histories: readTable(STORAGE_KEYS.TEST_HISTORIES),
   };
   const dateTag = new Date().toISOString().slice(0, 10);
@@ -277,7 +332,7 @@ export const exportAllDataToJson = () => {
   return payload;
 };
 
-// 2. Xuất 1 mục đơn lẻ (1 Học phần hoặc 1 Đề thi)
+// 2. Xuất 1 Học phần đơn lẻ
 export const exportSingleItemToJson = (itemType, itemId) => {
   if (itemType === 'set') {
     const sets = readTable(STORAGE_KEYS.SETS);
@@ -294,23 +349,10 @@ export const exportSingleItemToJson = (itemType, itemId) => {
       },
       `hoc_phan_${safeName}.json`
     );
-  } else if (itemType === 'exam') {
-    const exams = readTable(STORAGE_KEYS.EXAMS);
-    const targetExam = exams.find((ex) => Number(ex.id) === Number(itemId));
-    if (!targetExam) throw new Error('Không tìm thấy đề thi để xuất JSON');
-    const safeName = targetExam.title.replace(/[/\\?%*:|"<>]/g, '-');
-    triggerJsonDownload(
-      {
-        single_type: 'exam',
-        exported_at: new Date().toISOString(),
-        exam: targetExam,
-      },
-      `de_thi_${safeName}.json`
-    );
   }
 };
 
-// 3. Nhập JSON thông minh (Hỗ trợ file backup tổng, mảng nhiều mục, hoặc 1 mục đơn lẻ)
+// 3. Nhập JSON thông minh (Hỗ trợ file backup tổng, mảng nhiều học phần, hoặc 1 học phần đơn lẻ)
 export const importDataFromJson = async (fileOrObject, mode = 'merge') => {
   let parsed;
   if (typeof fileOrObject === 'string') {
@@ -328,19 +370,14 @@ export const importDataFromJson = async (fileOrObject, mode = 'merge') => {
 
   let sets = mode === 'replace' ? [] : readTable(STORAGE_KEYS.SETS);
   let vocabs = mode === 'replace' ? [] : readTable(STORAGE_KEYS.VOCABS);
-  let exams = mode === 'replace' ? [] : readTable(STORAGE_KEYS.EXAMS);
-  let examHistories = mode === 'replace' ? [] : readTable(STORAGE_KEYS.EXAM_HISTORIES);
   let testHistories = mode === 'replace' ? [] : readTable(STORAGE_KEYS.TEST_HISTORIES);
 
   let nextSetId = getNextId(sets);
   let nextVocabId = getNextId(vocabs);
-  let nextExamId = getNextId(exams);
-  let nextExamHistId = getNextId(examHistories);
   let nextTestHistId = getNextId(testHistories);
 
   let addedSets = 0;
   let addedVocabs = 0;
-  let addedExams = 0;
 
   const nowIso = new Date().toISOString();
 
@@ -388,31 +425,9 @@ export const importDataFromJson = async (fileOrObject, mode = 'merge') => {
     return newId;
   };
 
-  const insertOneExamObject = (rawExam) => {
-    const newId = nextExamId++;
-    const rawQuestions = Array.isArray(rawExam.questions) ? rawExam.questions : [];
-    const normalizedQuestions = rawQuestions.map((q, idx) => ({
-      id: idx + 1,
-      question: String(q.question || '').trim(),
-      options: Array.isArray(q.options)
-        ? q.options.map((o) => String(o || ''))
-        : [String(q.opt1 || ''), String(q.opt2 || ''), String(q.opt3 || ''), String(q.opt4 || '')],
-      correct_ans: Number(q.correct_ans) || 1,
-    }));
-
-    exams.push({
-      id: newId,
-      title: String(rawExam.title || `Đề thi #${newId}`).trim(),
-      questions: normalizedQuestions,
-    });
-    addedExams++;
-    return newId;
-  };
-
-  // Trường hợp 1: File Backup tổng (có sets, vocabularies, exams...)
-  if (Array.isArray(parsed.sets) || Array.isArray(parsed.vocabularies) || Array.isArray(parsed.exams)) {
+  // Trường hợp 1: File Backup tổng
+  if (Array.isArray(parsed.sets) || Array.isArray(parsed.vocabularies)) {
     const setIdMap = {};
-    const examIdMap = {};
     const externalVocabsBySet = {};
 
     if (Array.isArray(parsed.vocabularies)) {
@@ -431,32 +446,11 @@ export const importDataFromJson = async (fileOrObject, mode = 'merge') => {
       });
     }
 
-    // Nếu có từ vựng mồ côi chưa gắn set
     if (externalVocabsBySet['__unassigned__']?.length > 0) {
       insertOneSetObject(
         { title: 'Từ vựng nhập từ JSON', folder_path: '', language: 'ja', type: 'vocab' },
         externalVocabsBySet['__unassigned__']
       );
-    }
-
-    if (Array.isArray(parsed.exams)) {
-      parsed.exams.forEach((ex) => {
-        const newId = insertOneExamObject(ex);
-        if (ex.id !== undefined) examIdMap[ex.id] = newId;
-      });
-    }
-
-    if (Array.isArray(parsed.exam_histories)) {
-      parsed.exam_histories.forEach((eh) => {
-        examHistories.push({
-          id: nextExamHistId++,
-          exam_id: examIdMap[eh.exam_id] || eh.exam_id || null,
-          score: Number(eh.score) || 0,
-          total: Number(eh.total) || 0,
-          wrong_details: eh.wrong_details || eh.wrongDetails || [],
-          created_at: eh.created_at || nowIso,
-        });
-      });
     }
 
     if (Array.isArray(parsed.test_histories)) {
@@ -477,35 +471,20 @@ export const importDataFromJson = async (fileOrObject, mode = 'merge') => {
   else if (parsed.single_type === 'set' && parsed.set) {
     insertOneSetObject(parsed.set);
   }
-  // Trường hợp 3: File JSON xuất đơn lẻ 1 Đề thi
-  else if (parsed.single_type === 'exam' && parsed.exam) {
-    insertOneExamObject(parsed.exam);
-  }
-  // Trường hợp 4: Đối tượng đơn lẻ (1 học phần hoặc 1 đề thi trực tiếp)
+  // Trường hợp 3: Đối tượng đơn lẻ 1 Học phần trực tiếp
   else if (!Array.isArray(parsed) && parsed.title) {
-    if (Array.isArray(parsed.questions)) {
-      insertOneExamObject(parsed);
-    } else {
-      insertOneSetObject(parsed);
-    }
+    insertOneSetObject(parsed);
   }
-  // Trường hợp 5: Mảng nhiều mục (mảng các học phần, mảng các đề thi, hoặc mảng các từ vựng)
+  // Trường hợp 4: Mảng các học phần hoặc mảng từ vựng
   else if (Array.isArray(parsed) && parsed.length > 0) {
     const first = parsed[0];
-    if (first.questions && Array.isArray(first.questions)) {
-      parsed.forEach((ex) => insertOneExamObject(ex));
-    } else if (first.title && (Array.isArray(first.vocabularies) || Array.isArray(first.kanjis))) {
+    if (first.title && (Array.isArray(first.vocabularies) || Array.isArray(first.kanjis))) {
       parsed.forEach((s) => insertOneSetObject(s));
     } else if (first.word || first.kanji || first.meaning) {
       insertOneSetObject(
         { title: `Học phần JSON (${new Date().toLocaleDateString('vi-VN')})`, language: 'ja', type: 'vocab' },
         parsed
       );
-    } else if (first.question && (first.options || first.opt1)) {
-      insertOneExamObject({
-        title: `Đề thi JSON (${new Date().toLocaleDateString('vi-VN')})`,
-        questions: parsed,
-      });
     }
   } else {
     throw new Error('Cấu trúc file JSON không nhận diện được!');
@@ -513,11 +492,9 @@ export const importDataFromJson = async (fileOrObject, mode = 'merge') => {
 
   writeTable(STORAGE_KEYS.SETS, sets);
   writeTable(STORAGE_KEYS.VOCABS, vocabs);
-  writeTable(STORAGE_KEYS.EXAMS, exams);
-  writeTable(STORAGE_KEYS.EXAM_HISTORIES, examHistories);
   writeTable(STORAGE_KEYS.TEST_HISTORIES, testHistories.slice(0, 100));
 
-  return { addedSets, addedVocabs, addedExams };
+  return { addedSets, addedVocabs };
 };
 
 // ============================================================================
@@ -991,107 +968,6 @@ const handleRequest = async (method, url, payload = null) => {
   if (method === 'DELETE' && pathname === '/test-history/all') {
     writeTable(STORAGE_KEYS.TEST_HISTORIES, []);
     return { data: { message: 'Đã xóa toàn bộ lịch sử test' } };
-  }
-
-  // --------------------------------------------------------------------------
-  // 5. EXAMS & EXAM HISTORIES
-  // --------------------------------------------------------------------------
-  if (method === 'POST' && pathname === '/exams/import') {
-    const title = String(payload?.title || '').trim();
-    if (!title) throw createApiError('Tên bài thi không được để trống');
-    const questions = parseExamQuestionsFromRaw(payload?.raw_text);
-    const exams = readTable(STORAGE_KEYS.EXAMS);
-    const newExam = {
-      id: getNextId(exams),
-      title,
-      questions,
-    };
-    exams.push(newExam);
-    writeTable(STORAGE_KEYS.EXAMS, exams);
-    return { data: { message: 'Tạo bài test thành công', exam_id: newExam.id } };
-  }
-
-  if (method === 'GET' && pathname === '/exams') {
-    const exams = readTable(STORAGE_KEYS.EXAMS);
-    return { data: exams };
-  }
-
-  if (pathname === '/exams/history/all') {
-    if (method === 'GET') {
-      const histories = readTable(STORAGE_KEYS.EXAM_HISTORIES);
-      const exams = readTable(STORAGE_KEYS.EXAMS);
-      const sorted = [...histories].sort(
-        (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)
-      );
-      const result = sorted.map((h) => {
-        const ex = exams.find((e) => Number(e.id) === Number(h.exam_id));
-        return {
-          id: h.id,
-          examId: h.exam_id,
-          title: ex ? ex.title : 'Bài thi đã xóa',
-          score: h.score,
-          total: h.total,
-          date: formatDateFull(h.created_at),
-          wrongDetails: h.wrong_details || [],
-        };
-      });
-      return { data: result };
-    }
-
-    if (method === 'DELETE') {
-      writeTable(STORAGE_KEYS.EXAM_HISTORIES, []);
-      return { data: { message: 'Đã xóa toàn bộ lịch sử thi' } };
-    }
-  }
-
-  const examHistoryPostMatch = pathname.match(/^\/exams\/(\d+)\/history$/);
-  if (method === 'POST' && examHistoryPostMatch) {
-    const examId = parseInt(examHistoryPostMatch[1], 10);
-    const histories = readTable(STORAGE_KEYS.EXAM_HISTORIES);
-    const newHist = {
-      id: getNextId(histories),
-      exam_id: examId,
-      score: Number(payload?.score) || 0,
-      total: Number(payload?.total) || 0,
-      wrong_details: payload?.wrong_details || [],
-      created_at: new Date().toISOString(),
-    };
-    histories.unshift(newHist);
-    writeTable(STORAGE_KEYS.EXAM_HISTORIES, histories);
-    return { data: { message: 'Đã lưu lịch sử làm bài' } };
-  }
-
-  const examItemMatch = pathname.match(/^\/exams\/(\d+)$/);
-  if (examItemMatch) {
-    const examId = parseInt(examItemMatch[1], 10);
-    const exams = readTable(STORAGE_KEYS.EXAMS);
-    const idx = exams.findIndex((e) => Number(e.id) === examId);
-    if (idx === -1) throw createApiError('Không tìm thấy bài thi', 404);
-
-    if (method === 'GET') {
-      return { data: exams[idx] };
-    }
-
-    if (method === 'PUT') {
-      const title = String(payload?.title || '').trim();
-      if (!title) throw createApiError('Tên bài thi không được để trống');
-      const questions = parseExamQuestionsFromRaw(payload?.raw_text);
-      exams[idx] = {
-        ...exams[idx],
-        title,
-        questions,
-      };
-      writeTable(STORAGE_KEYS.EXAMS, exams);
-      return { data: { message: 'Cập nhật thành công' } };
-    }
-
-    if (method === 'DELETE') {
-      writeTable(
-        STORAGE_KEYS.EXAMS,
-        exams.filter((e) => Number(e.id) !== examId)
-      );
-      return { data: { message: 'Đã xóa bài thi' } };
-    }
   }
 
   throw createApiError(`Endpoint không tồn tại trong Offline Engine: [${method}] ${pathname}`, 404);
