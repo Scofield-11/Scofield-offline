@@ -5,6 +5,7 @@ import { Sparkles, RefreshCw, X, Flame, Sun, Moon, Volume2 } from 'lucide-react'
 import api, { getSyncStatus, autoPullFromCloud, pushToSupabase } from '../api/axiosConfig';
 import { VocabContext } from '../context/VocabContext';
 import { toast } from 'react-toastify';
+import { speakText } from '../utils/audio';
 
 function Dashboard() {
   const { sets } = useContext(VocabContext);
@@ -18,7 +19,6 @@ function Dashboard() {
   const [todayTests, setTodayTests] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [last7DaysActive, setLast7DaysActive] = useState([false, false, false, false, false, false, false]);
-  const [dueCount, setDueCount] = useState(0);
   const [syncInfo, setSyncInfo] = useState(getSyncStatus());
   const [theme, setTheme] = useState(() => localStorage.getItem('scofield_theme') || 'light');
 
@@ -55,13 +55,8 @@ function Dashboard() {
   };
 
   const speakWord = (item) => {
-    if (!item?.word || !('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(item.word);
-    const hasJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(item.word);
-    utterance.lang = item.language === 'en' && !hasJapanese ? 'en-US' : 'ja-JP';
-    utterance.rate = 0.9;
-    window.speechSynthesis.speak(utterance);
+    if (!item?.word) return;
+    speakText(item.word, item.language || 'ja');
   };
 
   const totalVocabCount = React.useMemo(() => {
@@ -75,13 +70,6 @@ function Dashboard() {
   }, [sets]);
 
   useEffect(() => {
-    api
-      .get('/stats/global')
-      .then((res) => {
-        setDueCount(res.data?.dueCount || 0);
-      })
-      .catch(console.error);
-
     api
       .get('/test-history?skip=0&limit=100')
       .then((res) => {
@@ -382,17 +370,8 @@ function Dashboard() {
           <Link to="/learn" className="bento-stat-card bento-interactive h-100 text-decoration-none">
             <div className="bento-icon-wrap bento-emerald">🧠</div>
             <div className="overflow-hidden flex-grow-1">
-              <div className="d-flex align-items-center justify-content-between gap-1">
-                <span className="bento-value">Học SRS</span>
-                {dueCount > 0 && (
-                  <span className="due-badge-pulse" title="Số thẻ đến hạn ôn tập">
-                    {dueCount}
-                  </span>
-                )}
-              </div>
-              <div className="bento-sub">
-                {dueCount > 0 ? `${dueCount} từ đến hạn →` : 'Ghi nhớ sâu →'}
-              </div>
+              <div className="bento-value">Học thuộc</div>
+              <div className="bento-sub">Ghi nhớ sâu →</div>
             </div>
           </Link>
         </div>

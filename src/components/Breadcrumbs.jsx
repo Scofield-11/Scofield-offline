@@ -8,7 +8,7 @@ function Breadcrumbs() {
   const routeNames = {
     '/': 'Quản lý Thư viện',
     '/flashcards': 'Ôn tập Flashcards',
-    '/learn': 'Chế độ Học (SRS)',
+    '/learn': 'Học thuộc',
     '/test': 'Kiểm tra năng lực',
     '/match': 'Trò chơi Ghép thẻ'
   };

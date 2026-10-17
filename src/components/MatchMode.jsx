@@ -16,18 +16,19 @@ function MatchMode() {
 
   const targetSets = React.useMemo(() => {
     if (!sets || sets.length === 0) return [];
+    const validSets = sets.filter(s => !s.title?.startsWith('_Thư mục:'));
     const idStr = String(selectedSetId);
     if (idStr.startsWith('lang_') || idStr.startsWith('all_')) {
       const lang = idStr.replace('lang_', '').replace('all_', '');
-      if (lang === 'kanji') return sets.filter(s => s.type === 'kanji');
-      if (lang === 'en') return sets.filter(s => s.type !== 'kanji' && s.language === 'en');
-      return sets.filter(s => s.type !== 'kanji' && (s.language || 'ja') === 'ja');
+      if (lang === 'kanji') return validSets.filter(s => s.type === 'kanji');
+      if (lang === 'en') return validSets.filter(s => s.type !== 'kanji' && s.language === 'en');
+      return validSets.filter(s => s.type !== 'kanji' && (s.language || 'ja') === 'ja');
     }
     if (idStr.startsWith('folder_')) {
       const folderName = idStr.substring(7);
-      return sets.filter(s => (s.folder_path || '🏠 Thư mục gốc') === folderName);
+      return validSets.filter(s => (s.folder_path || '🏠 Thư mục gốc') === folderName);
     }
-    const targetSet = sets.find(s => s.id == selectedSetId);
+    const targetSet = validSets.find(s => s.id == selectedSetId);
     return targetSet ? [targetSet] : [];
   }, [selectedSetId, sets]);
 

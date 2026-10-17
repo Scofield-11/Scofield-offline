@@ -62,3 +62,51 @@ export const playSound = (type) => {
     console.error("Audio playback error:", e);
   }
 };
+
+export const speakText = (text, langHint = 'ja', rate = 0.9) => {
+  if (!text || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+  const cleanText = String(text).trim();
+  if (!cleanText) return;
+
+  const hasJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(cleanText);
+  const hasVietnamese = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(cleanText);
+
+  let lang = 'ja-JP';
+  if (hasJapanese) {
+    lang = 'ja-JP';
+  } else if (
+    langHint === 'vi-VN' ||
+    langHint === 'vi' ||
+    langHint === 'meaning' ||
+    langHint === 'hanviet' ||
+    langHint === 'summary' ||
+    hasVietnamese
+  ) {
+    lang = 'vi-VN';
+  } else if (langHint === 'en' || langHint === 'en-US') {
+    lang = 'en-US';
+  } else if (/^[a-zA-Z0-9\s.,?!'"()-]+$/.test(cleanText)) {
+    lang = 'en-US';
+  }
+
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  utterance.lang = lang;
+  utterance.rate = rate;
+
+  const voices = window.speechSynthesis.getVoices();
+  if (voices && voices.length > 0) {
+    const langPrefix = lang.split('-')[0].toLowerCase();
+    const matchingVoices = voices.filter((v) => v.lang && v.lang.toLowerCase().startsWith(langPrefix));
+    if (matchingVoices.length > 0) {
+      const preferredVoice =
+        matchingVoices.find((v) => /google|microsoft|natural|online/i.test(v.name)) ||
+        matchingVoices.find((v) => v.localService) ||
+        matchingVoices[0];
+      if (preferredVoice) utterance.voice = preferredVoice;
+    }
+  }
+
+  window.speechSynthesis.speak(utterance);
+};

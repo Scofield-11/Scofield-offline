@@ -29,14 +29,14 @@
 
 [data-theme="dark"] {
   --bg-canvas: #090d16;
-  --bg-surface: rgba(17, 24, 39, 0.85);
+  --bg-surface: #131c2e;
   --bg-elevated: #1e293b;
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --brand-primary: #8b5cf6;
   --brand-gradient: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-  --surface-border: rgba(255, 255, 255, 0.08);
-  --tactile-shadow: rgba(0, 0, 0, 0.45);
+  --surface-border: rgba(148, 163, 184, 0.16);
+  --tactile-shadow: rgba(0, 0, 0, 0.5);
   --tactile-primary-shadow: #4c1d95;
 
   --bs-primary: #8b5cf6;
@@ -45,10 +45,10 @@
   --primary-soft: rgba(139, 92, 246, 0.16);
   --primary-border: rgba(139, 92, 246, 0.35);
   --slate-bg: #090d16;
-  --slate-card: #111827;
+  --slate-card: #131c2e;
   --slate-text: #f8fafc;
   --slate-muted: #94a3b8;
-  --slate-border: rgba(255, 255, 255, 0.08);
+  --slate-border: rgba(148, 163, 184, 0.16);
 }
 
 body {
@@ -81,6 +81,18 @@ body {
 [data-theme="dark"] .bg-light {
   background-color: var(--bg-elevated) !important;
   color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .card .bg-light,
+[data-theme="dark"] .bg-white .bg-light {
+  background-color: var(--bg-elevated) !important;
+  border: 1px solid var(--surface-border);
+}
+
+[data-theme="dark"] .bg-light .bg-white,
+[data-theme="dark"] .smooth-list-item-inner .form-control.bg-white {
+  background-color: var(--bg-surface) !important;
+  border: 1px solid var(--surface-border) !important;
 }
 
 [data-theme="dark"] .text-dark {
@@ -267,6 +279,30 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
 
 .nav-link-custom.active .nav-icon-wrapper {
   background: rgba(109, 40, 217, 0.12);
+}
+
+@media (min-width: 992px) {
+  [data-theme="dark"] .app-navigation {
+    background: linear-gradient(165deg, #0f172a 0%, #1e1b4b 60%, #2e1065 100%);
+    border-color: rgba(139, 92, 246, 0.22);
+    box-shadow:
+      0 20px 40px -15px rgba(0, 0, 0, 0.65),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  [data-theme="dark"] .nav-active-pill {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.28) 0%, rgba(109, 40, 217, 0.18) 100%);
+    border: 1px solid rgba(167, 139, 250, 0.35);
+    box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.45);
+  }
+
+  [data-theme="dark"] .nav-link-custom.active {
+    color: #f8fafc !important;
+  }
+
+  [data-theme="dark"] .nav-link-custom.active .nav-icon-wrapper {
+    background: rgba(139, 92, 246, 0.25);
+  }
 }
 
 .nav-sync-btn {
@@ -949,6 +985,30 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
   transform: translateY(18px) scale(0.90);
   opacity: 0.35;
   z-index: 0;
+}
+
+.flashcard-front-surface {
+  background-color: var(--bg-surface);
+  border: 1.5px solid var(--surface-border);
+  box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.1);
+}
+
+[data-theme="dark"] .flashcard-front-surface {
+  background: linear-gradient(165deg, #17223b 0%, #131c2e 100%);
+  border: 1.5px solid rgba(148, 163, 184, 0.24);
+  box-shadow: 0 16px 34px -8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .flashcard-stack-1 {
+  background-color: #162035;
+  border-color: rgba(148, 163, 184, 0.22);
+  opacity: 0.8;
+}
+
+[data-theme="dark"] .flashcard-stack-2 {
+  background-color: #111827;
+  border-color: rgba(148, 163, 184, 0.16);
+  opacity: 0.5;
 }
 
 .flashcard-container {

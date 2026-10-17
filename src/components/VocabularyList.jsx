@@ -22,6 +22,7 @@ import AddVocabularyForm from './AddVocabularyForm';
 import SaveNoteModal from './SaveNoteModal';
 import { VocabContext } from '../context/VocabContext';
 import { toast } from 'react-toastify';
+import { speakText } from '../utils/audio';
 import LoadingSkeleton from './LoadingSkeleton';
 import EmptyState from './EmptyState';
 
@@ -88,13 +89,8 @@ function VocabularyList() {
 
   const speakVocab = (e, vocab, setLang) => {
     e.stopPropagation();
-    if (!vocab?.word || !('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(vocab.word);
-    const hasJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(vocab.word);
-    utterance.lang = (vocab.language === 'en' || setLang === 'en') && !hasJapanese ? 'en-US' : 'ja-JP';
-    utterance.rate = 0.9;
-    window.speechSynthesis.speak(utterance);
+    if (!vocab?.word) return;
+    speakText(vocab.word, vocab.language || setLang || 'ja');
   };
 
   const calculateProgress = (set, vocabCount) => {

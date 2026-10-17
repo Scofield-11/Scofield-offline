@@ -46,7 +46,7 @@ function Navbar() {
   const navItems = [
     { path: "/", label: "Thư viện", icon: "📚" },
     { path: "/flashcards", label: "Thẻ nhớ", icon: "🗂️" },
-    { path: "/learn", label: "Học SRS", icon: "🧠" },
+    { path: "/learn", label: "Học thuộc", icon: "🧠" },
     { path: "/test", label: "Kiểm tra", icon: "📝" },
     { path: "/match", label: "Ghép thẻ", icon: "🎮" },
   ];

@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import LoadingSkeleton from './LoadingSkeleton';
 import confetti from 'canvas-confetti';
 import api from '../api/axiosConfig';
-import { playSound } from '../utils/audio';
+import { playSound, speakText } from '../utils/audio';
 import SetSelector from './SetSelector';
 import GameModeSelector from './GameModeSelector';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,18 +19,19 @@ function LearnMode() {
 
   const targetSets = React.useMemo(() => {
     if (!sets || sets.length === 0) return [];
+    const validSets = sets.filter((s) => !s.title?.startsWith('_Thư mục:'));
     const idStr = String(selectedSetId);
     if (idStr.startsWith('lang_') || idStr.startsWith('all_')) {
       const lang = idStr.replace('lang_', '').replace('all_', '');
-      if (lang === 'kanji') return sets.filter((s) => s.type === 'kanji');
-      if (lang === 'en') return sets.filter((s) => s.type !== 'kanji' && s.language === 'en');
-      return sets.filter((s) => s.type !== 'kanji' && (s.language || 'ja') === 'ja');
+      if (lang === 'kanji') return validSets.filter((s) => s.type === 'kanji');
+      if (lang === 'en') return validSets.filter((s) => s.type !== 'kanji' && s.language === 'en');
+      return validSets.filter((s) => s.type !== 'kanji' && (s.language || 'ja') === 'ja');
     }
     if (idStr.startsWith('folder_')) {
       const folderName = idStr.substring(7);
-      return sets.filter((s) => (s.folder_path || '🏠 Thư mục gốc') === folderName);
+      return validSets.filter((s) => (s.folder_path || '🏠 Thư mục gốc') === folderName);
     }
-    const targetSet = sets.find((s) => s.id == selectedSetId);
+    const targetSet = validSets.find((s) => s.id == selectedSetId);
     return targetSet ? [targetSet] : [];
   }, [selectedSetId, sets]);
 
@@ -58,13 +59,11 @@ function LearnMode() {
   const [selectedCorrectId, setSelectedCorrectId] = useState(null);
 
   const [isShaking, setIsShaking] = useState(false);
-  const [onlyDue, setOnlyDue] = useState(false);
 
   const [streak, setStreak] = useState(0);
   const [maxStreak, setMaxStreak] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef(null);
-  const srsAnsweredRefs = useRef(new Set());
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -183,29 +182,10 @@ function LearnMode() {
     }
   };
 
-  const updateSRS = async (vocabId, isCorrect) => {
-    if (currentContentType === 'kanji') return;
-    if (srsAnsweredRefs.current.has(vocabId)) return;
-    srsAnsweredRefs.current.add(vocabId);
-    try {
-      await api.put(`/vocabularies/${vocabId}/srs`, { is_correct: isCorrect });
-    } catch (err) {
-      console.error('Lỗi cập nhật SRS:', err);
-    }
-  };
-
   const playAudio = (text, type = 'normal') => {
     if (!text) return;
-    const hasJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(text);
-    if (!hasJapanese) return;
-
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'ja-JP';
-      utterance.rate = type === 'error' ? 0.8 : 0.9;
-      window.speechSynthesis.speak(utterance);
-    }
+    const currentWord = currentRoundWords[currentWordIndex];
+    speakText(text, currentWord?.language || 'ja', type === 'error' ? 0.8 : 0.9);
   };
 
   const handleStart = async () => {
@@ -225,15 +205,7 @@ function LearnMode() {
     );
 
     setSets((prev) => prev.map((p) => fullSets.find((fs) => fs.id === p.id) || p));
-    let pool = fullSets.flatMap((s) => s.vocabularies || []);
-
-    if (onlyDue) {
-      if (currentContentType === 'kanji')
-        return toast.warning('Chế độ ôn tập đến hạn (SRS) chưa hỗ trợ cho Kanji!');
-      const now = new Date();
-      pool = pool.filter((v) => v.next_review && new Date(v.next_review) <= now);
-      if (pool.length === 0) return toast.success('Tuyệt vời! Không có từ vựng nào đến hạn.');
-    }
+    const pool = fullSets.flatMap((s) => s.vocabularies || []);
 
     if (pool.length === 0) return toast.warning('Học phần này chưa có dữ liệu phù hợp!');
 
@@ -252,7 +224,6 @@ function LearnMode() {
     generateOptions(chunked[0][0], pool);
     setStreak(0);
     setMaxStreak(0);
-    srsAnsweredRefs.current.clear();
     setIsStarted(true);
     setIsFinished(false);
     if (window.innerWidth < 768 && !isFullscreen) toggleFullscreen();
@@ -375,7 +346,6 @@ function LearnMode() {
     playSound('wrong');
     vibrate([200, 100, 200]);
     setStreak(0);
-    updateSRS(currentWord.id, false);
 
     setIsShaking(true);
     setTimeout(() => setIsShaking(false), 400);
@@ -395,14 +365,13 @@ function LearnMode() {
     playAudio(correctAnswerText, 'error');
   };
 
-  const triggerStreakAndSRS = (currentWord) => {
+  const triggerStreakAndSRS = () => {
     const newStreak = streak + 1;
     setStreak(newStreak);
     if (newStreak > maxStreak) setMaxStreak(newStreak);
     if (newStreak >= 5 && newStreak % 5 === 0) {
       confetti({ particleCount: 20, spread: 45, origin: { y: 0.25 } });
     }
-    updateSRS(currentWord.id, true);
   };
 
   const handleCorrectAnswer = (currentWord) => {
@@ -503,27 +472,11 @@ function LearnMode() {
     return (
       <div className="container mt-3" style={{ maxWidth: '600px' }}>
         <div className="card shadow-sm border-0 p-3 p-md-4 rounded-4 bg-white">
-          <h4 className="text-center mb-3 fw-bold text-dark">🧠 Chế độ Học SRS</h4>
+          <h4 className="text-center mb-3 fw-bold text-dark">🧠 Chế độ Học thuộc</h4>
 
           <div className="mb-3">
             <label className="form-label fw-bold text-muted small mb-1">Học phần</label>
             <SetSelector sets={sets} selectedSetId={selectedSetId} setSelectedSetId={setSelectedSetId} />
-          </div>
-
-          <div className="mb-3 text-start">
-            <div className="form-check form-switch d-flex align-items-center gap-2 bg-light p-2 px-3 rounded-3">
-              <input
-                className="form-check-input m-0"
-                type="checkbox"
-                id="srsToggle"
-                checked={onlyDue}
-                onChange={(e) => setOnlyDue(e.target.checked)}
-                style={{ cursor: 'pointer' }}
-              />
-              <label className="form-check-label fw-semibold text-dark small m-0" htmlFor="srsToggle" style={{ cursor: 'pointer' }}>
-                Chỉ ôn các từ đến hạn (SRS)
-              </label>
-            </div>
           </div>
 
           <div className="mb-3">

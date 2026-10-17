@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { playSound } from '../utils/audio';
+import { playSound, speakText } from '../utils/audio';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { Star, Volume2, BookOpen, Edit3 } from 'lucide-react';
 import api from '../api/axiosConfig';
@@ -180,13 +180,7 @@ function Flashcard({
   };
 
   const speak = (text, lang) => {
-    if ('speechSynthesis' in window && text) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang;
-      utterance.rate = 0.9;
-      window.speechSynthesis.speak(utterance);
-    }
+    speakText(text, lang);
   };
 
   useEffect(() => {
@@ -210,10 +204,11 @@ function Flashcard({
 
   const renderStarButton = () => (
     <button
-      className="btn-icon-soft position-absolute top-0 start-0 m-3 border-0"
+      className="btn-icon-soft position-absolute top-0 start-0 m-3"
       style={{
         zIndex: 20,
-        backgroundColor: isStarred ? '#fef3c7' : 'var(--bg-elevated)',
+        backgroundColor: isStarred ? 'rgba(245, 158, 11, 0.18)' : 'var(--bg-elevated)',
+        borderColor: isStarred ? 'rgba(245, 158, 11, 0.45)' : 'var(--surface-border)',
         color: isStarred ? '#f59e0b' : 'var(--text-secondary)',
       }}
       onClick={handleToggleStar}
@@ -262,11 +257,9 @@ function Flashcard({
       >
         {/* MẶT TRƯỚC */}
         <div
-          className="position-absolute w-100 h-100 d-flex flex-column rounded-4 bg-white"
+          className="position-absolute w-100 h-100 d-flex flex-column rounded-4 flashcard-front-surface"
           style={{
             backfaceVisibility: 'hidden',
-            border: '1.5px solid var(--surface-border)',
-            boxShadow: '0 12px 28px -6px rgba(15, 23, 42, 0.1)',
             overflow: 'hidden',
           }}
         >

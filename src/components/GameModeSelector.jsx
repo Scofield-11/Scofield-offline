@@ -151,7 +151,7 @@ function GameModeSelector({
                 className={`gms-card ${active ? 'gms-card--active' : ''}`}
                 onClick={() => handleFourFieldSelect(preset)}
               >
-                <div className="gms-card-icon" style={{ backgroundColor: active ? '#ede9fe' : (preset.iconBg || '#f3f4f6') }}>
+                <div className="gms-card-icon" style={active ? undefined : { backgroundColor: preset.iconBg || 'var(--bg-elevated)' }}>
                   <span className="gms-card-emoji">{preset.icon}</span>
                 </div>
                 <div className="gms-card-content">
@@ -173,7 +173,7 @@ function GameModeSelector({
                 className={`gms-card ${active ? 'gms-card--active' : ''}`}
                 onClick={() => handleTwoFieldSelect(preset)}
               >
-                <div className="gms-card-icon" style={{ backgroundColor: active ? '#ede9fe' : (preset.iconBg || '#f3f4f6') }}>
+                <div className="gms-card-icon" style={active ? undefined : { backgroundColor: preset.iconBg || 'var(--bg-elevated)' }}>
                   <span className="gms-card-emoji">{preset.icon}</span>
                 </div>
                 <div className="gms-card-content">
