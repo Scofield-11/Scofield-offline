@@ -68,8 +68,8 @@ function Navbar() {
           <img
             src="/sea_15651557.ico"
             alt="Scofield Logo"
-            width="34"
-            height="34"
+            className="w-100 h-100"
+            style={{ objectFit: 'cover', display: 'block' }}
           />
         </div>
         <h5 className="fw-black mb-0 ms-2 nav-brand-title">Scofield</h5>
