@@ -190,10 +190,80 @@ function LearnMode() {
     }
   };
 
-  const playAudio = (text, type = 'normal') => {
+  const resolveFieldLangAndText = (vocab, fieldKey, fallbackText = '') => {
+    if (!vocab) return { text: fallbackText, lang: 'ja-JP' };
+    const vocabLang = vocab.language || 'ja';
+
+    // Nếu đang ở trường Ý nghĩa hoặc Hán Việt -> Đọc bằng Tiếng Việt
+    if (fieldKey === 'meaning' || fieldKey === 'hanviet') {
+      return { text: fallbackText || vocab[fieldKey] || '', lang: 'vi-VN' };
+    }
+
+    // Nếu đang ở trường Phiên âm (Pinyin) của Tiếng Trung -> Đọc chữ Hán gốc để không bị đánh vần Latin
+    if (fieldKey === 'hiragana' && vocabLang === 'zh') {
+      return { text: vocab.word || vocab.kanji || fallbackText, lang: 'zh-CN' };
+    }
+
+    const targetLang = vocabLang === 'zh' ? 'zh-CN' : vocabLang === 'en' ? 'en-US' : 'ja-JP';
+    return { text: fallbackText || vocab.word || vocab.kanji || '', lang: targetLang };
+  };
+
+  const getActiveFrontField = (vocab) => {
+    let front =
+      currentContentType === 'kanji'
+        ? kanjiFront
+        : hasFourFields
+        ? kanjiFront === 'kanji'
+          ? 'word'
+          : kanjiFront
+        : isReversed
+        ? 'meaning'
+        : 'word';
+    if (vocab && !vocab[front] && (front === 'hanviet' || front === 'hiragana')) front = 'word';
+    return front;
+  };
+
+  const getActiveBackField = (vocab) => {
+    let back =
+      currentContentType === 'kanji'
+        ? kanjiBack
+        : hasFourFields
+        ? kanjiBack === 'meaning' && kanjiFront === 'kanji'
+          ? 'meaning'
+          : kanjiBack === 'kanji'
+          ? 'word'
+          : kanjiBack
+        : isReversed
+        ? 'word'
+        : 'meaning';
+    if (vocab && !vocab[back] && (back === 'hanviet' || back === 'hiragana')) back = 'word';
+    return back;
+  };
+
+  const playAudio = (text, type = 'normal', fieldSide = 'auto') => {
     if (!text) return;
     const currentWord = currentRoundWords[currentWordIndex];
-    speakText(text, currentWord?.language || 'ja', type === 'error' ? 0.8 : 0.9);
+    if (!currentWord) {
+      speakText(text, 'ja', type === 'error' ? 0.85 : 0.92);
+      return;
+    }
+
+    let fieldKey = fieldSide;
+    if (fieldSide === 'question') {
+      fieldKey = getActiveFrontField(currentWord);
+    } else if (fieldSide === 'answer') {
+      fieldKey = getActiveBackField(currentWord);
+    } else if (fieldSide === 'auto') {
+      const qText = getQuestionText(currentWord);
+      fieldKey = text === qText ? getActiveFrontField(currentWord) : getActiveBackField(currentWord);
+    }
+
+    const { text: finalSpeechText, lang: finalLang } = resolveFieldLangAndText(
+      currentWord,
+      fieldKey,
+      text
+    );
+    speakText(finalSpeechText, finalLang, type === 'error' ? 0.85 : 0.92);
   };
 
   const handleStart = async () => {
@@ -403,7 +473,7 @@ function LearnMode() {
       setSelectedCorrectId(selectedOption.id);
       playSound('correct');
       vibrate(40);
-      playAudio(getQuestionText(currentWord));
+      playAudio(currentWord.word || currentWord.kanji || getQuestionText(currentWord), 'normal', 'word');
       triggerStreakAndSRS(currentWord);
 
       timerRef.current = setTimeout(() => {

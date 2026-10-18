@@ -398,38 +398,104 @@ function FlashcardMode() {
     >
       {editingVocab && (
         <div
-          className="modal d-flex align-items-center justify-content-center"
-          style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1060, position: 'fixed', inset: 0 }}
+          className="set-sheet-backdrop"
+          style={{ zIndex: 3000 }}
+          onClick={() => setEditingVocab(null)}
         >
-          <div className="card border-0 shadow-lg rounded-4 p-4" style={{ width: '90%', maxWidth: '400px' }}>
-            <h5 className="fw-bold mb-4 text-primary d-flex align-items-center gap-2">
-              <Edit3 size={18} /> Sửa nhanh thẻ
-            </h5>
-            <form onSubmit={handleQuickSave}>
+          <div
+            className="set-sheet-panel text-start"
+            style={{ maxWidth: '420px', height: 'auto', maxHeight: '88vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="set-sheet-grabber d-md-none" />
+            <div className="set-sheet-header">
+              <h6 className="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                <Edit3 size={17} className="text-primary" /> Sửa nhanh thẻ
+              </h6>
+            </div>
+            <form onSubmit={handleQuickSave} className="p-3 pt-2">
               {currentContentType === 'kanji' ? (
                 <>
-                  <input type="text" className="form-control bg-light border-0 mb-3 fw-bold shadow-sm" value={editingVocab.kanji} onChange={(e) => setEditingVocab({ ...editingVocab, kanji: e.target.value })} placeholder="Kanji" required />
-                  <input type="text" className="form-control bg-light border-0 mb-3 shadow-sm" value={editingVocab.hanviet} onChange={(e) => setEditingVocab({ ...editingVocab, hanviet: e.target.value })} placeholder="Hán Việt" required />
-                  <input type="text" className="form-control bg-light border-0 mb-3 shadow-sm" value={editingVocab.hiragana} onChange={(e) => setEditingVocab({ ...editingVocab, hiragana: e.target.value })} placeholder="Hiragana" required />
-                  <input type="text" className="form-control bg-light border-0 mb-4 shadow-sm" value={editingVocab.meaning} onChange={(e) => setEditingVocab({ ...editingVocab, meaning: e.target.value })} placeholder="Ý nghĩa" required />
+                  <input
+                    type="text"
+                    className="form-control bg-light border-0 mb-2 fw-bold py-2"
+                    value={editingVocab.kanji || editingVocab.word || ''}
+                    onChange={(e) =>
+                      setEditingVocab({ ...editingVocab, kanji: e.target.value, word: e.target.value })
+                    }
+                    placeholder="Chữ Hán (Kanji)"
+                    required
+                  />
+                  <input
+                    type="text"
+                    className="form-control bg-light border-0 mb-2 py-2"
+                    value={editingVocab.hanviet || ''}
+                    onChange={(e) => setEditingVocab({ ...editingVocab, hanviet: e.target.value })}
+                    placeholder="Âm Hán Việt"
+                  />
+                  <input
+                    type="text"
+                    className="form-control bg-light border-0 mb-2 py-2"
+                    value={editingVocab.hiragana || ''}
+                    onChange={(e) => setEditingVocab({ ...editingVocab, hiragana: e.target.value })}
+                    placeholder="Cách đọc (Hiragana)"
+                  />
+                  <input
+                    type="text"
+                    className="form-control bg-light border-0 mb-3 py-2"
+                    value={editingVocab.meaning || ''}
+                    onChange={(e) => setEditingVocab({ ...editingVocab, meaning: e.target.value })}
+                    placeholder="Ý nghĩa"
+                    required
+                  />
                 </>
               ) : (
                 <>
-                  <input type="text" className="form-control bg-light border-0 mb-3 fw-bold shadow-sm" value={editingVocab.word} onChange={(e) => setEditingVocab({ ...editingVocab, word: e.target.value })} placeholder="Từ vựng" required />
+                  <input
+                    type="text"
+                    className="form-control bg-light border-0 mb-2 fw-bold py-2"
+                    value={editingVocab.word || ''}
+                    onChange={(e) => setEditingVocab({ ...editingVocab, word: e.target.value })}
+                    placeholder="Từ vựng"
+                    required
+                  />
                   {(editingVocab.language || 'ja') !== 'en' && (
                     <>
-                      <input type="text" className="form-control bg-light border-0 mb-3 shadow-sm" value={editingVocab.hanviet || ''} onChange={(e) => setEditingVocab({ ...editingVocab, hanviet: e.target.value })} placeholder="Hán Việt" />
-                      <input type="text" className="form-control bg-light border-0 mb-3 shadow-sm" value={editingVocab.hiragana || ''} onChange={(e) => setEditingVocab({ ...editingVocab, hiragana: e.target.value })} placeholder="Cách đọc / Pinyin" />
+                      <input
+                        type="text"
+                        className="form-control bg-light border-0 mb-2 py-2"
+                        value={editingVocab.hanviet || ''}
+                        onChange={(e) => setEditingVocab({ ...editingVocab, hanviet: e.target.value })}
+                        placeholder="Hán Việt"
+                      />
+                      <input
+                        type="text"
+                        className="form-control bg-light border-0 mb-2 py-2"
+                        value={editingVocab.hiragana || ''}
+                        onChange={(e) => setEditingVocab({ ...editingVocab, hiragana: e.target.value })}
+                        placeholder="Cách đọc / Pinyin"
+                      />
                     </>
                   )}
-                  <input type="text" className="form-control bg-light border-0 mb-4 shadow-sm" value={editingVocab.meaning} onChange={(e) => setEditingVocab({ ...editingVocab, meaning: e.target.value })} placeholder="Ý nghĩa" required />
+                  <input
+                    type="text"
+                    className="form-control bg-light border-0 mb-3 py-2"
+                    value={editingVocab.meaning || ''}
+                    onChange={(e) => setEditingVocab({ ...editingVocab, meaning: e.target.value })}
+                    placeholder="Ý nghĩa"
+                    required
+                  />
                 </>
               )}
               <div className="d-flex gap-2">
-                <button type="button" className="btn btn-secondary w-50 fw-bold rounded-3" onClick={() => setEditingVocab(null)}>
+                <button
+                  type="button"
+                  className="btn btn-light btn-touch w-50 fw-bold"
+                  onClick={() => setEditingVocab(null)}
+                >
                   Hủy
                 </button>
-                <button type="submit" className="btn btn-primary w-50 fw-bold text-white rounded-3">
+                <button type="submit" className="btn btn-primary btn-touch w-50 fw-bold text-white">
                   Lưu lại
                 </button>
               </div>

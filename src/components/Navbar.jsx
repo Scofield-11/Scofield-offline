@@ -9,7 +9,7 @@ const NAV_SPRING = { type: "spring", stiffness: 280, damping: 28, mass: 0.6 };
 
 function Navbar() {
   const location = useLocation();
-  const currentUser = getCurrentUser();
+  const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
   const [syncInfo, setSyncInfo] = useState(getSyncStatus());
   const [theme, setTheme] = useState(() => localStorage.getItem("scofield_theme") || "light");
 
@@ -18,11 +18,14 @@ function Navbar() {
     const handleTheme = (e) => {
       if (e.detail) setTheme(e.detail);
     };
+    const handleAuth = () => setCurrentUser(getCurrentUser());
     window.addEventListener("scofield-sync-status", handleStatus);
     window.addEventListener("scofield-theme-change", handleTheme);
+    window.addEventListener("scofield-auth-changed", handleAuth);
     return () => {
       window.removeEventListener("scofield-sync-status", handleStatus);
       window.removeEventListener("scofield-theme-change", handleTheme);
+      window.removeEventListener("scofield-auth-changed", handleAuth);
     };
   }, []);
 
@@ -77,7 +80,7 @@ function Navbar() {
         <h5 className="fw-black mb-0 ms-2 nav-brand-title">Scofield</h5>
       </Link>
 
-      <div className="nav-menu">
+      <div className="nav-menu no-scrollbar" style={{ minHeight: 0 }}>
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
@@ -96,7 +99,7 @@ function Navbar() {
               <span className="nav-icon-wrapper position-relative" style={{ zIndex: 2 }}>
                 <span className="nav-icon">{item.icon}</span>
               </span>
-              <span className="d-none d-lg-inline nav-text position-relative" style={{ zIndex: 2 }}>
+              <span className="d-none d-lg-inline nav-text text-truncate position-relative" style={{ zIndex: 2 }}>
                 {item.label}
               </span>
               <span className="d-lg-none mobile-label position-relative" style={{ zIndex: 2 }}>
@@ -114,61 +117,67 @@ function Navbar() {
         })}
       </div>
 
-      {currentUser?.role === "admin" && (
-        <div className="d-none d-lg-block mt-auto mb-2 w-100">
+      <div className="d-none d-lg-flex flex-column gap-2 mt-auto pt-2 w-100" style={{ flexShrink: 0 }}>
+        {currentUser?.role === "admin" && (
           <Link
             to="/admin"
-            className={`btn nav-sync-btn w-100 d-flex align-items-center justify-content-center gap-2 text-decoration-none ${
-              location.pathname === "/admin" ? "border-warning" : ""
+            className={`btn nav-sync-btn w-100 d-flex align-items-center justify-content-between text-decoration-none ${
+              location.pathname === "/admin" ? "chip-primary border-primary" : ""
             }`}
+            title="Quản trị tài khoản người dùng"
           >
-            <Shield size={14} />
-            <span>🛡️ Quản trị tài khoản</span>
-          </Link>
-        </div>
-      )}
-
-      <div className={`d-none d-lg-flex align-items-center gap-2 ${currentUser?.role === "admin" ? "" : "mt-auto"} w-100`}>
-        <button
-          type="button"
-          className="btn nav-sync-btn d-flex align-items-center justify-content-between flex-grow-1"
-          onClick={handleManualSync}
-          disabled={syncInfo.state === "syncing"}
-          title={syncInfo.message || "Đồng bộ dữ liệu"}
-        >
-          <span className="d-flex align-items-center gap-2 text-truncate">
-            <span
-              className={`sync-status-dot ${syncInfo.state === "syncing" ? "pulse" : ""}`}
-              style={{ backgroundColor: getDotColor() }}
-            />
-            <span className="text-truncate">
-              {syncInfo.state === "syncing" ? "Đang lưu..." : "Cloud Sync"}
+            <span className="d-flex align-items-center gap-2 text-truncate">
+              <Shield size={15} className="flex-shrink-0" />
+              <span className="text-truncate fw-bold">Quản trị viên</span>
             </span>
-          </span>
-          <RefreshCw
-            size={14}
-            className={syncInfo.state === "syncing" ? "spin-anim flex-shrink-0" : "flex-shrink-0"}
-          />
-        </button>
+            <span className="badge rounded-pill chip-primary" style={{ fontSize: "0.65rem" }}>
+              Admin
+            </span>
+          </Link>
+        )}
 
-        <motion.button
-          type="button"
-          whileTap={{ scale: 0.9, rotate: 25 }}
-          className="btn nav-theme-btn d-flex align-items-center justify-content-center flex-shrink-0"
-          onClick={toggleTheme}
-          title={theme === "dark" ? "Chuyển sang chế độ Sáng" : "Chuyển sang chế độ Tối"}
-          aria-label="Toggle theme"
-        >
-          <motion.div
-            key={theme}
-            initial={{ rotate: -90, opacity: 0, scale: 0.6 }}
-            animate={{ rotate: 0, opacity: 1, scale: 1 }}
-            transition={{ type: "spring", stiffness: 380, damping: 24, mass: 0.6 }}
-            className="d-flex align-items-center justify-content-center"
+        <div className="d-flex align-items-center gap-2 w-100">
+          <button
+            type="button"
+            className="btn nav-sync-btn d-flex align-items-center justify-content-between flex-grow-1 overflow-hidden"
+            onClick={handleManualSync}
+            disabled={syncInfo.state === "syncing"}
+            title={syncInfo.message || "Đồng bộ dữ liệu"}
           >
-            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-          </motion.div>
-        </motion.button>
+            <span className="d-flex align-items-center gap-2 text-truncate">
+              <span
+                className={`sync-status-dot flex-shrink-0 ${syncInfo.state === "syncing" ? "pulse" : ""}`}
+                style={{ backgroundColor: getDotColor() }}
+              />
+              <span className="text-truncate">
+                {syncInfo.state === "syncing" ? "Đang lưu..." : "Cloud Sync"}
+              </span>
+            </span>
+            <RefreshCw
+              size={14}
+              className={syncInfo.state === "syncing" ? "spin-anim flex-shrink-0" : "flex-shrink-0"}
+            />
+          </button>
+
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.9, rotate: 25 }}
+            className="btn nav-theme-btn d-flex align-items-center justify-content-center flex-shrink-0"
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Chuyển sang chế độ Sáng" : "Chuyển sang chế độ Tối"}
+            aria-label="Toggle theme"
+          >
+            <motion.div
+              key={theme}
+              initial={{ rotate: -90, opacity: 0, scale: 0.6 }}
+              animate={{ rotate: 0, opacity: 1, scale: 1 }}
+              transition={{ type: "spring", stiffness: 380, damping: 24, mass: 0.6 }}
+              className="d-flex align-items-center justify-content-center"
+            >
+              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+            </motion.div>
+          </motion.button>
+        </div>
       </div>
     </nav>
   );

@@ -379,68 +379,192 @@ const createSetWithVocabulariesLocal = (
   let nextVocabId = getNextId(vocabs);
   const newVocabs = [];
 
-  lines.forEach((line, idx) => {
-    const lineClean = line.trim();
-    if (!lineClean) return;
-    if (lineClean.startsWith('---') || lineClean.startsWith('**')) return;
+  // Hỗ trợ phân tích cú pháp từ đi kèm viết trên 1 dòng: "食べる:たべる:Ăn; 食事:しょくじ:Bữa ăn"
+  const parseInlineExamples = (rawStr) => {
+    if (!rawStr || !rawStr.trim()) return [];
+    return rawStr
+      .split(';')
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .map((item) => {
+        const segs = item.split(':').map((s) => s.trim());
+        return {
+          word: segs[0] || '',
+          reading: segs[1] || '',
+          meaning: segs.slice(2).join(': ') || '',
+        };
+      })
+      .filter((ex) => ex.word);
+  };
 
-    if (lineClean.includes('|')) {
-      const parts = lineClean.split('|').map((p) => p.trim());
-      let word = '';
-      let hanviet = '';
-      let hiragana = '';
-      let meaning = '';
+  if (setType === 'kanji') {
+    let currentKanjiObj = null;
 
-      if (parts.length >= 4) {
-        const rawKanji = parts[0];
-        const rawHanviet = parts[1];
-        const rawHiragana = parts[2];
-        meaning = parts[3];
+    lines.forEach((line, idx) => {
+      const lineClean = line.trim();
+      if (!lineClean || lineClean.startsWith('---') || lineClean.startsWith('**')) return;
 
-        if (!rawKanji && rawHiragana) {
-          word = rawHiragana;
-          hiragana = rawHiragana;
-          hanviet = rawHanviet;
-        } else {
-          word = rawKanji;
-          hanviet = rawHanviet;
-          hiragana = rawHiragana;
+      // Dòng bắt đầu bằng '-' hoặc '+' là từ ghép Kanji đi kèm cho chữ Hán phía trên
+      if ((lineClean.startsWith('-') || lineClean.startsWith('+')) && currentKanjiObj) {
+        const subLine = lineClean.replace(/^[-+]+\s*/, '');
+        const subParts = subLine.split('|').map((p) => p.trim());
+        if (subParts[0]) {
+          currentKanjiObj.examples.push({
+            word: subParts[0] || '',
+            reading: subParts[1] || '',
+            meaning: subParts[2] || subParts[1] || '',
+          });
+          if (!currentKanjiObj.meaning && (subParts[2] || subParts[1])) {
+            currentKanjiObj.meaning = subParts[2] || subParts[1];
+          }
         }
-      } else if (parts.length === 3) {
-        word = parts[0] ? parts[0] : parts[1];
-        hiragana = parts[1] || '';
-        hanviet = '';
-        meaning = parts[2];
-      } else if (parts.length === 2) {
-        word = parts[0];
-        hanviet = '';
-        hiragana = '';
-        meaning = parts[1];
+        return;
       }
 
-      if (word && meaning) {
-        newVocabs.push({
-          id: nextVocabId++,
-          word,
-          hanviet,
-          hiragana,
-          meaning,
-          language: newSet.language,
-          set_id: newSetId,
-          repetition: 0,
-          ease_factor: 2.5,
-          interval: 0,
-          next_review: nowIso,
-          is_starred: false,
-        });
-        importedCount++;
+      if (lineClean.includes('|')) {
+        const parts = lineClean.split('|').map((p) => p.trim());
+        const word = parts[0] || '';
+        let onyomi = '';
+        let kunyomi = '';
+        let hanviet = '';
+        let meaning = '';
+        let inlineExamples = [];
+
+        if (parts.length >= 5) {
+          // Định dạng: Chữ Hán | Âm On | Âm Kun | Hán Việt / Nghĩa | Từ đi kèm (hoặc Nghĩa)
+          onyomi = parts[1];
+          kunyomi = parts[2];
+          hanviet = parts[3];
+          if (parts[4].includes(':')) {
+            meaning = parts[3] || word;
+            inlineExamples = parseInlineExamples(parts[4]);
+          } else {
+            meaning = parts[4];
+            if (parts[5]) inlineExamples = parseInlineExamples(parts[5]);
+          }
+        } else if (parts.length === 4) {
+          // Hỗ trợ cả định dạng mới: Chữ Hán | Âm On | Âm Kun | Nghĩa (hoặc Hán Việt - Nghĩa)
+          // và định dạng cũ: Chữ Hán | Hán Việt | Hiragana | Nghĩa
+          const p1IsKana = /[\u3040-\u30ff]/.test(parts[1]);
+          if (p1IsKana) {
+            onyomi = parts[1];
+            kunyomi = parts[2];
+            if (parts[3].includes('-')) {
+              const [hv, ...mn] = parts[3].split('-');
+              hanviet = hv.trim();
+              meaning = mn.join('-').trim() || hv.trim();
+            } else {
+              meaning = parts[3];
+            }
+          } else {
+            hanviet = parts[1];
+            const readings = parts[2].split('/').map((r) => r.trim());
+            onyomi = readings[0] || '';
+            kunyomi = readings.slice(1).join(', ') || '';
+            meaning = parts[3];
+          }
+        } else if (parts.length === 3) {
+          onyomi = parts[1];
+          kunyomi = parts[2];
+          meaning = parts[2] || parts[1] || word;
+        } else if (parts.length === 2) {
+          onyomi = parts[1];
+          meaning = parts[1] || word;
+        }
+
+        const combinedReading = [onyomi, kunyomi].filter(Boolean).join(' / ');
+
+        if (word) {
+          currentKanjiObj = {
+            id: nextVocabId++,
+            word,
+            onyomi,
+            kunyomi,
+            examples: inlineExamples,
+            hanviet,
+            hiragana: combinedReading,
+            meaning: meaning || hanviet || combinedReading || word,
+            language: 'ja',
+            set_id: newSetId,
+            repetition: 0,
+            ease_factor: 2.5,
+            interval: 0,
+            next_review: nowIso,
+            is_starred: false,
+          };
+          newVocabs.push(currentKanjiObj);
+          importedCount++;
+        } else {
+          errors.push(`Dòng ${idx + 1}: Thiếu chữ Hán.`);
+        }
       } else {
-        errors.push(`Dòng ${idx + 1}: Bị trống từ vựng hoặc ý nghĩa.`);
+        errors.push(`Dòng ${idx + 1}: Thiếu ký tự phân cách '|'.`);
       }
-    } else {
-      errors.push(`Dòng ${idx + 1}: Thiếu ký tự phân cách '|'.`);
-    }
-  });
+    });
+  } else {
+    lines.forEach((line, idx) => {
+      const lineClean = line.trim();
+      if (!lineClean) return;
+      if (lineClean.startsWith('---') || lineClean.startsWith('**')) return;
+
+      if (lineClean.includes('|')) {
+        const parts = lineClean.split('|').map((p) => p.trim());
+        let word = '';
+        let hanviet = '';
+        let hiragana = '';
+        let meaning = '';
+
+        if (parts.length >= 4) {
+          const rawKanji = parts[0];
+          const rawHanviet = parts[1];
+          const rawHiragana = parts[2];
+          meaning = parts[3];
+
+          if (!rawKanji && rawHiragana) {
+            word = rawHiragana;
+            hiragana = rawHiragana;
+            hanviet = rawHanviet;
+          } else {
+            word = rawKanji;
+            hanviet = rawHanviet;
+            hiragana = rawHiragana;
+          }
+        } else if (parts.length === 3) {
+          word = parts[0] ? parts[0] : parts[1];
+          hiragana = parts[1] || '';
+          hanviet = '';
+          meaning = parts[2];
+        } else if (parts.length === 2) {
+          word = parts[0];
+          hanviet = '';
+          hiragana = '';
+          meaning = parts[1];
+        }
+
+        if (word && meaning) {
+          newVocabs.push({
+            id: nextVocabId++,
+            word,
+            hanviet,
+            hiragana,
+            meaning,
+            language: newSet.language,
+            set_id: newSetId,
+            repetition: 0,
+            ease_factor: 2.5,
+            interval: 0,
+            next_review: nowIso,
+            is_starred: false,
+          });
+          importedCount++;
+        } else {
+          errors.push(`Dòng ${idx + 1}: Bị trống từ vựng hoặc ý nghĩa.`);
+        }
+      } else {
+        errors.push(`Dòng ${idx + 1}: Thiếu ký tự phân cách '|'.`);
+      }
+    });
+  }
 
   if (importedCount === 0) {
     return { importedCount: null, errors, set: null };
@@ -556,9 +680,12 @@ export const importDataFromJson = async (fileOrObject, mode = 'merge') => {
       vocabs.push({
         id: nextVocabId++,
         word,
+        onyomi: String(v.onyomi || '').trim(),
+        kunyomi: String(v.kunyomi || '').trim(),
+        examples: Array.isArray(v.examples) ? v.examples : [],
         hanviet: String(v.hanviet || '').trim(),
-        hiragana: String(v.hiragana || '').trim(),
-        meaning,
+        hiragana: String(v.hiragana || [v.onyomi, v.kunyomi].filter(Boolean).join(' / ') || '').trim(),
+        meaning: meaning || word,
         language: v.language || lang,
         set_id: newId,
         repetition: Number(v.repetition) || 0,
@@ -1156,6 +1283,33 @@ const handleRequest = async (method, url, payload = null) => {
     }
   }
 
+  // Helper chuẩn hóa dữ liệu 1 chữ Kanji
+  const formatKanjiRecord = (k, setMap = {}) => {
+    let onyomi = k.onyomi || '';
+    let kunyomi = k.kunyomi || '';
+    if (!onyomi && !kunyomi && k.hiragana) {
+      const parts = k.hiragana.split('/').map((s) => s.trim());
+      onyomi = parts[0] || '';
+      kunyomi = parts.slice(1).join(', ') || '';
+    }
+    return {
+      id: k.id,
+      kanji: k.word,
+      word: k.word,
+      onyomi,
+      kunyomi,
+      examples: Array.isArray(k.examples) ? k.examples : [],
+      hanviet: k.hanviet || '',
+      hiragana: k.hiragana || [onyomi, kunyomi].filter(Boolean).join(' / ') || '',
+      meaning: k.meaning || '',
+      kanji_set_id: k.set_id,
+      set_id: k.set_id,
+      set_title: setMap[k.set_id]?.title || 'Học phần Kanji',
+      folder_path: setMap[k.set_id]?.folder_path || '',
+      is_starred: Boolean(k.is_starred),
+    };
+  };
+
   // 3. KANJI SETS & KANJIS
   if (method === 'GET' && pathname === '/kanji/all') {
     const sets = readTable(STORAGE_KEYS.SETS).filter(
@@ -1168,36 +1322,47 @@ const handleRequest = async (method, url, payload = null) => {
     const vocabs = readTable(STORAGE_KEYS.VOCABS);
     const allKanjis = vocabs
       .filter((v) => setMap[v.set_id])
-      .map((k) => ({
-        id: k.id,
-        kanji: k.word,
-        word: k.word,
-        hanviet: k.hanviet || '',
-        hiragana: k.hiragana || '',
-        meaning: k.meaning || '',
-        kanji_set_id: k.set_id,
-        set_id: k.set_id,
-        set_title: setMap[k.set_id]?.title || 'Học phần Kanji',
-        folder_path: setMap[k.set_id]?.folder_path || '',
-        is_starred: Boolean(k.is_starred),
-      }));
+      .map((k) => formatKanjiRecord(k, setMap));
     return { data: allKanjis };
   }
 
   if (method === 'POST' && pathname === '/kanji') {
-    const { kanji, word, hanviet, hiragana, meaning, set_id } = payload || {};
+    const { kanji, word, onyomi, kunyomi, examples, hanviet, hiragana, meaning, set_id } =
+      payload || {};
     const charVal = String(kanji || word || '').trim();
-    const meaningVal = String(meaning || '').trim();
-    if (!charVal || !meaningVal) {
-      throw createApiError('Chữ Hán và ý nghĩa không được để trống');
+    if (!charVal) {
+      throw createApiError('Chữ Hán không được để trống');
     }
+    const cleanOnyomi = String(onyomi || '').trim();
+    const cleanKunyomi = String(kunyomi || '').trim();
+    const cleanExamples = Array.isArray(examples)
+      ? examples
+          .map((ex) => ({
+            word: String(ex.word || '').trim(),
+            reading: String(ex.reading || ex.hiragana || '').trim(),
+            meaning: String(ex.meaning || '').trim(),
+          }))
+          .filter((ex) => ex.word)
+      : [];
+    const combinedReading =
+      String(hiragana || '').trim() || [cleanOnyomi, cleanKunyomi].filter(Boolean).join(' / ');
+    const fallbackMeaning =
+      String(meaning || '').trim() ||
+      (cleanExamples[0]?.meaning ? cleanExamples[0].meaning : '') ||
+      String(hanviet || '').trim() ||
+      combinedReading ||
+      charVal;
+
     const vocabs = readTable(STORAGE_KEYS.VOCABS);
     const newKanji = {
       id: getNextId(vocabs),
       word: charVal,
+      onyomi: cleanOnyomi,
+      kunyomi: cleanKunyomi,
+      examples: cleanExamples,
       hanviet: String(hanviet || '').trim(),
-      hiragana: String(hiragana || '').trim(),
-      meaning: meaningVal,
+      hiragana: combinedReading,
+      meaning: fallbackMeaning,
       language: 'ja',
       set_id: set_id != null ? Number(set_id) : null,
       repetition: 0,
@@ -1208,16 +1373,7 @@ const handleRequest = async (method, url, payload = null) => {
     };
     vocabs.push(newKanji);
     writeTable(STORAGE_KEYS.VOCABS, vocabs);
-    return {
-      data: {
-        id: newKanji.id,
-        kanji: newKanji.word,
-        hanviet: newKanji.hanviet,
-        hiragana: newKanji.hiragana,
-        meaning: newKanji.meaning,
-        kanji_set_id: newKanji.set_id,
-      },
-    };
+    return { data: formatKanjiRecord(newKanji) };
   }
 
   if (method === 'GET' && pathname === '/kanji-sets') {
@@ -1246,7 +1402,7 @@ const handleRequest = async (method, url, payload = null) => {
     if (importedCount === null) {
       throw createApiError('Không tìm thấy Kanji hợp lệ nào. Kiểm tra lại định dạng.');
     }
-    return { data: { message: `Đã tạo học phần Kanji với ${importedCount} từ.`, errors } };
+    return { data: { message: `Đã tạo học phần Kanji với ${importedCount} chữ Hán.`, errors } };
   }
 
   const kanjiSetDetailMatch = pathname.match(/^\/kanji-sets\/(\d+)$/);
@@ -1261,14 +1417,7 @@ const handleRequest = async (method, url, payload = null) => {
     if (method === 'GET') {
       const kanjiList = vocabs
         .filter((k) => Number(k.set_id) === setId)
-        .map((k) => ({
-          id: k.id,
-          kanji: k.word,
-          hanviet: k.hanviet || '',
-          hiragana: k.hiragana || '',
-          meaning: k.meaning,
-          kanji_set_id: k.set_id,
-        }));
+        .map((k) => formatKanjiRecord(k, { [dbSet.id]: dbSet }));
       return {
         data: {
           id: dbSet.id,
@@ -1310,28 +1459,41 @@ const handleRequest = async (method, url, payload = null) => {
 
     if (method === 'PUT') {
       const wordVal = String(payload?.kanji ?? payload?.word ?? vocabs[idx].word).trim();
+      const onyomiVal = String(payload?.onyomi ?? vocabs[idx].onyomi ?? '').trim();
+      const kunyomiVal = String(payload?.kunyomi ?? vocabs[idx].kunyomi ?? '').trim();
+      const examplesVal = Array.isArray(payload?.examples)
+        ? payload.examples
+            .map((ex) => ({
+              word: String(ex.word || '').trim(),
+              reading: String(ex.reading || ex.hiragana || '').trim(),
+              meaning: String(ex.meaning || '').trim(),
+            }))
+            .filter((ex) => ex.word)
+        : Array.isArray(vocabs[idx].examples)
+        ? vocabs[idx].examples
+        : [];
       const hanvietVal = String(payload?.hanviet ?? vocabs[idx].hanviet ?? '').trim();
-      const hiraganaVal = String(payload?.hiragana ?? vocabs[idx].hiragana ?? '').trim();
-      const meaningVal = String(payload?.meaning ?? vocabs[idx].meaning).trim();
+      const combinedReading =
+        [onyomiVal, kunyomiVal].filter(Boolean).join(' / ') ||
+        String(payload?.hiragana ?? vocabs[idx].hiragana ?? '').trim();
+      const meaningVal =
+        String(payload?.meaning ?? vocabs[idx].meaning ?? '').trim() ||
+        (examplesVal[0]?.meaning ? examplesVal[0].meaning : '') ||
+        hanvietVal ||
+        wordVal;
 
       vocabs[idx] = {
         ...vocabs[idx],
         word: wordVal,
+        onyomi: onyomiVal,
+        kunyomi: kunyomiVal,
+        examples: examplesVal,
         hanviet: hanvietVal,
-        hiragana: hiraganaVal,
+        hiragana: combinedReading,
         meaning: meaningVal,
       };
       writeTable(STORAGE_KEYS.VOCABS, vocabs);
-      return {
-        data: {
-          id: vocabs[idx].id,
-          kanji: vocabs[idx].word,
-          hanviet: vocabs[idx].hanviet,
-          hiragana: vocabs[idx].hiragana,
-          meaning: vocabs[idx].meaning,
-          kanji_set_id: vocabs[idx].set_id,
-        },
-      };
+      return { data: formatKanjiRecord(vocabs[idx]) };
     }
   }
 

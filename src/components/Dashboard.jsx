@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
+import ReactDOM from 'react-dom';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, RefreshCw, X, Flame, Sun, Moon, Volume2, LogOut, KeyRound, Shield } from 'lucide-react';
@@ -218,56 +219,108 @@ function Dashboard() {
       className="container-fluid mt-1 mb-3 mx-auto px-2 px-md-3 position-relative"
       style={{ maxWidth: '1000px', zIndex: 1030 }}
     >
-      {showPassModal && (
-        <div
-          className="set-sheet-backdrop"
-          style={{ zIndex: 3000 }}
-          onClick={() => setShowPassModal(false)}
-        >
-          <div
-            className="card border-0 shadow-lg rounded-4 p-4 bg-white"
-            style={{ width: '92%', maxWidth: '380px' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h6 className="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
-              <KeyRound size={17} className="text-primary" /> Đổi mật khẩu cá nhân
-            </h6>
-            <form onSubmit={handleChangePassword}>
-              <input
-                type="password"
-                className="form-control mb-2 bg-light border-0 fw-semibold"
-                placeholder="Mật khẩu hiện tại..."
-                value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
-                required
-              />
-              <input
-                type="password"
-                className="form-control mb-3 bg-light border-0 fw-semibold"
-                placeholder="Mật khẩu mới (tối thiểu 4 ký tự)..."
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-              />
-              <div className="d-flex gap-2 justify-content-end">
-                <button
-                  type="button"
-                  className="btn btn-mobile-chip chip-slate"
-                  onClick={() => setShowPassModal(false)}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-mobile-chip btn-primary text-white"
-                  disabled={changingPass}
-                >
-                  {changingPass ? 'Đang lưu...' : 'Lưu mật khẩu'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {ReactDOM.createPortal(
+        <AnimatePresence>
+          {showPassModal && (
+            <motion.div
+              className="set-sheet-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              onClick={() => setShowPassModal(false)}
+            >
+              <motion.div
+                className="set-sheet-panel"
+                style={{ maxWidth: '420px', height: 'auto', maxHeight: '85vh' }}
+                initial={window.innerWidth < 768 ? { y: '100%' } : { opacity: 0, scale: 0.95, y: 12 }}
+                animate={window.innerWidth < 768 ? { y: 0 } : { opacity: 1, scale: 1, y: 0 }}
+                exit={window.innerWidth < 768 ? { y: '100%' } : { opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ type: 'spring', stiffness: 280, damping: 28, mass: 0.7 }}
+                drag={window.innerWidth < 768 ? 'y' : false}
+                dragConstraints={{ top: 0, bottom: 0 }}
+                dragElastic={{ top: 0, bottom: 0.6 }}
+                onDragEnd={(_, info) => {
+                  if (info.offset.y > 90 || info.velocity.y > 500) {
+                    setShowPassModal(false);
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="set-sheet-grabber d-md-none" />
+
+                <div className="set-sheet-header">
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="btn-icon-soft chip-primary" style={{ width: '34px', height: '34px' }}>
+                      <KeyRound size={16} />
+                    </span>
+                    <div>
+                      <h6 className="fw-bold mb-0 text-dark">Đổi mật khẩu cá nhân</h6>
+                      <span className="text-muted" style={{ fontSize: '0.75rem' }}>
+                        Tài khoản: {currentUser?.username || 'Học viên'}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-icon-soft chip-slate"
+                    onClick={() => setShowPassModal(false)}
+                    aria-label="Đóng"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleChangePassword} className="p-3 pt-2">
+                  <div className="mb-3">
+                    <label className="form-label small fw-bold text-muted mb-1">
+                      MẬT KHẨU HIỆN TẠI
+                    </label>
+                    <input
+                      type="password"
+                      className="form-control bg-light border-0 fw-semibold py-2"
+                      placeholder="Nhập mật khẩu hiện tại..."
+                      value={oldPassword}
+                      onChange={(e) => setOldPassword(e.target.value)}
+                      autoFocus
+                      required
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="form-label small fw-bold text-muted mb-1">
+                      MẬT KHẨU MỚI
+                    </label>
+                    <input
+                      type="password"
+                      className="form-control bg-light border-0 fw-semibold py-2"
+                      placeholder="Nhập mật khẩu mới (tối thiểu 4 ký tự)..."
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="d-flex gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-light btn-touch w-50 fw-bold"
+                      onClick={() => setShowPassModal(false)}
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary btn-touch w-50 fw-bold text-white"
+                      disabled={changingPass}
+                    >
+                      {changingPass ? 'Đang lưu...' : 'Lưu mật khẩu'}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
       )}
 
       <div className="position-relative mb-3" style={{ zIndex: 1040 }}>

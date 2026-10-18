@@ -75,49 +75,84 @@ function AuthPage({ onAuthSuccess }) {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
         className="card border-0 rounded-4 shadow-lg overflow-hidden w-100"
-        style={{ maxWidth: '430px' }}
+        style={{ maxWidth: '410px' }}
       >
         <div className="dashboard-hero-card p-4 text-center rounded-0 border-0">
           <div
             className="mx-auto mb-2 d-flex align-items-center justify-content-center rounded-4 overflow-hidden shadow"
-            style={{ width: '58px', height: '58px', border: '2px solid rgba(255,255,255,0.25)' }}
+            style={{ width: '60px', height: '60px', border: '2px solid rgba(255,255,255,0.3)' }}
           >
             <img
               src="/sea_15651557.ico"
-              alt="Scofield"
+              alt="Scofile"
               className="w-100 h-100"
               style={{ objectFit: 'cover' }}
             />
           </div>
-          <h4 className="fw-bold text-white mb-1">Scofield Workspace</h4>
-          <div className="d-inline-flex align-items-center gap-1 px-3 py-1 rounded-pill dashboard-hero-badge">
-            <Sparkles size={13} />
-            <span>Nhật • Trung • Anh • Từ điển Kanji</span>
-          </div>
+          <h4 className="fw-bold text-white mb-0" style={{ letterSpacing: '0.5px' }}>
+            Scofile
+          </h4>
         </div>
 
         <div className="card-body p-4 bg-white">
-          <div className="set-sheet-segmented mb-4" style={{ gridTemplateColumns: '1fr 1fr', margin: 0 }}>
+          {/* Thanh chuyển đổi Đăng nhập / Đăng ký dạng Pill nổi */}
+          <div
+            className="d-grid p-1 mb-4 rounded-4 position-relative bg-light border"
+            style={{ gridTemplateColumns: '1fr 1fr', gap: '4px' }}
+          >
             <button
               type="button"
-              className={`set-seg-btn ${mode === 'login' ? 'active' : ''}`}
               onClick={() => setMode('login')}
+              className="btn border-0 py-2 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2 position-relative"
+              style={{
+                zIndex: 1,
+                fontSize: '0.9rem',
+                color: mode === 'login' ? '#ffffff' : 'var(--text-secondary)',
+                transition: 'color 0.2s ease',
+              }}
             >
               {mode === 'login' && (
-                <motion.div layoutId="authTabPill" className="set-seg-pill" />
+                <motion.div
+                  layoutId="authTabPill"
+                  className="position-absolute inset-0 rounded-3"
+                  style={{
+                    inset: 0,
+                    background: 'var(--brand-gradient)',
+                    boxShadow: '0 4px 12px rgba(109, 40, 217, 0.28)',
+                    zIndex: -1,
+                  }}
+                  transition={{ type: 'spring', stiffness: 340, damping: 28 }}
+                />
               )}
-              <LogIn size={15} />
+              <LogIn size={16} />
               <span>Đăng nhập</span>
             </button>
+
             <button
               type="button"
-              className={`set-seg-btn ${mode === 'register' ? 'active' : ''}`}
               onClick={() => setMode('register')}
+              className="btn border-0 py-2 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2 position-relative"
+              style={{
+                zIndex: 1,
+                fontSize: '0.9rem',
+                color: mode === 'register' ? '#ffffff' : 'var(--text-secondary)',
+                transition: 'color 0.2s ease',
+              }}
             >
               {mode === 'register' && (
-                <motion.div layoutId="authTabPill" className="set-seg-pill" />
+                <motion.div
+                  layoutId="authTabPill"
+                  className="position-absolute inset-0 rounded-3"
+                  style={{
+                    inset: 0,
+                    background: 'var(--brand-gradient)',
+                    boxShadow: '0 4px 12px rgba(109, 40, 217, 0.28)',
+                    zIndex: -1,
+                  }}
+                  transition={{ type: 'spring', stiffness: 340, damping: 28 }}
+                />
               )}
-              <UserPlus size={15} />
+              <UserPlus size={16} />
               <span>Đăng ký</span>
             </button>
           </div>
@@ -127,14 +162,14 @@ function AuthPage({ onAuthSuccess }) {
               <label className="form-label small fw-bold text-muted mb-1">
                 TÊN ĐĂNG NHẬP
               </label>
-              <div className="input-group">
+              <div className="input-group rounded-3 overflow-hidden border">
                 <span className="input-group-text bg-light border-0 text-muted">
                   <User size={16} />
                 </span>
                 <input
                   type="text"
-                  className="form-control bg-light border-0 fw-semibold py-2"
-                  placeholder="Nhập username (VD: namnguyen)..."
+                  className="form-control bg-light border-0 fw-semibold py-2 shadow-none"
+                  placeholder="Nhập tên đăng nhập..."
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   autoComplete="username"
@@ -151,14 +186,14 @@ function AuthPage({ onAuthSuccess }) {
                 <label className="form-label small fw-bold text-muted mb-1">
                   TÊN HIỂN THỊ
                 </label>
-                <div className="input-group">
+                <div className="input-group rounded-3 overflow-hidden border">
                   <span className="input-group-text bg-light border-0 text-muted">
                     <Smile size={16} />
                   </span>
                   <input
                     type="text"
-                    className="form-control bg-light border-0 fw-semibold py-2"
-                    placeholder="Tên gọi của bạn (VD: Nam Nguyễn)..."
+                    className="form-control bg-light border-0 fw-semibold py-2 shadow-none"
+                    placeholder="Nhập tên hiển thị..."
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                   />
@@ -170,13 +205,13 @@ function AuthPage({ onAuthSuccess }) {
               <label className="form-label small fw-bold text-muted mb-1">
                 MẬT KHẨU
               </label>
-              <div className="input-group">
+              <div className="input-group rounded-3 overflow-hidden border">
                 <span className="input-group-text bg-light border-0 text-muted">
                   <Lock size={16} />
                 </span>
                 <input
                   type="password"
-                  className="form-control bg-light border-0 fw-semibold py-2"
+                  className="form-control bg-light border-0 fw-semibold py-2 shadow-none"
                   placeholder="Nhập mật khẩu..."
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -187,17 +222,17 @@ function AuthPage({ onAuthSuccess }) {
             </div>
 
             {mode === 'register' && (
-              <div className="mb-4">
+              <div className="mb-3">
                 <label className="form-label small fw-bold text-muted mb-1">
                   XÁC NHẬN MẬT KHẨU
                 </label>
-                <div className="input-group">
+                <div className="input-group rounded-3 overflow-hidden border">
                   <span className="input-group-text bg-light border-0 text-muted">
                     <Lock size={16} />
                   </span>
                   <input
                     type="password"
-                    className="form-control bg-light border-0 fw-semibold py-2"
+                    className="form-control bg-light border-0 fw-semibold py-2 shadow-none"
                     placeholder="Nhập lại mật khẩu..."
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -208,24 +243,33 @@ function AuthPage({ onAuthSuccess }) {
               </div>
             )}
 
-            <button
+            <motion.button
+              whileTap={{ scale: 0.98 }}
               type="submit"
-              className="btn btn-primary btn-touch w-100 mt-2"
+              className="btn w-100 mt-2 py-2 fw-bold text-white rounded-3 d-flex align-items-center justify-content-center gap-2 border-0"
+              style={{
+                minHeight: '48px',
+                fontSize: '1rem',
+                background: 'var(--brand-gradient)',
+                boxShadow: '0 6px 18px -4px rgba(109, 40, 217, 0.45)',
+              }}
               disabled={submitting}
             >
-              {submitting
-                ? '⏳ Đang đồng bộ dữ liệu...'
-                : mode === 'login'
-                ? '🚀 Đăng nhập vào kho học tập'
-                : '✨ Tạo tài khoản & Bắt đầu học'}
-            </button>
+              {submitting ? (
+                <span>Đang xử lý...</span>
+              ) : mode === 'login' ? (
+                <>
+                  <LogIn size={18} />
+                  <span>Đăng nhập</span>
+                </>
+              ) : (
+                <>
+                  <UserPlus size={18} />
+                  <span>Đăng ký</span>
+                </>
+              )}
+            </motion.button>
           </form>
-
-          <div className="text-center mt-3">
-            <span className="text-muted small">
-              ☁️ Dữ liệu học tập được đồng bộ riêng biệt theo từng tài khoản
-            </span>
-          </div>
         </div>
       </motion.div>
     </div>

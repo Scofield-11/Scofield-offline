@@ -56,38 +56,50 @@ function Flashcard({
 
   if (!vocab) return null;
 
-  const detectLanguage = (text, field) => {
-    if (field === 'kanji' || field === 'hiragana') {
-      return vocab.language === 'zh' ? 'zh-CN' : 'ja-JP';
-    }
-    if (field === 'word') {
-      return vocab.language === 'en' ? 'en-US' : vocab.language === 'zh' ? 'zh-CN' : 'ja-JP';
-    }
-    if (field === 'hanviet' || field === 'meaning' || field === 'summary') return 'vi-VN';
-    if (!text) return 'en-US';
-    if (vocab.language === 'zh') return 'zh-CN';
-    const hasJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(text);
-    return hasJapanese ? 'ja-JP' : 'en-US';
-  };
+  const vocabLangCode =
+    vocab.language === 'en' ? 'en-US' : vocab.language === 'zh' ? 'zh-CN' : 'ja-JP';
 
   const frontField = contentType === 'kanji' ? kanjiFront : (kanjiFront || (isReversed ? 'meaning' : 'word'));
   const backField = contentType === 'kanji' ? kanjiBack : (kanjiBack || (isReversed ? 'word' : 'meaning'));
 
-  const getFallbackText = (field) => {
-    if (field === 'summary') return vocab.meaning;
-    if (field === 'kanji' || field === 'word') return vocab.kanji || vocab.word || '';
-    let text = vocab[field] || '';
-    if (!text && (field === 'hanviet' || field === 'hiragana')) {
-      text = vocab.word || vocab.kanji || '';
+  const getAudioPayload = (field, isFrontSide) => {
+    const mainWord = vocab.kanji || vocab.word || '';
+
+    // Ở mặt tổng hợp (summary): ưu tiên phát âm từ vựng gốc ngoại ngữ nếu mặt trước đang là Nghĩa/Hán Việt
+    if (field === 'summary') {
+      if (frontField === 'word' || frontField === 'kanji') {
+        return { text: vocab.meaning || mainWord, lang: vocab.meaning ? 'vi-VN' : vocabLangCode };
+      }
+      return { text: mainWord, lang: vocabLangCode };
     }
-    return text;
+
+    if (field === 'kanji' || field === 'word') {
+      return { text: mainWord, lang: vocabLangCode };
+    }
+
+    if (field === 'hiragana') {
+      // Nếu là Tiếng Trung, Pinyin viết bằng chữ Latin nên cần truyền chữ Hán gốc vào bộ đọc zh-CN
+      if (vocab.language === 'zh') {
+        return { text: mainWord || vocab.hiragana || '', lang: 'zh-CN' };
+      }
+      return { text: vocab.hiragana || mainWord, lang: 'ja-JP' };
+    }
+
+    if (field === 'hanviet' || field === 'meaning') {
+      const val = vocab[field] || '';
+      if (!val) {
+        return isFrontSide
+          ? { text: mainWord, lang: vocabLangCode }
+          : { text: vocab.meaning || mainWord, lang: 'vi-VN' };
+      }
+      return { text: val, lang: 'vi-VN' };
+    }
+
+    return { text: mainWord, lang: vocabLangCode };
   };
 
-  const frontText = getFallbackText(frontField);
-  const backText = getFallbackText(backField);
-
-  const frontLang = detectLanguage(frontText, frontField);
-  const backLang = detectLanguage(backText, backField);
+  const { text: frontText, lang: frontLang } = getAudioPayload(frontField, true);
+  const { text: backText, lang: backLang } = getAudioPayload(backField, false);
 
   const renderField = (field, isFront) => {
     if (field === 'summary') {

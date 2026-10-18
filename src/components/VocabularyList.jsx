@@ -1,4 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 import {
   ChevronDown,
@@ -90,7 +91,9 @@ function VocabularyList() {
   const speakVocab = (e, vocab, setLang) => {
     e.stopPropagation();
     if (!vocab?.word) return;
-    speakText(vocab.word, vocab.language || setLang || 'ja');
+    const rawLang = setLang || vocab.language || 'ja';
+    const langCode = rawLang === 'zh' ? 'zh-CN' : rawLang === 'en' ? 'en-US' : 'ja-JP';
+    speakText(vocab.word, langCode);
   };
 
   const calculateProgress = (set, vocabCount) => {
@@ -477,81 +480,98 @@ function VocabularyList() {
       />
 
       {/* INLINE MODAL THAY THẾ PROMPT / CONFIRM */}
-      <AnimatePresence>
-        {dialogState && (
-          <motion.div
-            className="set-sheet-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.16 }}
-            onClick={() => setDialogState(null)}
-          >
+      {ReactDOM.createPortal(
+        <AnimatePresence>
+          {dialogState && (
             <motion.div
-              className="card border-0 shadow-lg rounded-4 p-4"
-              style={{ width: '92%', maxWidth: '380px' }}
-              initial={{ opacity: 0, scale: 0.92, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.92, y: 10 }}
-              transition={MODAL_SPRING}
-              onClick={(e) => e.stopPropagation()}
+              className="set-sheet-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.16 }}
+              onClick={() => setDialogState(null)}
             >
-              {dialogState.type === 'createFolder' ? (
-                <form onSubmit={confirmCreateFolder}>
-                  <h6 className="fw-bold text-dark mb-3">📁 Tạo thư mục con mới</h6>
-                  <input
-                    type="text"
-                    className="form-control mb-3 fw-semibold"
-                    placeholder="Nhập tên thư mục..."
-                    value={folderInputName}
-                    onChange={(e) => setFolderInputName(e.target.value)}
-                    autoFocus
-                    required
-                  />
-                  <div className="d-flex gap-2 justify-content-end">
-                    <button type="button" className="btn btn-mobile-chip chip-slate" onClick={() => setDialogState(null)}>
-                      Hủy
-                    </button>
-                    <button type="submit" className="btn btn-mobile-chip btn-primary text-white">
-                      Tạo ngay
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div>
-                  <h6 className="fw-bold text-danger mb-2">Xác nhận xóa</h6>
-                  <p className="text-secondary small mb-3">
-                    {dialogState.type === 'deleteFolder' &&
-                      `Xóa thư mục "${dialogState.folderName}" sẽ xóa toàn bộ học phần bên trong?`}
-                    {dialogState.type === 'deleteSet' &&
-                      `Bạn có chắc muốn xóa học phần "${dialogState.setTitle}"?`}
-                    {dialogState.type === 'deleteVocab' &&
-                      `Xóa từ vựng "${dialogState.word || ''}" khỏi học phần này?`}
-                  </p>
-                  <div className="d-flex gap-2 justify-content-end">
-                    <button type="button" className="btn btn-mobile-chip chip-slate" onClick={() => setDialogState(null)}>
-                      Hủy
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-mobile-chip chip-danger"
-                      onClick={
-                        dialogState.type === 'deleteFolder'
-                          ? confirmDeleteFolder
-                          : dialogState.type === 'deleteSet'
-                          ? confirmDeleteSet
-                          : confirmDeleteVocab
-                      }
-                    >
-                      <Trash2 size={14} /> Xóa
-                    </button>
-                  </div>
+              <motion.div
+                className="set-sheet-panel"
+                style={{ maxWidth: '400px', height: 'auto', maxHeight: '85vh' }}
+                initial={window.innerWidth < 768 ? { y: '100%' } : { opacity: 0, scale: 0.92, y: 10 }}
+                animate={window.innerWidth < 768 ? { y: 0 } : { opacity: 1, scale: 1, y: 0 }}
+                exit={window.innerWidth < 768 ? { y: '100%' } : { opacity: 0, scale: 0.92, y: 10 }}
+                transition={MODAL_SPRING}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="set-sheet-grabber d-md-none" />
+                <div className="set-sheet-header">
+                  <h6 className={`fw-bold mb-0 ${dialogState.type === 'createFolder' ? 'text-dark' : 'text-danger'}`}>
+                    {dialogState.type === 'createFolder' ? '📁 Tạo thư mục con mới' : '⚠️ Xác nhận xóa'}
+                  </h6>
+                  <button
+                    type="button"
+                    className="btn-icon-soft chip-slate"
+                    onClick={() => setDialogState(null)}
+                  >
+                    <X size={16} />
+                  </button>
                 </div>
-              )}
+
+                <div className="p-3 pt-2">
+                  {dialogState.type === 'createFolder' ? (
+                    <form onSubmit={confirmCreateFolder}>
+                      <input
+                        type="text"
+                        className="form-control bg-light border-0 mb-3 fw-semibold py-2"
+                        placeholder="Nhập tên thư mục..."
+                        value={folderInputName}
+                        onChange={(e) => setFolderInputName(e.target.value)}
+                        autoFocus
+                        required
+                      />
+                      <div className="d-flex gap-2">
+                        <button type="button" className="btn btn-light btn-touch w-50 fw-bold" onClick={() => setDialogState(null)}>
+                          Hủy
+                        </button>
+                        <button type="submit" className="btn btn-primary btn-touch w-50 fw-bold text-white">
+                          Tạo ngay
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div>
+                      <p className="text-secondary small mb-3">
+                        {dialogState.type === 'deleteFolder' &&
+                          `Xóa thư mục "${dialogState.folderName}" sẽ xóa toàn bộ học phần bên trong?`}
+                        {dialogState.type === 'deleteSet' &&
+                          `Bạn có chắc muốn xóa học phần "${dialogState.setTitle}"?`}
+                        {dialogState.type === 'deleteVocab' &&
+                          `Xóa từ vựng "${dialogState.word || ''}" khỏi học phần này?`}
+                      </p>
+                      <div className="d-flex gap-2">
+                        <button type="button" className="btn btn-light btn-touch w-50 fw-bold" onClick={() => setDialogState(null)}>
+                          Hủy
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-touch w-50 fw-bold text-white d-flex align-items-center justify-content-center gap-1"
+                          onClick={
+                            dialogState.type === 'deleteFolder'
+                              ? confirmDeleteFolder
+                              : dialogState.type === 'deleteSet'
+                              ? confirmDeleteSet
+                              : confirmDeleteVocab
+                          }
+                        >
+                          <Trash2 size={15} /> Xóa
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       <div id="add-vocab-section">
         <AddVocabularyForm

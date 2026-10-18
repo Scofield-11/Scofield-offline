@@ -493,6 +493,9 @@ function MatchMode() {
                 justifyContent: 'center',
                 border: '2px solid var(--surface-border)',
                 pointerEvents: isMatched ? 'none' : 'auto',
+                position: 'relative',
+                overflow: 'hidden',
+                transition: 'border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease',
               };
 
               if (window.innerWidth > 768) {
@@ -500,14 +503,24 @@ function MatchMode() {
               }
 
               if (isSelected) {
-                cardClasses = 'bg-primary text-white';
-                cardStyles.border = '3px solid var(--brand-primary)';
+                cardClasses = 'match-card-selected text-white';
+                cardStyles.background = 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)';
+                cardStyles.color = '#ffffff';
+                cardStyles.border = '3px solid #fde047';
+                cardStyles.boxShadow =
+                  '0 0 0 4px rgba(139, 92, 246, 0.38), 0 10px 24px -4px rgba(109, 40, 217, 0.55)';
               } else if (isError) {
-                cardClasses = 'bg-danger text-white';
-                cardStyles.border = '3px solid #ef4444';
+                cardClasses = 'match-card-error text-white';
+                cardStyles.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                cardStyles.color = '#ffffff';
+                cardStyles.border = '3px solid #fecaca';
+                cardStyles.boxShadow = '0 0 0 4px rgba(239, 68, 68, 0.35)';
               } else if (isSuccess) {
-                cardClasses = 'match-card-matched';
-                cardStyles.border = '3px solid #10b981';
+                cardClasses = 'match-card-matched text-white';
+                cardStyles.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                cardStyles.color = '#ffffff';
+                cardStyles.border = '3px solid #a7f3d0';
+                cardStyles.boxShadow = '0 0 0 4px rgba(16, 185, 129, 0.35)';
               }
 
               return (
@@ -521,10 +534,12 @@ function MatchMode() {
                         ? { opacity: 1, scale: 1.06, y: 0, filter: 'blur(0px)' }
                         : isError
                         ? { opacity: 1, scale: [1, 1.05, 0.95, 1], y: 0 }
+                        : isSelected
+                        ? { opacity: 1, scale: 1.04, y: -4, filter: 'blur(0px)' }
                         : { opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }
                     }
                     transition={
-                      isMatched || isSuccess || isError
+                      isMatched || isSuccess || isError || isSelected
                         ? { type: 'spring', stiffness: 380, damping: 26, mass: 0.7 }
                         : { delay: index * 0.025, type: 'spring', stiffness: 400, damping: 25 }
                     }
@@ -534,7 +549,27 @@ function MatchMode() {
                     style={cardStyles}
                     onClick={() => handleCardClick(card)}
                   >
-                    <div className="card-body d-flex align-items-center justify-content-center p-3 text-wrap text-center w-100" style={{ fontSize: '1.15rem', fontWeight: 700 }}>
+                    {isSelected && (
+                      <span
+                        className="position-absolute top-0 end-0 m-2 px-2 py-0 rounded-pill fw-bold"
+                        style={{
+                          fontSize: '0.65rem',
+                          backgroundColor: '#fde047',
+                          color: '#1e1b4b',
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                        }}
+                      >
+                        ✓ Đang chọn
+                      </span>
+                    )}
+                    <div
+                      className="card-body d-flex align-items-center justify-content-center p-3 text-wrap text-center w-100"
+                      style={{
+                        fontSize: '1.15rem',
+                        fontWeight: 700,
+                        color: isSelected || isError || isSuccess ? '#ffffff' : 'var(--text-primary)',
+                      }}
+                    >
                       {card.text}
                     </div>
                   </motion.div>

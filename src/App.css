@@ -1731,3 +1731,172 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
     box-shadow: none !important;
   }
 }
+
+/* ==========================================================================
+   FIX DARK MODE CHO GAME MODE (MATCH, TEST, LEARN) & TỪ ĐIỂN KANJI 2 CỘT
+   ========================================================================== */
+
+/* 1. Giao diện Từ điển Kanji 2 cột (Chữ Hán to bên trái + Từ đi kèm bên phải) */
+.kanji-dict-entry-card {
+  border: 1.5px solid var(--surface-border) !important;
+  background-color: var(--bg-surface) !important;
+}
+
+.kanji-dict-left-pane {
+  background: rgba(109, 40, 217, 0.04);
+  border-bottom: 1.5px solid var(--surface-border);
+}
+
+@media (min-width: 768px) {
+  .kanji-dict-left-pane {
+    border-bottom: none;
+    border-right: 1.5px solid var(--surface-border);
+  }
+}
+
+[data-theme="dark"] .kanji-dict-left-pane {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.kanji-dict-big-char {
+  width: 108px;
+  height: 108px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.6rem;
+  font-weight: 800;
+  font-family: var(--font-jp-serif, serif);
+  color: var(--brand-primary);
+  background-color: var(--bg-surface);
+  border: 2px solid var(--surface-border);
+  box-shadow: 0 6px 18px -4px rgba(109, 40, 217, 0.15);
+  line-height: 1;
+}
+
+[data-theme="dark"] .kanji-dict-big-char {
+  color: #c4b5fd;
+  background-color: rgba(15, 23, 42, 0.75);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.kanji-readings-box {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--surface-border);
+}
+
+.kanji-reading-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  min-width: 58px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.kanji-reading-badge.on-badge {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+[data-theme="dark"] .kanji-reading-badge.on-badge {
+  background-color: rgba(239, 68, 68, 0.22);
+  color: #fca5a5;
+}
+
+.kanji-reading-badge.kun-badge {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+[data-theme="dark"] .kanji-reading-badge.kun-badge {
+  background-color: rgba(16, 185, 129, 0.22);
+  color: #6ee7b7;
+}
+
+.kanji-compound-row {
+  background-color: var(--bg-elevated, rgba(148, 163, 184, 0.08));
+  border: 1px solid var(--surface-border);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.kanji-compound-row:hover {
+  border-color: var(--brand-primary);
+}
+
+/* 2. Fix Dark Mode cho MatchMode (Ghép thẻ phản xạ) - Hiển thị rõ thẻ đang nhấn */
+[data-theme="dark"] .card.match-card-selected {
+  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%) !important;
+  color: #ffffff !important;
+  border: 3px solid #fde047 !important;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.45), 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme="dark"] .card.match-card-error {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: #ffffff !important;
+  border: 3px solid #fecaca !important;
+}
+
+[data-theme="dark"] .card.match-card-matched {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border: 3px solid #a7f3d0 !important;
+}
+
+/* 3. Fix Dark Mode cho TestMode (Đáp án đang chọn & Thanh số thứ tự câu hỏi) */
+[data-theme="dark"] .test-option-btn {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border: 1.5px solid var(--surface-border) !important;
+}
+
+[data-theme="dark"] .test-option-btn.selected,
+.test-option-btn.selected {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.22), rgba(79, 70, 229, 0.28)) !important;
+  border: 2.5px solid #8b5cf6 !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25) !important;
+}
+
+[data-theme="dark"] .test-option-btn.selected .test-option-badge,
+.test-option-btn.selected .test-option-badge {
+  background-color: #7c3aed !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .mobile-question-strip .btn.btn-primary {
+  background: var(--brand-gradient) !important;
+  color: #ffffff !important;
+  border-color: #8b5cf6 !important;
+}
+
+/* 4. Fix Dark Mode cho LearnMode (Nút đáp án khi nhấn chọn đúng & hover/active) */
+[data-theme="dark"] .learn-option-btn {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border: 1.5px solid var(--surface-border) !important;
+}
+
+[data-theme="dark"] .learn-option-btn:active {
+  background-color: rgba(139, 92, 246, 0.25) !important;
+  border-color: #8b5cf6 !important;
+}
+
+[data-theme="dark"] .learn-option-btn.correct-reward,
+.learn-option-btn.correct-reward {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border-color: #34d399 !important;
+}
+
+/* 5. Fix các nút chọn bộ / độ khó dùng .btn-primary trong Dark Mode không bị chìm */
+[data-theme="dark"] .btn-mobile-chip.btn-primary {
+  background: var(--brand-gradient) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35) !important;
+}
