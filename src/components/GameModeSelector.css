@@ -158,12 +158,13 @@
 
 .gms-card-title {
   font-weight: 700;
-  font-size: 0.8125rem;
+  font-size: 0.825rem;
   color: var(--text-primary);
-  line-height: 1.3;
-  white-space: nowrap;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .gms-card--active .gms-card-title {

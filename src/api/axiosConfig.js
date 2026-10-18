@@ -379,7 +379,7 @@ const createSetWithVocabulariesLocal = (
   let nextVocabId = getNextId(vocabs);
   const newVocabs = [];
 
-  // Hỗ trợ phân tích cú pháp từ đi kèm viết trên 1 dòng: "食べる:たべる:Ăn; 食事:しょくじ:Bữa ăn"
+  // Hỗ trợ phân tích cú pháp từ đi kèm trên 1 dòng (4 trường: Từ:Hán Việt:Phiên âm:Nghĩa hoặc 3 trường: Từ:Phiên âm:Nghĩa)
   const parseInlineExamples = (rawStr) => {
     if (!rawStr || !rawStr.trim()) return [];
     return rawStr
@@ -388,10 +388,30 @@ const createSetWithVocabulariesLocal = (
       .filter(Boolean)
       .map((item) => {
         const segs = item.split(':').map((s) => s.trim());
+        if (segs.length >= 4) {
+          return {
+            word: segs[0] || '',
+            hanviet: segs[1] || '',
+            reading: segs[2] || '',
+            hiragana: segs[2] || '',
+            meaning: segs.slice(3).join(': ') || '',
+          };
+        }
+        if (segs.length === 3) {
+          return {
+            word: segs[0] || '',
+            hanviet: '',
+            reading: segs[1] || '',
+            hiragana: segs[1] || '',
+            meaning: segs[2] || '',
+          };
+        }
         return {
           word: segs[0] || '',
-          reading: segs[1] || '',
-          meaning: segs.slice(2).join(': ') || '',
+          hanviet: '',
+          reading: '',
+          hiragana: '',
+          meaning: segs[1] || '',
         };
       })
       .filter((ex) => ex.word);
@@ -404,18 +424,40 @@ const createSetWithVocabulariesLocal = (
       const lineClean = line.trim();
       if (!lineClean || lineClean.startsWith('---') || lineClean.startsWith('**')) return;
 
-      // Dòng bắt đầu bằng '-' hoặc '+' là từ ghép Kanji đi kèm cho chữ Hán phía trên
+      // Dòng bắt đầu bằng '-' hoặc '+' là từ ghép Kanji đi kèm (Từ vựng | Hán Việt | Phiên âm | Ý nghĩa)
       if ((lineClean.startsWith('-') || lineClean.startsWith('+')) && currentKanjiObj) {
         const subLine = lineClean.replace(/^[-+]+\s*/, '');
         const subParts = subLine.split('|').map((p) => p.trim());
         if (subParts[0]) {
-          currentKanjiObj.examples.push({
-            word: subParts[0] || '',
-            reading: subParts[1] || '',
-            meaning: subParts[2] || subParts[1] || '',
-          });
-          if (!currentKanjiObj.meaning && (subParts[2] || subParts[1])) {
-            currentKanjiObj.meaning = subParts[2] || subParts[1];
+          let exItem;
+          if (subParts.length >= 4) {
+            exItem = {
+              word: subParts[0] || '',
+              hanviet: subParts[1] || '',
+              reading: subParts[2] || '',
+              hiragana: subParts[2] || '',
+              meaning: subParts.slice(3).join(' | ') || '',
+            };
+          } else if (subParts.length === 3) {
+            exItem = {
+              word: subParts[0] || '',
+              hanviet: '',
+              reading: subParts[1] || '',
+              hiragana: subParts[1] || '',
+              meaning: subParts[2] || '',
+            };
+          } else {
+            exItem = {
+              word: subParts[0] || '',
+              hanviet: '',
+              reading: '',
+              hiragana: '',
+              meaning: subParts[1] || '',
+            };
+          }
+          currentKanjiObj.examples.push(exItem);
+          if (!currentKanjiObj.meaning && exItem.meaning) {
+            currentKanjiObj.meaning = exItem.meaning;
           }
         }
         return;
@@ -1022,10 +1064,22 @@ const handleRequest = async (method, url, payload = null) => {
     const sets = readTable(STORAGE_KEYS.SETS);
     const vocabs = readTable(STORAGE_KEYS.VOCABS);
 
+    const setTypeMap = {};
+    sets.forEach((s) => {
+      setTypeMap[s.id] = s.type || 'vocab';
+    });
+
     const countMap = {};
     vocabs.forEach((v) => {
       if (v.set_id != null) {
-        countMap[v.set_id] = (countMap[v.set_id] || 0) + 1;
+        if (setTypeMap[v.set_id] === 'kanji') {
+          const exCount = Array.isArray(v.examples)
+            ? v.examples.filter((ex) => ex && String(ex.word || '').trim()).length
+            : 0;
+          countMap[v.set_id] = (countMap[v.set_id] || 0) + exCount;
+        } else {
+          countMap[v.set_id] = (countMap[v.set_id] || 0) + 1;
+        }
       }
     });
 
@@ -1051,6 +1105,43 @@ const handleRequest = async (method, url, payload = null) => {
 
     if (method === 'GET') {
       if (!targetSet) throw createApiError('Không tìm thấy học phần', 404);
+
+      if (targetSet.type === 'kanji') {
+        const kanjiRecords = vocabs.filter((v) => Number(v.set_id) === setId);
+        const exampleVocabs = [];
+        kanjiRecords.forEach((k) => {
+          if (Array.isArray(k.examples)) {
+            k.examples.forEach((ex, exIdx) => {
+              const w = String(ex?.word || '').trim();
+              if (!w) return;
+              const hv = String(ex.hanviet || '').trim();
+              const hira = String(ex.hiragana || ex.reading || '').trim();
+              const mn = String(ex.meaning || '').trim();
+              exampleVocabs.push({
+                id: `${k.id}_ex_${exIdx}`,
+                parent_kanji_id: k.id,
+                example_index: exIdx,
+                word: w,
+                kanji: w,
+                hanviet: hv,
+                hiragana: hira,
+                meaning: mn || hv || w,
+                language: 'ja',
+                set_id: setId,
+                is_starred: Boolean(ex.is_starred ?? k.is_starred),
+              });
+            });
+          }
+        });
+        return {
+          data: {
+            ...targetSet,
+            vocab_count: exampleVocabs.length,
+            vocabularies: exampleVocabs,
+          },
+        };
+      }
+
       const setVocabs = vocabs
         .filter((v) => Number(v.set_id) === setId)
         .map((v) => ({ ...v, kanji: v.kanji || v.word }));
@@ -1206,6 +1297,51 @@ const handleRequest = async (method, url, payload = null) => {
     return { data: newVocab };
   }
 
+  const vocabExStarMatch = pathname.match(/^\/vocabularies\/(\d+)_ex_(\d+)\/star$/);
+  if (method === 'PUT' && vocabExStarMatch) {
+    const kanjiId = parseInt(vocabExStarMatch[1], 10);
+    const exIdx = parseInt(vocabExStarMatch[2], 10);
+    const vocabs = readTable(STORAGE_KEYS.VOCABS);
+    const idx = vocabs.findIndex((v) => Number(v.id) === kanjiId);
+    if (idx === -1 || !Array.isArray(vocabs[idx].examples) || !vocabs[idx].examples[exIdx]) {
+      throw createApiError('Không tìm thấy từ đi kèm', 404);
+    }
+    vocabs[idx].examples[exIdx].is_starred = Boolean(payload?.is_starred);
+    writeTable(STORAGE_KEYS.VOCABS, vocabs);
+    return {
+      data: {
+        message: 'Đã cập nhật trạng thái sao',
+        is_starred: vocabs[idx].examples[exIdx].is_starred,
+      },
+    };
+  }
+
+  const vocabExEditMatch = pathname.match(/^\/(?:vocabularies|kanji)\/(\d+)_ex_(\d+)$/);
+  if (method === 'PUT' && vocabExEditMatch) {
+    const kanjiId = parseInt(vocabExEditMatch[1], 10);
+    const exIdx = parseInt(vocabExEditMatch[2], 10);
+    const vocabs = readTable(STORAGE_KEYS.VOCABS);
+    const idx = vocabs.findIndex((v) => Number(v.id) === kanjiId);
+    if (idx === -1 || !Array.isArray(vocabs[idx].examples) || !vocabs[idx].examples[exIdx]) {
+      throw createApiError('Không tìm thấy từ đi kèm', 404);
+    }
+    const wordVal = String(payload?.word ?? payload?.kanji ?? vocabs[idx].examples[exIdx].word ?? '').trim();
+    const hanvietVal = String(payload?.hanviet ?? vocabs[idx].examples[exIdx].hanviet ?? '').trim();
+    const hiraVal = String(payload?.hiragana ?? payload?.reading ?? vocabs[idx].examples[exIdx].hiragana ?? vocabs[idx].examples[exIdx].reading ?? '').trim();
+    const meaningVal = String(payload?.meaning ?? vocabs[idx].examples[exIdx].meaning ?? '').trim();
+
+    vocabs[idx].examples[exIdx] = {
+      ...vocabs[idx].examples[exIdx],
+      word: wordVal,
+      hanviet: hanvietVal,
+      reading: hiraVal,
+      hiragana: hiraVal,
+      meaning: meaningVal,
+    };
+    writeTable(STORAGE_KEYS.VOCABS, vocabs);
+    return { data: vocabs[idx].examples[exIdx] };
+  }
+
   const vocabStarMatch = pathname.match(/^\/vocabularies\/(\d+)\/star$/);
   if (method === 'PUT' && vocabStarMatch) {
     const vocabId = parseInt(vocabStarMatch[1], 10);
@@ -1298,7 +1434,16 @@ const handleRequest = async (method, url, payload = null) => {
       word: k.word,
       onyomi,
       kunyomi,
-      examples: Array.isArray(k.examples) ? k.examples : [],
+      examples: Array.isArray(k.examples)
+        ? k.examples.map((ex) => ({
+            word: String(ex.word || '').trim(),
+            hanviet: String(ex.hanviet || '').trim(),
+            reading: String(ex.reading || ex.hiragana || '').trim(),
+            hiragana: String(ex.hiragana || ex.reading || '').trim(),
+            meaning: String(ex.meaning || '').trim(),
+            is_starred: Boolean(ex.is_starred),
+          }))
+        : [],
       hanviet: k.hanviet || '',
       hiragana: k.hiragana || [onyomi, kunyomi].filter(Boolean).join(' / ') || '',
       meaning: k.meaning || '',
@@ -1339,7 +1484,9 @@ const handleRequest = async (method, url, payload = null) => {
       ? examples
           .map((ex) => ({
             word: String(ex.word || '').trim(),
+            hanviet: String(ex.hanviet || '').trim(),
             reading: String(ex.reading || ex.hiragana || '').trim(),
+            hiragana: String(ex.hiragana || ex.reading || '').trim(),
             meaning: String(ex.meaning || '').trim(),
           }))
           .filter((ex) => ex.word)
@@ -1465,7 +1612,9 @@ const handleRequest = async (method, url, payload = null) => {
         ? payload.examples
             .map((ex) => ({
               word: String(ex.word || '').trim(),
+              hanviet: String(ex.hanviet || '').trim(),
               reading: String(ex.reading || ex.hiragana || '').trim(),
+              hiragana: String(ex.hiragana || ex.reading || '').trim(),
               meaning: String(ex.meaning || '').trim(),
             }))
             .filter((ex) => ex.word)

@@ -23,10 +23,11 @@ function EditKanjiModal({ kanjiItem, onClose, onUpdateSuccess }) {
     Array.isArray(kanjiItem.examples) && kanjiItem.examples.length > 0
       ? kanjiItem.examples.map((ex) => ({
           word: ex.word || "",
+          hanviet: ex.hanviet || "",
           reading: ex.reading || ex.hiragana || "",
           meaning: ex.meaning || "",
         }))
-      : [{ word: "", reading: "", meaning: "" }]
+      : [{ word: "", hanviet: "", reading: "", meaning: "" }]
   );
 
   const [error, setError] = useState("");
@@ -39,7 +40,7 @@ function EditKanjiModal({ kanjiItem, onClose, onUpdateSuccess }) {
   };
 
   const handleAddExampleRow = () => {
-    setExamples((prev) => [...prev, { word: "", reading: "", meaning: "" }]);
+    setExamples((prev) => [...prev, { word: "", hanviet: "", reading: "", meaning: "" }]);
   };
 
   const handleRemoveExampleRow = (idx) => {
@@ -56,7 +57,9 @@ function EditKanjiModal({ kanjiItem, onClose, onUpdateSuccess }) {
     const cleanExamples = examples
       .map((ex) => ({
         word: ex.word.trim(),
+        hanviet: (ex.hanviet || "").trim(),
         reading: ex.reading.trim(),
+        hiragana: ex.reading.trim(),
         meaning: ex.meaning.trim(),
       }))
       .filter((ex) => ex.word);
@@ -159,7 +162,7 @@ function EditKanjiModal({ kanjiItem, onClose, onUpdateSuccess }) {
           <div className="mb-3">
             <div className="d-flex justify-content-between align-items-center mb-2">
               <label className="form-label small fw-bold text-muted mb-0">
-                DANH SÁCH CHỮ KANJI ĐI KÈM (TỪ GHÉP + PHIÊN ÂM + Ý NGHĨA)
+                DANH SÁCH TỪ ĐI KÈM (TỪ VỰNG + HÁN VIỆT + PHIÊN ÂM + Ý NGHĨA)
               </label>
               <button
                 type="button"
@@ -172,40 +175,54 @@ function EditKanjiModal({ kanjiItem, onClose, onUpdateSuccess }) {
 
             <div className="d-flex flex-column gap-2">
               {examples.map((ex, idx) => (
-                <div key={idx} className="d-flex gap-2 align-items-center">
-                  <input
-                    type="text"
-                    className="form-control form-control-sm bg-light border-0 fw-bold text-dark"
-                    style={{ flex: "1.1" }}
-                    placeholder="Chữ Kanji (VD: 食べる)"
-                    value={ex.word}
-                    onChange={(e) => handleExampleChange(idx, "word", e.target.value)}
-                  />
-                  <input
-                    type="text"
-                    className="form-control form-control-sm bg-light border-0 text-dark"
-                    style={{ flex: "1.1" }}
-                    placeholder="Phiên âm (VD: たべる)"
-                    value={ex.reading}
-                    onChange={(e) => handleExampleChange(idx, "reading", e.target.value)}
-                  />
-                  <input
-                    type="text"
-                    className="form-control form-control-sm bg-light border-0 text-dark"
-                    style={{ flex: "1.4" }}
-                    placeholder="Ý nghĩa (VD: Ăn)"
-                    value={ex.meaning}
-                    onChange={(e) => handleExampleChange(idx, "meaning", e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="btn-icon-soft chip-danger flex-shrink-0"
-                    style={{ width: "32px", height: "32px" }}
-                    onClick={() => handleRemoveExampleRow(idx)}
-                    title="Xóa dòng này"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                <div key={idx} className="row g-2 align-items-center bg-light p-2 rounded-3 m-0">
+                  <div className="col-6 col-md-3 px-1">
+                    <input
+                      type="text"
+                      className="form-control form-control-sm bg-white border-0 fw-bold text-dark"
+                      placeholder="Từ vựng (食べる)"
+                      value={ex.word}
+                      onChange={(e) => handleExampleChange(idx, "word", e.target.value)}
+                    />
+                  </div>
+                  <div className="col-6 col-md-3 px-1">
+                    <input
+                      type="text"
+                      className="form-control form-control-sm bg-white border-0 fw-semibold text-primary"
+                      placeholder="Hán Việt (THỰC)"
+                      value={ex.hanviet || ""}
+                      onChange={(e) => handleExampleChange(idx, "hanviet", e.target.value)}
+                    />
+                  </div>
+                  <div className="col-5 col-md-3 px-1">
+                    <input
+                      type="text"
+                      className="form-control form-control-sm bg-white border-0 text-dark"
+                      placeholder="Phiên âm (たべる)"
+                      value={ex.reading}
+                      onChange={(e) => handleExampleChange(idx, "reading", e.target.value)}
+                    />
+                  </div>
+                  <div className="col-5 col-md-2 px-1">
+                    <input
+                      type="text"
+                      className="form-control form-control-sm bg-white border-0 text-dark"
+                      placeholder="Ý nghĩa (Ăn)"
+                      value={ex.meaning}
+                      onChange={(e) => handleExampleChange(idx, "meaning", e.target.value)}
+                    />
+                  </div>
+                  <div className="col-2 col-md-1 px-1 text-end">
+                    <button
+                      type="button"
+                      className="btn-icon-soft chip-danger flex-shrink-0"
+                      style={{ width: "32px", height: "32px" }}
+                      onClick={() => handleRemoveExampleRow(idx)}
+                      title="Xóa dòng này"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

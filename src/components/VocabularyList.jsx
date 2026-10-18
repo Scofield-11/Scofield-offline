@@ -111,8 +111,10 @@ function VocabularyList() {
     return Math.round((maxScore / vocabCount) * 100);
   };
 
+  const vocabSetsOnly = sets.filter((s) => s.type !== 'kanji');
+
   const allExistingFolders = Array.from(
-    new Set([...sets.map((s) => s.folder_path).filter((p) => p), ...customFolders])
+    new Set([...vocabSetsOnly.map((s) => s.folder_path).filter((p) => p), ...customFolders])
   ).sort();
 
   const currentLevelSets = [];
@@ -127,7 +129,7 @@ function VocabularyList() {
     }
   };
 
-  sets.forEach((set) => {
+  vocabSetsOnly.forEach((set) => {
     const path = (set.folder_path || '').trim();
     if (path === currentPath) currentLevelSets.push(set);
     checkPathForFolders(path);
@@ -691,7 +693,7 @@ function VocabularyList() {
         </div>
       )}
 
-      {sets.length === 0 ? (
+      {vocabSetsOnly.length === 0 ? (
         <EmptyState
           title="Thư viện trống"
           message="Hãy bấm Nhập JSON hoặc Tạo học phần mới ở phía trên nhé!"

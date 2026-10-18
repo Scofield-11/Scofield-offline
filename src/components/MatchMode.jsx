@@ -303,20 +303,41 @@ function MatchMode() {
 
           <div className="mb-3">
             <label className="form-label fw-bold text-muted small mb-1">Chế độ chơi</label>
-            <div className="set-sheet-segmented mb-0" style={{ gridTemplateColumns: '1fr 1fr' }}>
+            <div className="gms-grid gms-grid-2">
               <button
                 type="button"
-                className={`set-seg-btn ${gameMode === 'normal' ? 'active' : ''}`}
+                className={`gms-card ${gameMode === 'normal' ? 'gms-card--active' : ''}`}
                 onClick={() => setGameMode('normal')}
               >
-                ⏱️ Tính giờ
+                <div
+                  className="gms-card-icon"
+                  style={gameMode === 'normal' ? undefined : { backgroundColor: '#dbeafe' }}
+                >
+                  <span className="gms-card-emoji">⏱️</span>
+                </div>
+                <div className="gms-card-content">
+                  <span className="gms-card-title">Tính giờ</span>
+                  <span className="gms-card-desc">Ghép hết các cặp nhanh nhất</span>
+                </div>
+                {gameMode === 'normal' && <div className="gms-card-check">✓</div>}
               </button>
+
               <button
                 type="button"
-                className={`set-seg-btn ${gameMode === 'challenge' ? 'active' : ''}`}
+                className={`gms-card ${gameMode === 'challenge' ? 'gms-card--active' : ''}`}
                 onClick={() => setGameMode('challenge')}
               >
-                🔥 Thử thách 60s
+                <div
+                  className="gms-card-icon"
+                  style={gameMode === 'challenge' ? undefined : { backgroundColor: '#fee2e2' }}
+                >
+                  <span className="gms-card-emoji">🔥</span>
+                </div>
+                <div className="gms-card-content">
+                  <span className="gms-card-title">Thử thách 60s</span>
+                  <span className="gms-card-desc">Đua điểm & nhân chuỗi Combo</span>
+                </div>
+                {gameMode === 'challenge' && <div className="gms-card-check">✓</div>}
               </button>
             </div>
           </div>
@@ -335,8 +356,8 @@ function MatchMode() {
               const isZh =
                 String(selectedSetId).includes('zh') ||
                 (targetSets.length > 0 && targetSets.every((s) => s.language === 'zh'));
-              const wordLabel = isZh ? 'Chữ Hán' : currentContentType === 'kanji' ? 'Hán tự' : 'Từ';
-              const readingLabel = isZh ? 'Pinyin' : 'Kana';
+              const wordLabel = isZh ? 'Chữ Hán' : 'Từ';
+              const readingLabel = isZh ? 'Pinyin' : 'Phiên âm';
 
               return (
                 <GameModeSelector
@@ -467,18 +488,51 @@ function MatchMode() {
   return (
     <div className={`container-fluid py-4 text-center transition-all ${isFullscreen ? 'bg-light mobile-fullscreen pt-4' : ''}`} ref={containerRef} style={isFullscreen ? { minHeight: '100vh', overflowY: 'auto' } : {}}>
       
-      {showExitModal && (
-        <div className="modal d-flex align-items-center justify-content-center fade-in" style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
-          <div className="card border-0 shadow-lg rounded-4 p-4 text-center" style={{ width: '90%', maxWidth: '400px' }}>
-            <h4 className="fw-bold text-danger mb-3">Cảnh báo</h4>
-            <p className="text-dark mb-4 fs-5">Bạn đang trong ván chơi. Nếu thoát bây giờ sẽ mất toàn bộ tiến trình và điểm số. Chắc chắn thoát?</p>
-            <div className="d-flex gap-3">
-              <button className="btn btn-danger fw-bold w-50 py-2 rounded-3" onClick={() => { setShowExitModal(false); setIsStarted(false); setIsFullscreen(false); }}>Thoát luôn</button>
-              <button className="btn btn-secondary fw-bold w-50 py-2 rounded-3" onClick={() => setShowExitModal(false)}>Tiếp tục chơi</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showExitModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+            className="set-sheet-backdrop"
+            style={{ zIndex: 9999 }}
+            onClick={() => setShowExitModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              className="card border-0 shadow-lg rounded-4 p-4 text-center bg-white"
+              style={{ width: '90%', maxWidth: '400px' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h4 className="fw-bold text-danger mb-3">⚠️ Cảnh báo</h4>
+              <p className="text-dark mb-4 fs-6">
+                Bạn đang trong ván chơi. Nếu thoát bây giờ sẽ mất toàn bộ tiến trình và điểm số. Chắc chắn thoát?
+              </p>
+              <div className="d-flex gap-3">
+                <button
+                  className="btn btn-danger btn-touch fw-bold w-50 py-2 rounded-3"
+                  onClick={() => {
+                    setShowExitModal(false);
+                    setIsStarted(false);
+                    setIsFullscreen(false);
+                  }}
+                >
+                  Thoát luôn
+                </button>
+                <button
+                  className="btn btn-light btn-touch fw-bold w-50 py-2 rounded-3"
+                  onClick={() => setShowExitModal(false)}
+                >
+                  Tiếp tục
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="mx-auto" style={{ maxWidth: '900px', width: '100%' }}>
         

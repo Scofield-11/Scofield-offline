@@ -8,9 +8,8 @@ const DEFAULT_JA_PRESETS = [
     icon: '🧠',
     iconBg: '#ede9fe',
     label: 'Từ ➔ Nghĩa',
-    getDesc: (f, b, type) => {
-      const w = type === 'kanji' ? 'Hán tự' : 'Từ';
-      return f === 'meaning' && (b === 'word' || b === 'kanji') ? `Nghĩa ➔ ${w}` : `${w} ➔ Nghĩa`;
+    getDesc: (f, b) => {
+      return f === 'meaning' && (b === 'word' || b === 'kanji') ? 'Nghĩa ➔ Từ' : 'Từ ➔ Nghĩa';
     },
     frontKey: (type) => (type === 'kanji' ? 'kanji' : 'word'),
     backKey: () => 'meaning',
@@ -24,9 +23,8 @@ const DEFAULT_JA_PRESETS = [
     icon: '🗣️',
     iconBg: '#fef3c7',
     label: 'Cách đọc',
-    getDesc: (f, b, type) => {
-      const w = type === 'kanji' ? 'Hán tự' : 'Từ';
-      return f === 'hiragana' && (b === 'word' || b === 'kanji') ? `Kana ➔ ${w}` : `${w} ➔ Kana`;
+    getDesc: (f, b) => {
+      return f === 'hiragana' && (b === 'word' || b === 'kanji') ? 'Phiên âm ➔ Từ' : 'Từ ➔ Phiên âm';
     },
     frontKey: (type) => (type === 'kanji' ? 'kanji' : 'word'),
     backKey: () => 'hiragana',
@@ -183,10 +181,10 @@ function GameModeSelector({
             summary: 'Chi tiết',
           }
         : {
-            kanji: 'Hán tự',
+            kanji: 'Từ vựng',
             word: 'Từ vựng',
             hanviet: 'Hán Việt',
-            hiragana: 'Kana',
+            hiragana: 'Phiên âm',
             meaning: 'Ý nghĩa',
             summary: 'Chi tiết',
           };

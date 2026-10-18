@@ -313,8 +313,8 @@ function FlashcardMode() {
                   icon: currentLanguage === 'zh' ? '🇨🇳' : '🧠',
                   iconBg: '#ede9fe',
                   label: currentLanguage === 'zh' ? 'Chữ Hán' : 'Từ vựng',
-                  getDesc: (f, b, type) =>
-                    `${currentLanguage === 'zh' ? 'Chữ Hán' : type === 'kanji' ? 'Hán tự' : 'Từ'} ➔ Chi tiết`,
+                  getDesc: () =>
+                    `${currentLanguage === 'zh' ? 'Chữ Hán' : 'Từ vựng'} ➔ Chi tiết`,
                   frontKey: (type) => (type === 'kanji' ? 'kanji' : 'word'),
                   backKey: () => 'summary',
                   isActive: (f, b, type) => {
