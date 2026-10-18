@@ -139,10 +139,22 @@ function LearnMode() {
     return false;
   })();
 
+  const currentLanguage = React.useMemo(() => {
+    const idStr = String(selectedSetId);
+    if (idStr.includes('zh')) return 'zh';
+    if (idStr.includes('en')) return 'en';
+    if (targetSets.length > 0 && targetSets.every((s) => s.language === 'zh')) return 'zh';
+    if (targetSets.length > 0 && targetSets.every((s) => s.language === 'en')) return 'en';
+    return 'ja';
+  }, [selectedSetId, targetSets]);
+
   const getBackLabel = () => {
-    if (currentContentType === 'kanji') {
-      const map = { kanji: 'Hán tự', hanviet: 'Hán Việt', hiragana: 'Phiên âm', meaning: 'Ý nghĩa' };
-      return map[kanjiBack];
+    if (hasFourFields) {
+      const map =
+        currentLanguage === 'zh'
+          ? { kanji: 'Chữ Hán', word: 'Chữ Hán', hanviet: 'Hán Việt', hiragana: 'Pinyin', meaning: 'Ý nghĩa' }
+          : { kanji: 'Hán tự', word: 'Từ vựng', hanviet: 'Hán Việt', hiragana: 'Kana', meaning: 'Ý nghĩa' };
+      return map[kanjiBack] || 'Đáp án';
     }
     return isReversed ? 'Từ vựng' : 'Ý nghĩa';
   };
@@ -561,6 +573,7 @@ function LearnMode() {
             <GameModeSelector
               hasFourFields={hasFourFields}
               currentContentType={currentContentType}
+              currentLanguage={currentLanguage}
               isReversed={isReversed}
               setIsReversed={setIsReversed}
               kanjiFront={kanjiFront}

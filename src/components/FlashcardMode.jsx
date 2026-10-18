@@ -56,6 +56,15 @@ function FlashcardMode() {
   const currentContentType =
     targetSets.length > 0 && targetSets.every((s) => s.type === 'kanji') ? 'kanji' : 'vocab';
 
+  const currentLanguage = React.useMemo(() => {
+    const idStr = String(selectedSetId);
+    if (idStr.includes('zh')) return 'zh';
+    if (idStr.includes('en')) return 'en';
+    if (targetSets.length > 0 && targetSets.every((s) => s.language === 'zh')) return 'zh';
+    if (targetSets.length > 0 && targetSets.every((s) => s.language === 'en')) return 'en';
+    return 'ja';
+  }, [selectedSetId, targetSets]);
+
   const hasFourFields = (() => {
     if (currentContentType === 'kanji') return true;
     if (
@@ -289,6 +298,7 @@ function FlashcardMode() {
             <GameModeSelector
               hasFourFields={hasFourFields}
               currentContentType={currentContentType}
+              currentLanguage={currentLanguage}
               isReversed={isReversed}
               setIsReversed={setIsReversed}
               kanjiFront={kanjiFront}
@@ -300,15 +310,16 @@ function FlashcardMode() {
               presets={[
                 {
                   id: 'recognition',
-                  icon: '🧠',
+                  icon: currentLanguage === 'zh' ? '🇨🇳' : '🧠',
                   iconBg: '#ede9fe',
-                  label: 'Từ vựng',
-                  getDesc: (f, b, type) => `${type === 'kanji' ? 'Hán tự' : 'Từ'} ➔ Chi tiết`,
+                  label: currentLanguage === 'zh' ? 'Chữ Hán' : 'Từ vựng',
+                  getDesc: (f, b, type) =>
+                    `${currentLanguage === 'zh' ? 'Chữ Hán' : type === 'kanji' ? 'Hán tự' : 'Từ'} ➔ Chi tiết`,
                   frontKey: (type) => (type === 'kanji' ? 'kanji' : 'word'),
                   backKey: () => 'summary',
                   isActive: (f, b, type) => {
                     const w = type === 'kanji' ? 'kanji' : 'word';
-                    return f === w && b === 'summary';
+                    return (f === w || f === 'kanji' || f === 'word') && b === 'summary';
                   },
                 },
                 {
@@ -325,8 +336,8 @@ function FlashcardMode() {
                   id: 'reading',
                   icon: '🗣️',
                   iconBg: '#dbeafe',
-                  label: 'Phiên âm',
-                  getDesc: () => 'Kana ➔ Chi tiết',
+                  label: currentLanguage === 'zh' ? 'Pinyin' : 'Phiên âm',
+                  getDesc: () => `${currentLanguage === 'zh' ? 'Pinyin' : 'Kana'} ➔ Chi tiết`,
                   frontKey: () => 'hiragana',
                   backKey: () => 'summary',
                   isActive: (f, b) => f === 'hiragana' && b === 'summary',

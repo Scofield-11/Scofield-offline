@@ -331,48 +331,99 @@ function MatchMode() {
           </div>
 
           <div className="mb-3">
-            <GameModeSelector
-              hasFourFields={hasFourFields}
-              currentContentType={currentContentType}
-              kanjiFront={kanjiMatchA}
-              setKanjiFront={setKanjiMatchA}
-              kanjiBack={kanjiMatchB}
-              setKanjiBack={setKanjiMatchB}
-              isReversed={isReversed}
-              setIsReversed={setIsReversed}
-              onSwap={handleSwap}
-              sectionLabel="Luật ghép"
-              presets={[
-                {
-                  id: 'classic', icon: '🏛️', iconBg: '#ede9fe', label: 'Từ ↔ Nghĩa',
-                  getDesc: (f, b, type) => { const w = type === 'kanji' ? 'Hán tự' : 'Từ'; return f === 'meaning' && (b === 'word' || b === 'kanji') ? `Nghĩa ↔ ${w}` : `${w} ↔ Nghĩa`; },
-                  frontKey: (type) => type === 'kanji' ? 'kanji' : 'word', backKey: () => 'meaning',
-                  isActive: (f, b, type) => { const w = type === 'kanji' ? 'kanji' : 'word'; return ((f === w) && b === 'meaning') || (f === 'meaning' && b === w); }
-                },
-                {
-                  id: 'speed', icon: '⚡', iconBg: '#fef3c7', label: 'Từ ↔ Kana',
-                  getDesc: (f, b, type) => { const w = type === 'kanji' ? 'Hán tự' : 'Từ'; return f === 'hiragana' && (b === 'word' || b === 'kanji') ? `Kana ↔ ${w}` : `${w} ↔ Kana`; },
-                  frontKey: (type) => type === 'kanji' ? 'kanji' : 'word', backKey: () => 'hiragana',
-                  isActive: (f, b, type) => { const w = type === 'kanji' ? 'kanji' : 'word'; return ((f === w) && b === 'hiragana') || (f === 'hiragana' && b === w); }
-                },
-                {
-                  id: 'hanviet', icon: '👑', iconBg: '#fee2e2', label: 'Hán Việt',
-                  getDesc: (f, b) => f === 'meaning' && b === 'hanviet' ? 'Nghĩa ↔ Hán Việt' : 'Hán Việt ↔ Nghĩa',
-                  frontKey: () => 'hanviet', backKey: () => 'meaning',
-                  isActive: (f, b) => (f === 'hanviet' && b === 'meaning') || (f === 'meaning' && b === 'hanviet')
-                },
-                {
-                  id: 'listening', icon: '🎧', iconBg: '#dbeafe', label: 'Kana ↔ Nghĩa',
-                  getDesc: (f, b) => f === 'meaning' && b === 'hiragana' ? 'Nghĩa ↔ Kana' : 'Kana ↔ Nghĩa',
-                  frontKey: () => 'hiragana', backKey: () => 'meaning',
-                  isActive: (f, b) => (f === 'hiragana' && b === 'meaning') || (f === 'meaning' && b === 'hiragana')
-                }
-              ]}
+            {(() => {
+              const isZh =
+                String(selectedSetId).includes('zh') ||
+                (targetSets.length > 0 && targetSets.every((s) => s.language === 'zh'));
+              const wordLabel = isZh ? 'Chữ Hán' : currentContentType === 'kanji' ? 'Hán tự' : 'Từ';
+              const readingLabel = isZh ? 'Pinyin' : 'Kana';
+
+              return (
+                <GameModeSelector
+                  hasFourFields={hasFourFields}
+                  currentContentType={currentContentType}
+                  currentLanguage={isZh ? 'zh' : 'ja'}
+                  kanjiFront={kanjiMatchA}
+                  setKanjiFront={setKanjiMatchA}
+                  kanjiBack={kanjiMatchB}
+                  setKanjiBack={setKanjiMatchB}
+                  isReversed={isReversed}
+                  setIsReversed={setIsReversed}
+                  onSwap={handleSwap}
+                  sectionLabel="Luật ghép"
+                  presets={[
+                    {
+                      id: 'classic',
+                      icon: isZh ? '🇨🇳' : '🏛️',
+                      iconBg: '#ede9fe',
+                      label: `${wordLabel} ↔ Nghĩa`,
+                      getDesc: (f, b) =>
+                        f === 'meaning' && (b === 'word' || b === 'kanji')
+                          ? `Nghĩa ↔ ${wordLabel}`
+                          : `${wordLabel} ↔ Nghĩa`,
+                      frontKey: (type) => (type === 'kanji' ? 'kanji' : 'word'),
+                      backKey: () => 'meaning',
+                      isActive: (f, b, type) => {
+                        const w = type === 'kanji' ? 'kanji' : 'word';
+                        return (
+                          ((f === w || f === 'kanji' || f === 'word') && b === 'meaning') ||
+                          (f === 'meaning' && (b === w || b === 'kanji' || b === 'word'))
+                        );
+                      },
+                    },
+                    {
+                      id: 'speed',
+                      icon: '⚡',
+                      iconBg: '#fef3c7',
+                      label: `${wordLabel} ↔ ${readingLabel}`,
+                      getDesc: (f, b) =>
+                        f === 'hiragana' && (b === 'word' || b === 'kanji')
+                          ? `${readingLabel} ↔ ${wordLabel}`
+                          : `${wordLabel} ↔ ${readingLabel}`,
+                      frontKey: (type) => (type === 'kanji' ? 'kanji' : 'word'),
+                      backKey: () => 'hiragana',
+                      isActive: (f, b, type) => {
+                        const w = type === 'kanji' ? 'kanji' : 'word';
+                        return (
+                          ((f === w || f === 'kanji' || f === 'word') && b === 'hiragana') ||
+                          (f === 'hiragana' && (b === w || b === 'kanji' || b === 'word'))
+                        );
+                      },
+                    },
+                    {
+                      id: 'hanviet',
+                      icon: '👑',
+                      iconBg: '#fee2e2',
+                      label: 'Hán Việt',
+                      getDesc: (f, b) =>
+                        f === 'meaning' && b === 'hanviet' ? 'Nghĩa ↔ Hán Việt' : 'Hán Việt ↔ Nghĩa',
+                      frontKey: () => 'hanviet',
+                      backKey: () => 'meaning',
+                      isActive: (f, b) =>
+                        (f === 'hanviet' && b === 'meaning') || (f === 'meaning' && b === 'hanviet'),
+                    },
+                    {
+                      id: 'listening',
+                      icon: '🎧',
+                      iconBg: '#dbeafe',
+                      label: `${readingLabel} ↔ Nghĩa`,
+                      getDesc: (f, b) =>
+                        f === 'meaning' && b === 'hiragana'
+                          ? `Nghĩa ↔ ${readingLabel}`
+                          : `${readingLabel} ↔ Nghĩa`,
+                      frontKey: () => 'hiragana',
+                      backKey: () => 'meaning',
+                      isActive: (f, b) =>
+                        (f === 'hiragana' && b === 'meaning') || (f === 'meaning' && b === 'hiragana'),
+                    },
+                  ]}
               twoFieldPresets={[
-                { id: 'forward', icon: '🧠', iconBg: '#ede9fe', label: 'Xuôi', description: 'Từ ↔ Nghĩa', reversedValue: false },
-                { id: 'backward', icon: '🇻🇳', iconBg: '#fef3c7', label: 'Ngược', description: 'Nghĩa ↔ Từ', reversedValue: true },
-              ]}
-            />
+                    { id: 'forward', icon: '🧠', iconBg: '#ede9fe', label: 'Xuôi', description: 'Từ ↔ Nghĩa', reversedValue: false },
+                    { id: 'backward', icon: '🇻🇳', iconBg: '#fef3c7', label: 'Ngược', description: 'Nghĩa ↔ Từ', reversedValue: true },
+                  ]}
+                />
+              );
+            })()}
           </div>
 
           <div className="mb-3">

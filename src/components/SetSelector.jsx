@@ -80,6 +80,25 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
     };
   }, [validSets]);
 
+  // Tự động nhảy sang ngôn ngữ đầu tiên đã tạo nếu ngôn ngữ mặc định đang có 0 học phần
+  useEffect(() => {
+    if (validSets.length === 0) return;
+    const availableKeys = ['ja', 'zh', 'en', 'kanji'].filter((k) => countsByType[k] > 0);
+    if (availableKeys.length === 0) return;
+
+    if (!availableKeys.includes(filterType)) {
+      setFilterType(availableKeys[0]);
+    }
+
+    const idStr = String(selectedSetId);
+    if (idStr.startsWith('lang_') || idStr.startsWith('all_')) {
+      const currentKey = idStr.replace('lang_', '').replace('all_', '');
+      if (countsByType[currentKey] === 0) {
+        setSelectedSetId(`lang_${availableKeys[0]}`);
+      }
+    }
+  }, [validSets, countsByType, filterType, selectedSetId, setSelectedSetId]);
+
   const typeFilteredSets = useMemo(() => {
     return validSets.filter((s) => {
       if (filterType === 'kanji') return s.type === 'kanji';
@@ -197,12 +216,14 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
     (filterType === 'en' && ['lang_en', 'all_en'].includes(String(selectedSetId))) ||
     (filterType === 'kanji' && ['lang_kanji', 'all_kanji'].includes(String(selectedSetId)));
 
-  const langTabs = [
+  const allLangTabs = [
     { key: 'ja', label: '🇯🇵 Nhật', count: countsByType.ja },
     { key: 'zh', label: '🇨🇳 Trung', count: countsByType.zh },
     { key: 'en', label: '🇬🇧 Anh', count: countsByType.en },
     { key: 'kanji', label: '⛩️ Kanji', count: countsByType.kanji },
   ];
+  const createdLangTabs = allLangTabs.filter((tab) => tab.count > 0);
+  const langTabs = createdLangTabs.length > 0 ? createdLangTabs : allLangTabs;
 
   return (
     <>
@@ -268,7 +289,10 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
                   </button>
                 </div>
 
-                <div className="set-sheet-segmented">
+                <div
+                  className="set-sheet-segmented"
+                  style={{ gridTemplateColumns: `repeat(${langTabs.length}, minmax(0, 1fr))` }}
+                >
                   {langTabs.map((tab) => {
                     const active = filterType === tab.key;
                     return (

@@ -87,6 +87,14 @@ function TestSetup({ sets, currentContentType, selectedSetId, setSelectedSetId, 
           <GameModeSelector
             hasFourFields={hasFourFields}
             currentContentType={currentContentType}
+            currentLanguage={
+              String(selectedSetId).includes('zh') ||
+              (sets || []).find((s) => String(s.id) === String(selectedSetId))?.language === 'zh'
+                ? 'zh'
+                : String(selectedSetId).includes('en')
+                ? 'en'
+                : 'ja'
+            }
             isReversed={isReversed}
             setIsReversed={setIsReversed}
             kanjiFront={kanjiFront}

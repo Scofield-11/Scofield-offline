@@ -1,54 +1,115 @@
 import React, { useState } from 'react';
 import './GameModeSelector.css';
 
-/**
- * GameModeSelector - Bento Grid component dùng chung cho tất cả chế độ học.
- * 
- * Props:
- * - hasFourFields: boolean - Có phải tiếng Nhật (4 trường: kanji/word, hanviet, hiragana, meaning)?
- * - currentContentType: 'vocab' | 'kanji'
- * - isReversed / setIsReversed: Dùng cho trường hợp chỉ có 2 trường (EN)
- * - kanjiFront / setKanjiFront: Trường hiển thị mặt trước (cho JP/Kanji)
- * - kanjiBack / setKanjiBack: Trường hiển thị mặt sau (cho JP/Kanji)
- * - onSwap: Hàm xử lý đảo chiều
- * - presets: (optional) Mảng tuỳ chỉnh danh sách gói rèn luyện
- *   Mỗi phần tử: { id, icon, label, description, frontKey, backKey }
- * - twoFieldPresets: (optional) Tương tự nhưng cho trường hợp 2 trường
- */
-
-// ── Cấu hình mặc định cho 4-field (JP/Kanji) ──
-const DEFAULT_FOUR_FIELD_PRESETS = [
+// ── Cấu hình mặc định cho Tiếng Nhật / Kanji (4 trường) ──
+const DEFAULT_JA_PRESETS = [
   {
-    id: 'translate', icon: '🧠', iconBg: '#ede9fe', label: 'Từ ➔ Nghĩa',
-    getDesc: (f, b, type) => { const w = type === 'kanji' ? 'Hán tự' : 'Từ'; return f === 'meaning' && (b === 'word' || b === 'kanji') ? `Nghĩa ➔ ${w}` : `${w} ➔ Nghĩa`; },
-    frontKey: (type) => type === 'kanji' ? 'kanji' : 'word', backKey: () => 'meaning',
-    isActive: (f, b, type) => { const w = type === 'kanji' ? 'kanji' : 'word'; return ((f === w) && b === 'meaning') || (f === 'meaning' && b === w); }
+    id: 'translate',
+    icon: '🧠',
+    iconBg: '#ede9fe',
+    label: 'Từ ➔ Nghĩa',
+    getDesc: (f, b, type) => {
+      const w = type === 'kanji' ? 'Hán tự' : 'Từ';
+      return f === 'meaning' && (b === 'word' || b === 'kanji') ? `Nghĩa ➔ ${w}` : `${w} ➔ Nghĩa`;
+    },
+    frontKey: (type) => (type === 'kanji' ? 'kanji' : 'word'),
+    backKey: () => 'meaning',
+    isActive: (f, b, type) => {
+      const w = type === 'kanji' ? 'kanji' : 'word';
+      return (f === w && b === 'meaning') || (f === 'meaning' && b === w);
+    },
   },
   {
-    id: 'reading', icon: '🗣️', iconBg: '#fef3c7', label: 'Cách đọc',
-    getDesc: (f, b, type) => { const w = type === 'kanji' ? 'Hán tự' : 'Từ'; return f === 'hiragana' && (b === 'word' || b === 'kanji') ? `Kana ➔ ${w}` : `${w} ➔ Kana`; },
-    frontKey: (type) => type === 'kanji' ? 'kanji' : 'word', backKey: () => 'hiragana',
-    isActive: (f, b, type) => { const w = type === 'kanji' ? 'kanji' : 'word'; return ((f === w) && b === 'hiragana') || (f === 'hiragana' && b === w); }
+    id: 'reading',
+    icon: '🗣️',
+    iconBg: '#fef3c7',
+    label: 'Cách đọc',
+    getDesc: (f, b, type) => {
+      const w = type === 'kanji' ? 'Hán tự' : 'Từ';
+      return f === 'hiragana' && (b === 'word' || b === 'kanji') ? `Kana ➔ ${w}` : `${w} ➔ Kana`;
+    },
+    frontKey: (type) => (type === 'kanji' ? 'kanji' : 'word'),
+    backKey: () => 'hiragana',
+    isActive: (f, b, type) => {
+      const w = type === 'kanji' ? 'kanji' : 'word';
+      return (f === w && b === 'hiragana') || (f === 'hiragana' && b === w);
+    },
   },
   {
-    id: 'hanviet', icon: '👑', iconBg: '#fee2e2', label: 'Hán Việt',
-    getDesc: (f, b) => f === 'meaning' && b === 'hanviet' ? 'Nghĩa ➔ Hán Việt' : 'Hán Việt ➔ Nghĩa',
-    frontKey: () => 'hanviet', backKey: () => 'meaning',
-    isActive: (f, b) => (f === 'hanviet' && b === 'meaning') || (f === 'meaning' && b === 'hanviet')
+    id: 'hanviet',
+    icon: '👑',
+    iconBg: '#fee2e2',
+    label: 'Hán Việt',
+    getDesc: (f, b) => (f === 'meaning' && b === 'hanviet' ? 'Nghĩa ➔ Hán Việt' : 'Hán Việt ➔ Nghĩa'),
+    frontKey: () => 'hanviet',
+    backKey: () => 'meaning',
+    isActive: (f, b) => (f === 'hanviet' && b === 'meaning') || (f === 'meaning' && b === 'hanviet'),
   },
   {
-    id: 'listening', icon: '🎧', iconBg: '#dbeafe', label: 'Phiên âm',
-    getDesc: (f, b) => f === 'meaning' && b === 'hiragana' ? 'Nghĩa ➔ Kana' : 'Kana ➔ Nghĩa',
-    frontKey: () => 'hiragana', backKey: () => 'meaning',
-    isActive: (f, b) => (f === 'hiragana' && b === 'meaning') || (f === 'meaning' && b === 'hiragana')
-  }
+    id: 'listening',
+    icon: '🎧',
+    iconBg: '#dbeafe',
+    label: 'Phiên âm',
+    getDesc: (f, b) => (f === 'meaning' && b === 'hiragana' ? 'Nghĩa ➔ Kana' : 'Kana ➔ Nghĩa'),
+    frontKey: () => 'hiragana',
+    backKey: () => 'meaning',
+    isActive: (f, b) => (f === 'hiragana' && b === 'meaning') || (f === 'meaning' && b === 'hiragana'),
+  },
 ];
 
-// ── Cấu hình mặc định cho 2-field (EN hoặc không có hanviet/hiragana) ──
+// ── Cấu hình riêng khi người dùng chọn Tiếng Trung (ZH - 4 trường) ──
+const DEFAULT_ZH_PRESETS = [
+  {
+    id: 'zh_translate',
+    icon: '🇨🇳',
+    iconBg: '#fee2e2',
+    label: 'Chữ Hán ➔ Nghĩa',
+    getDesc: (f, b) => (f === 'meaning' && (b === 'word' || b === 'kanji') ? 'Nghĩa ➔ Chữ Hán' : 'Chữ Hán ➔ Nghĩa'),
+    frontKey: () => 'word',
+    backKey: () => 'meaning',
+    isActive: (f, b) =>
+      ((f === 'word' || f === 'kanji') && b === 'meaning') ||
+      (f === 'meaning' && (b === 'word' || b === 'kanji')),
+  },
+  {
+    id: 'zh_pinyin',
+    icon: '🗣️',
+    iconBg: '#fef3c7',
+    label: 'Luyện Pinyin',
+    getDesc: (f, b) => (f === 'hiragana' && (b === 'word' || b === 'kanji') ? 'Pinyin ➔ Chữ Hán' : 'Chữ Hán ➔ Pinyin'),
+    frontKey: () => 'word',
+    backKey: () => 'hiragana',
+    isActive: (f, b) =>
+      ((f === 'word' || f === 'kanji') && b === 'hiragana') ||
+      (f === 'hiragana' && (b === 'word' || b === 'kanji')),
+  },
+  {
+    id: 'zh_hanviet',
+    icon: '👑',
+    iconBg: '#ede9fe',
+    label: 'Âm Hán Việt',
+    getDesc: (f, b) => (f === 'meaning' && b === 'hanviet' ? 'Nghĩa ➔ Hán Việt' : 'Hán Việt ➔ Nghĩa'),
+    frontKey: () => 'hanviet',
+    backKey: () => 'meaning',
+    isActive: (f, b) => (f === 'hanviet' && b === 'meaning') || (f === 'meaning' && b === 'hanviet'),
+  },
+  {
+    id: 'zh_listening',
+    icon: '🎧',
+    iconBg: '#dbeafe',
+    label: 'Pinyin ➔ Nghĩa',
+    getDesc: (f, b) => (f === 'meaning' && b === 'hiragana' ? 'Nghĩa ➔ Pinyin' : 'Pinyin ➔ Nghĩa'),
+    frontKey: () => 'hiragana',
+    backKey: () => 'meaning',
+    isActive: (f, b) => (f === 'hiragana' && b === 'meaning') || (f === 'meaning' && b === 'hiragana'),
+  },
+];
+
+// ── Cấu hình mặc định cho 2 trường (Tiếng Anh) ──
 const DEFAULT_TWO_FIELD_PRESETS = [
   {
     id: 'forward',
-    icon: '🇺🇸',
+    icon: '🇬🇧',
     iconBg: '#dbeafe',
     label: 'Xuôi',
     description: 'Từ ➔ Nghĩa',
@@ -61,12 +122,13 @@ const DEFAULT_TWO_FIELD_PRESETS = [
     label: 'Ngược',
     description: 'Nghĩa ➔ Từ',
     reversedValue: true,
-  }
+  },
 ];
 
 function GameModeSelector({
   hasFourFields,
   currentContentType = 'vocab',
+  currentLanguage = 'ja',
   isReversed = false,
   setIsReversed,
   kanjiFront,
@@ -79,12 +141,13 @@ function GameModeSelector({
   sectionLabel = 'Chọn kỹ năng rèn luyện',
 }) {
   const [swapRotation, setSwapRotation] = useState(0);
+  const isChinese = currentLanguage === 'zh';
 
-  const fourFieldPresets = presets || DEFAULT_FOUR_FIELD_PRESETS;
+  const fourFieldPresets = presets || (isChinese ? DEFAULT_ZH_PRESETS : DEFAULT_JA_PRESETS);
   const twoPresets = twoFieldPresets || DEFAULT_TWO_FIELD_PRESETS;
 
   const handleSwapClick = () => {
-    setSwapRotation(prev => prev + 180);
+    setSwapRotation((prev) => prev + 180);
     if (onSwap) onSwap();
   };
 
@@ -93,7 +156,6 @@ function GameModeSelector({
     const targetBack = preset.backKey(currentContentType);
 
     if (preset.isActive(kanjiFront, kanjiBack, currentContentType)) {
-      // Nếu đang active -> đảo chiều
       if (onSwap) onSwap();
     } else {
       setKanjiFront(isWord);
@@ -103,17 +165,31 @@ function GameModeSelector({
 
   const handleTwoFieldSelect = (preset) => {
     if (isReversed === preset.reversedValue) {
-      // Đang active -> đảo chiều
       if (onSwap) onSwap();
     } else {
       setIsReversed(preset.reversedValue);
     }
   };
 
-  // ── Swap direction label ──
   const getDirectionLabel = () => {
     if (hasFourFields) {
-      const map = { kanji: 'Hán tự', word: 'Từ vựng', hanviet: 'Hán Việt', hiragana: 'Phiên âm', meaning: 'Ý nghĩa' };
+      const map = isChinese
+        ? {
+            kanji: 'Chữ Hán',
+            word: 'Chữ Hán',
+            hanviet: 'Hán Việt',
+            hiragana: 'Pinyin',
+            meaning: 'Ý nghĩa',
+            summary: 'Chi tiết',
+          }
+        : {
+            kanji: 'Hán tự',
+            word: 'Từ vựng',
+            hanviet: 'Hán Việt',
+            hiragana: 'Kana',
+            meaning: 'Ý nghĩa',
+            summary: 'Chi tiết',
+          };
       return `${map[kanjiFront] || 'A'} → ${map[kanjiBack] || 'B'}`;
     }
     return isReversed ? 'Nghĩa → Từ' : 'Từ → Nghĩa';
@@ -121,25 +197,21 @@ function GameModeSelector({
 
   return (
     <div className="gms-container">
-      {/* ── Header: Label + Swap Button ── */}
       <div className="gms-header">
         <span className="gms-section-label">{sectionLabel}</span>
         <button
+          type="button"
           className="gms-swap-btn"
           onClick={handleSwapClick}
           title={`Đảo chiều: ${getDirectionLabel()}`}
         >
-          <span
-            className="gms-swap-icon"
-            style={{ transform: `rotate(${swapRotation}deg)` }}
-          >
+          <span className="gms-swap-icon" style={{ transform: `rotate(${swapRotation}deg)` }}>
             🔄
           </span>
           <span className="gms-swap-label">{getDirectionLabel()}</span>
         </button>
       </div>
 
-      {/* ── Bento Grid Cards ── */}
       {hasFourFields ? (
         <div className="gms-grid gms-grid-4">
           {fourFieldPresets.map((preset) => {
@@ -147,11 +219,15 @@ function GameModeSelector({
             const desc = preset.getDesc(kanjiFront, kanjiBack, currentContentType);
             return (
               <button
+                type="button"
                 key={preset.id}
                 className={`gms-card ${active ? 'gms-card--active' : ''}`}
                 onClick={() => handleFourFieldSelect(preset)}
               >
-                <div className="gms-card-icon" style={active ? undefined : { backgroundColor: preset.iconBg || 'var(--bg-elevated)' }}>
+                <div
+                  className="gms-card-icon"
+                  style={active ? undefined : { backgroundColor: preset.iconBg || 'var(--bg-elevated)' }}
+                >
                   <span className="gms-card-emoji">{preset.icon}</span>
                 </div>
                 <div className="gms-card-content">
@@ -169,11 +245,15 @@ function GameModeSelector({
             const active = isReversed === preset.reversedValue;
             return (
               <button
+                type="button"
                 key={preset.id}
                 className={`gms-card ${active ? 'gms-card--active' : ''}`}
                 onClick={() => handleTwoFieldSelect(preset)}
               >
-                <div className="gms-card-icon" style={active ? undefined : { backgroundColor: preset.iconBg || 'var(--bg-elevated)' }}>
+                <div
+                  className="gms-card-icon"
+                  style={active ? undefined : { backgroundColor: preset.iconBg || 'var(--bg-elevated)' }}
+                >
                   <span className="gms-card-emoji">{preset.icon}</span>
                 </div>
                 <div className="gms-card-content">
@@ -191,4 +271,3 @@ function GameModeSelector({
 }
 
 export default GameModeSelector;
-
