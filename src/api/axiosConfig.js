@@ -61,7 +61,9 @@ const notifySyncStatus = (state, message = '') => {
 export const getSyncStatus = () => currentSyncStatus;
 
 const supabaseFetch = async (url, options = {}) => {
-  const doCall = (apiKey, includeBearer = true) => {
+  const isJwtKey = SUPABASE_PUB_KEY.startsWith('eyJ');
+
+  const doCall = (apiKey, includeBearer) => {
     const headers = {
       'Content-Type': 'application/json',
       apikey: apiKey,
@@ -76,10 +78,11 @@ const supabaseFetch = async (url, options = {}) => {
     });
   };
 
-  let res = await doCall(SUPABASE_PUB_KEY, true);
+  // Chỉ đính kèm Bearer ở lần gọi đầu nếu key là chuẩn JWT (eyJ...)
+  let res = await doCall(SUPABASE_PUB_KEY, isJwtKey);
   if (!res.ok && (res.status === 401 || res.status === 403 || res.status === 400)) {
-    const retryRes = await doCall(SUPABASE_PUB_KEY, false);
-    if (retryRes.ok) return retryRes;
+    const retryRes = await doCall(SUPABASE_PUB_KEY, !isJwtKey);
+    return retryRes;
   }
   return res;
 };
@@ -715,7 +718,9 @@ const handleRequest = async (method, url, payload = null) => {
     const checkUrl = `${SUPABASE_USERS_URL}?username=eq.${encodeURIComponent(cleanUsername)}&select=id&limit=1`;
     const checkRes = await supabaseFetch(checkUrl, { method: 'GET' });
     if (!checkRes.ok) {
-      throw createApiError('Lỗi kiểm tra tài khoản trên Supabase!', 500);
+      const errText = await checkRes.text().catch(() => '');
+      console.error('Supabase Register Check Error:', checkRes.status, errText);
+      throw createApiError(`Lỗi kiểm tra tài khoản trên Supabase (HTTP ${checkRes.status})!`, 500);
     }
     const existing = await checkRes.json();
     if (Array.isArray(existing) && existing.length > 0) {
@@ -736,7 +741,9 @@ const handleRequest = async (method, url, payload = null) => {
     });
 
     if (!createRes.ok) {
-      throw createApiError('Không thể tạo tài khoản mới. Vui lòng thử lại!', 500);
+      const errText = await createRes.text().catch(() => '');
+      console.error('Supabase Register Create Error:', createRes.status, errText);
+      throw createApiError(`Không thể tạo tài khoản mới (HTTP ${createRes.status}). Hãy kiểm tra bảng app_users và RLS trên Supabase!`, 500);
     }
 
     const createdRows = await createRes.json();
