@@ -716,7 +716,7 @@ function VocabularyList() {
                             {vocabSet.vocab_count} thẻ
                           </span>
                           <span className="badge chip-primary rounded-pill">
-                            {vocabSet.type === 'kanji' ? '⛩️ KANJI' : vocabSet.language === 'en' ? '🇬🇧 EN' : '🇯🇵 JA'}
+                            {vocabSet.type === 'kanji' ? '⛩️ KANJI' : vocabSet.language === 'en' ? '🇬🇧 EN' : vocabSet.language === 'zh' ? '🇨🇳 ZH' : '🇯🇵 JA'}
                           </span>
                         </div>
 

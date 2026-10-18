@@ -29,6 +29,8 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
     const idStr = String(selectedSetId);
     if (idStr === 'lang_ja' || idStr === 'all_ja') {
       setFilterType('ja');
+    } else if (idStr === 'lang_zh' || idStr === 'all_zh') {
+      setFilterType('zh');
     } else if (idStr === 'lang_en' || idStr === 'all_en') {
       setFilterType('en');
     } else if (idStr === 'lang_kanji' || idStr === 'all_kanji') {
@@ -40,6 +42,7 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
       if (s) {
         if (s.type === 'kanji') setFilterType('kanji');
         else if (s.language === 'en') setFilterType('en');
+        else if (s.language === 'zh') setFilterType('zh');
         else setFilterType('ja');
       }
     } else {
@@ -49,6 +52,7 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
         setExpandedFolders((prev) => ({ ...prev, [folderName]: true }));
         if (s.type === 'kanji') setFilterType('kanji');
         else if (s.language === 'en') setFilterType('en');
+        else if (s.language === 'zh') setFilterType('zh');
         else setFilterType('ja');
       }
     }
@@ -70,6 +74,7 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
   const countsByType = useMemo(() => {
     return {
       ja: validSets.filter((s) => s.type !== 'kanji' && (s.language === 'ja' || !s.language)).length,
+      zh: validSets.filter((s) => s.type !== 'kanji' && s.language === 'zh').length,
       en: validSets.filter((s) => s.type !== 'kanji' && s.language === 'en').length,
       kanji: validSets.filter((s) => s.type === 'kanji').length,
     };
@@ -79,6 +84,7 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
     return validSets.filter((s) => {
       if (filterType === 'kanji') return s.type === 'kanji';
       if (filterType === 'en') return s.type !== 'kanji' && s.language === 'en';
+      if (filterType === 'zh') return s.type !== 'kanji' && s.language === 'zh';
       return s.type !== 'kanji' && (s.language === 'ja' || !s.language);
     });
   }, [validSets, filterType]);
@@ -140,6 +146,12 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
         .reduce((sum, s) => sum + (s.vocab_count || 0), 0);
       return { icon: '🇯🇵', title: 'Tất cả từ vựng Tiếng Nhật', subtitle: 'Gộp toàn bộ học phần JA', count };
     }
+    if (idStr === 'lang_zh' || idStr === 'all_zh') {
+      const count = validSets
+        .filter((s) => s.type !== 'kanji' && s.language === 'zh')
+        .reduce((sum, s) => sum + (s.vocab_count || 0), 0);
+      return { icon: '🇨🇳', title: 'Tất cả từ vựng Tiếng Trung', subtitle: 'Gộp toàn bộ học phần ZH', count };
+    }
     if (idStr === 'lang_en' || idStr === 'all_en') {
       const count = validSets
         .filter((s) => s.type !== 'kanji' && s.language === 'en')
@@ -160,7 +172,14 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
 
     const selected = validSets.find((s) => String(s.id) === idStr);
     if (selected) {
-      const icon = selected.type === 'kanji' ? '⛩️' : selected.language === 'en' ? '🇬🇧' : '🇯🇵';
+      const icon =
+        selected.type === 'kanji'
+          ? '⛩️'
+          : selected.language === 'en'
+          ? '🇬🇧'
+          : selected.language === 'zh'
+          ? '🇨🇳'
+          : '🇯🇵';
       return {
         icon,
         title: selected.title,
@@ -174,11 +193,13 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
 
   const isAllTypeSelected =
     (filterType === 'ja' && ['lang_ja', 'all_ja'].includes(String(selectedSetId))) ||
+    (filterType === 'zh' && ['lang_zh', 'all_zh'].includes(String(selectedSetId))) ||
     (filterType === 'en' && ['lang_en', 'all_en'].includes(String(selectedSetId))) ||
     (filterType === 'kanji' && ['lang_kanji', 'all_kanji'].includes(String(selectedSetId)));
 
   const langTabs = [
     { key: 'ja', label: '🇯🇵 Nhật', count: countsByType.ja },
+    { key: 'zh', label: '🇨🇳 Trung', count: countsByType.zh },
     { key: 'en', label: '🇬🇧 Anh', count: countsByType.en },
     { key: 'kanji', label: '⛩️ Kanji', count: countsByType.kanji },
   ];
@@ -300,7 +321,13 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
                     >
                       <div className="d-flex align-items-center gap-2">
                         <span className="fs-5">
-                          {filterType === 'kanji' ? '⛩️' : filterType === 'en' ? '🇬🇧' : '🇯🇵'}
+                          {filterType === 'kanji'
+                            ? '⛩️'
+                            : filterType === 'en'
+                            ? '🇬🇧'
+                            : filterType === 'zh'
+                            ? '🇨🇳'
+                            : '🇯🇵'}
                         </span>
                         <div className="text-start">
                           <div className="fw-bold" style={{ fontSize: '0.88rem' }}>
@@ -308,6 +335,8 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
                               ? 'Học tất cả Kanji'
                               : filterType === 'en'
                               ? 'Học tất cả Tiếng Anh'
+                              : filterType === 'zh'
+                              ? 'Học tất cả Tiếng Trung'
                               : 'Học tất cả Tiếng Nhật'}
                           </div>
                           <div className="opacity-75" style={{ fontSize: '0.72rem' }}>
@@ -383,7 +412,13 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
                                   {folderSets.map((s) => {
                                     const isSelected = String(selectedSetId) === String(s.id);
                                     const prefix =
-                                      s.type === 'kanji' ? '⛩️' : s.language === 'en' ? '🇬🇧' : '🇯🇵';
+                                      s.type === 'kanji'
+                                        ? '⛩️'
+                                        : s.language === 'en'
+                                        ? '🇬🇧'
+                                        : s.language === 'zh'
+                                        ? '🇨🇳'
+                                        : '🇯🇵';
                                     return (
                                       <button
                                         type="button"

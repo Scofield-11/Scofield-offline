@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { RefreshCw, Sun, Moon } from "lucide-react";
-import { getSyncStatus, autoPullFromCloud, pushToSupabase } from "../api/axiosConfig";
+import { RefreshCw, Sun, Moon, Shield } from "lucide-react";
+import { getSyncStatus, autoPullFromCloud, pushToSupabase, getCurrentUser } from "../api/axiosConfig";
 import { toast } from "react-toastify";
 
 const NAV_SPRING = { type: "spring", stiffness: 280, damping: 28, mass: 0.6 };
 
 function Navbar() {
   const location = useLocation();
+  const currentUser = getCurrentUser();
   const [syncInfo, setSyncInfo] = useState(getSyncStatus());
   const [theme, setTheme] = useState(() => localStorage.getItem("scofield_theme") || "light");
 
@@ -45,6 +46,7 @@ function Navbar() {
 
   const navItems = [
     { path: "/", label: "Thư viện", icon: "📚" },
+    { path: "/kanji", label: "Kanji", icon: "⛩️" },
     { path: "/flashcards", label: "Thẻ nhớ", icon: "🗂️" },
     { path: "/learn", label: "Học thuộc", icon: "🧠" },
     { path: "/test", label: "Kiểm tra", icon: "📝" },
@@ -112,7 +114,21 @@ function Navbar() {
         })}
       </div>
 
-      <div className="d-none d-lg-flex align-items-center gap-2 mt-auto w-100">
+      {currentUser?.role === "admin" && (
+        <div className="d-none d-lg-block mt-auto mb-2 w-100">
+          <Link
+            to="/admin"
+            className={`btn nav-sync-btn w-100 d-flex align-items-center justify-content-center gap-2 text-decoration-none ${
+              location.pathname === "/admin" ? "border-warning" : ""
+            }`}
+          >
+            <Shield size={14} />
+            <span>🛡️ Quản trị tài khoản</span>
+          </Link>
+        </div>
+      )}
+
+      <div className={`d-none d-lg-flex align-items-center gap-2 ${currentUser?.role === "admin" ? "" : "mt-auto"} w-100`}>
         <button
           type="button"
           className="btn nav-sync-btn d-flex align-items-center justify-content-between flex-grow-1"

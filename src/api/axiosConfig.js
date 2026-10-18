@@ -3,15 +3,45 @@
 // ============================================================================
 
 const SUPABASE_REST_URL = 'https://htnzlthwzclkstdwvwya.supabase.co/rest/v1/sync_data';
+const SUPABASE_USERS_URL = 'https://htnzlthwzclkstdwvwya.supabase.co/rest/v1/app_users';
 const SUPABASE_PUB_KEY = 'sb_publishable_DS7d-iSQGgksM7LpKyptzQ_YXgGtbZF';
 const SUPABASE_SEC_KEY = 'sb_secret_O7fSZVJgpOygD4T08JK22A_fguUsNvC';
-const SYNC_USER_KEY = 'quanglevanqqq@gmail.com';
 
 const STORAGE_KEYS = {
   SETS: 'scofield_db_sets',
   VOCABS: 'scofield_db_vocabularies',
   TEST_HISTORIES: 'scofield_db_test_histories',
   UPDATED_AT: 'scofield_db_updated_at',
+  AUTH_USER: 'scofield_auth_user',
+};
+
+export const getCurrentUser = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.AUTH_USER);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+};
+
+export const getSyncUserKey = () => {
+  const user = getCurrentUser();
+  return user && user.sync_user_key ? user.sync_user_key : null;
+};
+
+export const clearLocalDatabase = () => {
+  localStorage.removeItem(STORAGE_KEYS.SETS);
+  localStorage.removeItem(STORAGE_KEYS.VOCABS);
+  localStorage.removeItem(STORAGE_KEYS.TEST_HISTORIES);
+  localStorage.removeItem(STORAGE_KEYS.UPDATED_AT);
+  localStorage.removeItem('scofieldSetOrder');
+};
+
+export const logoutUser = () => {
+  localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+  clearLocalDatabase();
+  window.dispatchEvent(new Event('scofield-auth-changed'));
 };
 
 let currentSyncStatus = { state: 'idle', lastSynced: null, message: 'Sẵn sàng' };
@@ -64,6 +94,12 @@ const readTable = (key) => {
 let syncPushTimer = null;
 
 export const pushToSupabase = async () => {
+  const syncUserKey = getSyncUserKey();
+  if (!syncUserKey) {
+    notifySyncStatus('idle', 'Chưa đăng nhập');
+    return false;
+  }
+
   notifySyncStatus('syncing', 'Đang đẩy lên Cloud...');
   try {
     const updatedAt = localStorage.getItem(STORAGE_KEYS.UPDATED_AT) || new Date().toISOString();
@@ -74,7 +110,7 @@ export const pushToSupabase = async () => {
       set_order: JSON.parse(localStorage.getItem('scofieldSetOrder') || '[]'),
     };
 
-    const checkUrl = `${SUPABASE_REST_URL}?user_key=eq.${encodeURIComponent(SYNC_USER_KEY)}&select=user_key&limit=1`;
+    const checkUrl = `${SUPABASE_REST_URL}?user_key=eq.${encodeURIComponent(syncUserKey)}&select=user_key&limit=1`;
     const checkRes = await supabaseFetch(checkUrl, { method: 'GET' });
     if (!checkRes.ok) throw new Error(`HTTP ${checkRes.status}`);
     const existing = await checkRes.json();
@@ -82,7 +118,7 @@ export const pushToSupabase = async () => {
     let writeRes;
     if (Array.isArray(existing) && existing.length > 0) {
       writeRes = await supabaseFetch(
-        `${SUPABASE_REST_URL}?user_key=eq.${encodeURIComponent(SYNC_USER_KEY)}`,
+        `${SUPABASE_REST_URL}?user_key=eq.${encodeURIComponent(syncUserKey)}`,
         {
           method: 'PATCH',
           headers: { Prefer: 'return=minimal' },
@@ -97,7 +133,7 @@ export const pushToSupabase = async () => {
         method: 'POST',
         headers: { Prefer: 'return=minimal' },
         body: JSON.stringify({
-          user_key: SYNC_USER_KEY,
+          user_key: syncUserKey,
           backup_json: backupPayload,
           updated_at: updatedAt,
         }),
@@ -115,6 +151,7 @@ export const pushToSupabase = async () => {
 };
 
 export const scheduleDebouncedPush = () => {
+  if (!getSyncUserKey()) return;
   notifySyncStatus('syncing', 'Chờ lưu ngầm...');
   if (syncPushTimer) clearTimeout(syncPushTimer);
   syncPushTimer = setTimeout(() => {
@@ -123,9 +160,15 @@ export const scheduleDebouncedPush = () => {
 };
 
 export const autoPullFromCloud = async (forcePull = false) => {
+  const syncUserKey = getSyncUserKey();
+  if (!syncUserKey) {
+    notifySyncStatus('idle', 'Chưa đăng nhập');
+    return false;
+  }
+
   notifySyncStatus('syncing', 'Đang kiểm tra Cloud...');
   try {
-    const queryUrl = `${SUPABASE_REST_URL}?user_key=eq.${encodeURIComponent(SYNC_USER_KEY)}&select=user_key,backup_json,updated_at&order=updated_at.desc&limit=1`;
+    const queryUrl = `${SUPABASE_REST_URL}?user_key=eq.${encodeURIComponent(syncUserKey)}&select=user_key,backup_json,updated_at&order=updated_at.desc&limit=1`;
     const res = await supabaseFetch(queryUrl, { method: 'GET' });
     if (!res.ok) throw new Error(`Pull HTTP ${res.status}`);
 
@@ -137,7 +180,11 @@ export const autoPullFromCloud = async (forcePull = false) => {
       if (localSets.length > 0 || localVocabs.length > 0) {
         await pushToSupabase();
       } else {
+        localStorage.setItem(STORAGE_KEYS.SETS, JSON.stringify([]));
+        localStorage.setItem(STORAGE_KEYS.VOCABS, JSON.stringify([]));
+        localStorage.setItem(STORAGE_KEYS.TEST_HISTORIES, JSON.stringify([]));
         notifySyncStatus('synced', 'Cloud sẵn sàng');
+        window.dispatchEvent(new Event('scofield-cloud-synced'));
       }
       return false;
     }
@@ -163,6 +210,8 @@ export const autoPullFromCloud = async (forcePull = false) => {
       localStorage.setItem(STORAGE_KEYS.TEST_HISTORIES, JSON.stringify(test_histories));
       if (Array.isArray(set_order) && set_order.length > 0) {
         localStorage.setItem('scofieldSetOrder', JSON.stringify(set_order));
+      } else {
+        localStorage.removeItem('scofieldSetOrder');
       }
       localStorage.setItem(
         STORAGE_KEYS.UPDATED_AT,
@@ -190,7 +239,9 @@ export const autoPullFromCloud = async (forcePull = false) => {
 };
 
 setTimeout(() => {
-  autoPullFromCloud();
+  if (getSyncUserKey()) {
+    autoPullFromCloud();
+  }
 }, 100);
 
 const writeTable = (key, data) => {
@@ -599,6 +650,204 @@ const parseUrlAndQuery = (rawUrl) => {
 const handleRequest = async (method, url, payload = null) => {
   const { pathname, params } = parseUrlAndQuery(url);
 
+  // 0. AUTHENTICATION & ADMIN USERS (SUPABASE app_users)
+  if (method === 'POST' && pathname === '/auth/login') {
+    const { username, password } = payload || {};
+    const cleanUsername = String(username || '').trim();
+    if (!cleanUsername || !password) {
+      throw createApiError('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!');
+    }
+
+    const queryUrl = `${SUPABASE_USERS_URL}?username=eq.${encodeURIComponent(cleanUsername)}&select=*&limit=1`;
+    const res = await supabaseFetch(queryUrl, { method: 'GET' });
+    if (!res.ok) {
+      throw createApiError('Không thể kết nối máy chủ xác thực Supabase!', 500);
+    }
+
+    const rows = await res.json();
+    if (!Array.isArray(rows) || rows.length === 0) {
+      throw createApiError('Tài khoản không tồn tại!', 401);
+    }
+
+    const user = rows[0];
+    if (String(user.password) !== String(password)) {
+      throw createApiError('Mật khẩu không chính xác!', 401);
+    }
+
+    const safeUser = {
+      id: user.id,
+      username: user.username,
+      display_name: user.display_name || user.username,
+      role: user.role || 'user',
+      sync_user_key: user.sync_user_key,
+    };
+
+    clearLocalDatabase();
+    localStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(safeUser));
+    await autoPullFromCloud(true);
+    window.dispatchEvent(new Event('scofield-auth-changed'));
+
+    return { data: { message: 'Đăng nhập thành công!', user: safeUser } };
+  }
+
+  if (method === 'POST' && pathname === '/auth/register') {
+    const { username, password, display_name } = payload || {};
+    const cleanUsername = String(username || '').trim().toLowerCase();
+    const cleanDisplayName = String(display_name || username || '').trim();
+
+    if (!cleanUsername || cleanUsername.length < 3) {
+      throw createApiError('Tên đăng nhập phải có ít nhất 3 ký tự!');
+    }
+    if (/\s/.test(cleanUsername)) {
+      throw createApiError('Tên đăng nhập không được chứa khoảng trắng!');
+    }
+    if (!password || String(password).length < 4) {
+      throw createApiError('Mật khẩu phải có ít nhất 4 ký tự!');
+    }
+
+    const checkUrl = `${SUPABASE_USERS_URL}?username=eq.${encodeURIComponent(cleanUsername)}&select=id&limit=1`;
+    const checkRes = await supabaseFetch(checkUrl, { method: 'GET' });
+    if (!checkRes.ok) {
+      throw createApiError('Lỗi kiểm tra tài khoản trên Supabase!', 500);
+    }
+    const existing = await checkRes.json();
+    if (Array.isArray(existing) && existing.length > 0) {
+      throw createApiError('Tên đăng nhập này đã có người sử dụng!');
+    }
+
+    const syncUserKey = `user_${cleanUsername}`;
+    const createRes = await supabaseFetch(SUPABASE_USERS_URL, {
+      method: 'POST',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({
+        username: cleanUsername,
+        password: String(password),
+        display_name: cleanDisplayName,
+        role: 'user',
+        sync_user_key: syncUserKey,
+      }),
+    });
+
+    if (!createRes.ok) {
+      throw createApiError('Không thể tạo tài khoản mới. Vui lòng thử lại!', 500);
+    }
+
+    const createdRows = await createRes.json();
+    const createdUser = Array.isArray(createdRows) && createdRows[0] ? createdRows[0] : {
+      username: cleanUsername,
+      display_name: cleanDisplayName,
+      role: 'user',
+      sync_user_key: syncUserKey,
+    };
+
+    const safeUser = {
+      id: createdUser.id,
+      username: createdUser.username,
+      display_name: createdUser.display_name || cleanDisplayName,
+      role: createdUser.role || 'user',
+      sync_user_key: createdUser.sync_user_key || syncUserKey,
+    };
+
+    clearLocalDatabase();
+    localStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(safeUser));
+    localStorage.setItem(STORAGE_KEYS.SETS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.VOCABS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.TEST_HISTORIES, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.UPDATED_AT, new Date().toISOString());
+
+    await autoPullFromCloud(true);
+    window.dispatchEvent(new Event('scofield-auth-changed'));
+
+    return { data: { message: 'Đăng ký tài khoản thành công!', user: safeUser } };
+  }
+
+  if (method === 'PUT' && pathname === '/auth/change-password') {
+    const currentUser = getCurrentUser();
+    if (!currentUser) throw createApiError('Vui lòng đăng nhập!', 401);
+
+    const { old_password, new_password } = payload || {};
+    if (!new_password || String(new_password).trim().length < 4) {
+      throw createApiError('Mật khẩu mới phải có ít nhất 4 ký tự!');
+    }
+
+    const checkUrl = `${SUPABASE_USERS_URL}?id=eq.${currentUser.id}&select=id,password&limit=1`;
+    const checkRes = await supabaseFetch(checkUrl, { method: 'GET' });
+    if (!checkRes.ok) throw createApiError('Lỗi xác thực người dùng!', 500);
+    const rows = await checkRes.json();
+    if (!Array.isArray(rows) || rows.length === 0) {
+      throw createApiError('Không tìm thấy tài khoản!', 404);
+    }
+
+    if (old_password !== undefined && String(rows[0].password) !== String(old_password)) {
+      throw createApiError('Mật khẩu hiện tại không đúng!', 400);
+    }
+
+    const updateRes = await supabaseFetch(`${SUPABASE_USERS_URL}?id=eq.${currentUser.id}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ password: String(new_password).trim() }),
+    });
+
+    if (!updateRes.ok) throw createApiError('Lỗi cập nhật mật khẩu!', 500);
+    return { data: { message: 'Đổi mật khẩu thành công!' } };
+  }
+
+  if (method === 'GET' && pathname === '/admin/users') {
+    const currentUser = getCurrentUser();
+    if (!currentUser || currentUser.role !== 'admin') {
+      throw createApiError('Bạn không có quyền truy cập trang Quản trị!', 403);
+    }
+    const res = await supabaseFetch(
+      `${SUPABASE_USERS_URL}?select=id,username,display_name,role,sync_user_key,created_at&order=created_at.desc`,
+      { method: 'GET' }
+    );
+    if (!res.ok) throw createApiError('Không thể tải danh sách tài khoản!', 500);
+    const users = await res.json();
+    return { data: Array.isArray(users) ? users : [] };
+  }
+
+  const adminResetMatch = pathname.match(/^\/admin\/users\/(\d+)\/reset-password$/);
+  if (method === 'PUT' && adminResetMatch) {
+    const currentUser = getCurrentUser();
+    if (!currentUser || currentUser.role !== 'admin') {
+      throw createApiError('Không có quyền thực hiện!', 403);
+    }
+    const targetUserId = parseInt(adminResetMatch[1], 10);
+    const newPassword = payload?.new_password || '123456';
+
+    const res = await supabaseFetch(`${SUPABASE_USERS_URL}?id=eq.${targetUserId}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ password: String(newPassword) }),
+    });
+    if (!res.ok) throw createApiError('Reset mật khẩu thất bại!', 500);
+    return { data: { message: `Đã reset mật khẩu về ${newPassword}!` } };
+  }
+
+  const adminDeleteUserMatch = pathname.match(/^\/admin\/users\/(\d+)$/);
+  if (method === 'DELETE' && adminDeleteUserMatch) {
+    const currentUser = getCurrentUser();
+    if (!currentUser || currentUser.role !== 'admin') {
+      throw createApiError('Không có quyền thực hiện!', 403);
+    }
+    const targetUserId = parseInt(adminDeleteUserMatch[1], 10);
+
+    const checkRes = await supabaseFetch(
+      `${SUPABASE_USERS_URL}?id=eq.${targetUserId}&select=id,role,username&limit=1`,
+      { method: 'GET' }
+    );
+    const rows = await checkRes.json();
+    if (Array.isArray(rows) && rows[0]?.role === 'admin') {
+      throw createApiError('Không thể xóa tài khoản Quản trị viên (Admin)!', 400);
+    }
+
+    const delRes = await supabaseFetch(`${SUPABASE_USERS_URL}?id=eq.${targetUserId}`, {
+      method: 'DELETE',
+    });
+    if (!delRes.ok) throw createApiError('Xóa tài khoản thất bại!', 500);
+    return { data: { message: 'Đã xóa tài khoản người dùng!' } };
+  }
+
   // 1. STATS & SEARCH
   if (method === 'GET' && pathname === '/stats/global') {
     const vocabs = readTable(STORAGE_KEYS.VOCABS);
@@ -894,6 +1143,69 @@ const handleRequest = async (method, url, payload = null) => {
   }
 
   // 3. KANJI SETS & KANJIS
+  if (method === 'GET' && pathname === '/kanji/all') {
+    const sets = readTable(STORAGE_KEYS.SETS).filter(
+      (s) => s.type === 'kanji' && !s.title?.startsWith('_Thư mục:')
+    );
+    const setMap = {};
+    sets.forEach((s) => {
+      setMap[s.id] = s;
+    });
+    const vocabs = readTable(STORAGE_KEYS.VOCABS);
+    const allKanjis = vocabs
+      .filter((v) => setMap[v.set_id])
+      .map((k) => ({
+        id: k.id,
+        kanji: k.word,
+        word: k.word,
+        hanviet: k.hanviet || '',
+        hiragana: k.hiragana || '',
+        meaning: k.meaning || '',
+        kanji_set_id: k.set_id,
+        set_id: k.set_id,
+        set_title: setMap[k.set_id]?.title || 'Học phần Kanji',
+        folder_path: setMap[k.set_id]?.folder_path || '',
+        is_starred: Boolean(k.is_starred),
+      }));
+    return { data: allKanjis };
+  }
+
+  if (method === 'POST' && pathname === '/kanji') {
+    const { kanji, word, hanviet, hiragana, meaning, set_id } = payload || {};
+    const charVal = String(kanji || word || '').trim();
+    const meaningVal = String(meaning || '').trim();
+    if (!charVal || !meaningVal) {
+      throw createApiError('Chữ Hán và ý nghĩa không được để trống');
+    }
+    const vocabs = readTable(STORAGE_KEYS.VOCABS);
+    const newKanji = {
+      id: getNextId(vocabs),
+      word: charVal,
+      hanviet: String(hanviet || '').trim(),
+      hiragana: String(hiragana || '').trim(),
+      meaning: meaningVal,
+      language: 'ja',
+      set_id: set_id != null ? Number(set_id) : null,
+      repetition: 0,
+      ease_factor: 2.5,
+      interval: 0,
+      next_review: new Date().toISOString(),
+      is_starred: false,
+    };
+    vocabs.push(newKanji);
+    writeTable(STORAGE_KEYS.VOCABS, vocabs);
+    return {
+      data: {
+        id: newKanji.id,
+        kanji: newKanji.word,
+        hanviet: newKanji.hanviet,
+        hiragana: newKanji.hiragana,
+        meaning: newKanji.meaning,
+        kanji_set_id: newKanji.set_id,
+      },
+    };
+  }
+
   if (method === 'GET' && pathname === '/kanji-sets') {
     const sets = readTable(STORAGE_KEYS.SETS).filter((s) => s.type === 'kanji');
     const vocabs = readTable(STORAGE_KEYS.VOCABS);

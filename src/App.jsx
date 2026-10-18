@@ -1,95 +1,73 @@
-import { useState, useEffect, useRef } from "react";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import { AnimatePresence, motion } from "framer-motion";
-import "react-toastify/dist/ReactToastify.css";
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import './App.css';
 
-import Navbar from "./components/Navbar";
-import HomePage from "./pages/HomePage";
-import FlashcardMode from "./components/FlashcardMode";
-import LearnMode from "./components/LearnMode";
-import TestMode from "./components/TestMode";
-import MatchMode from "./components/MatchMode";
-import NotFound from "./pages/NotFound";
-import { VocabProvider } from "./context/VocabContext";
+import { VocabProvider } from './context/VocabContext';
+import { getCurrentUser } from './api/axiosConfig';
 
-const PageWrapper = ({ children }) => {
-  const ref = useRef(null);
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
-      onAnimationComplete={() => {
-        if (ref.current) {
-          ref.current.style.transform = "none";
-          ref.current.style.willChange = "auto";
-        }
-      }}
-    >
-      {children}
-    </motion.div>
-  );
-};
-
-function AnimatedRoutes() {
-  const location = useLocation();
-  return (
-    <Routes location={location} key={location.pathname}>
-      <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
-      <Route path="/flashcards" element={<PageWrapper><FlashcardMode /></PageWrapper>} />
-      <Route path="/learn" element={<PageWrapper><LearnMode /></PageWrapper>} />
-      <Route path="/test" element={<PageWrapper><TestMode /></PageWrapper>} />
-      <Route path="/match" element={<PageWrapper><MatchMode /></PageWrapper>} />
-      <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
-    </Routes>
-  );
-}
+import Navbar from './components/Navbar';
+import Breadcrumbs from './components/Breadcrumbs';
+import HomePage from './pages/HomePage';
+import KanjiDictionary from './pages/KanjiDictionary';
+import FlashcardMode from './components/FlashcardMode';
+import LearnMode from './components/LearnMode';
+import TestMode from './components/TestMode';
+import MatchMode from './components/MatchMode';
+import AdminUsersPage from './pages/AdminUsersPage';
+import AuthPage from './pages/AuthPage';
+import NotFound from './pages/NotFound';
 
 function App() {
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("scofield_theme") || "light";
-  });
+  const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("scofield_theme", theme);
-  }, [theme]);
+    const savedTheme = localStorage.getItem('scofield_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }, []);
 
   useEffect(() => {
-    const handleThemeEvent = (e) => {
-      if (e.detail) setTheme(e.detail);
+    const handleAuthChange = () => {
+      setCurrentUser(getCurrentUser());
     };
-    window.addEventListener("scofield-theme-change", handleThemeEvent);
-    return () => window.removeEventListener("scofield-theme-change", handleThemeEvent);
+    window.addEventListener('scofield-auth-changed', handleAuthChange);
+    return () => window.removeEventListener('scofield-auth-changed', handleAuthChange);
   }, []);
 
   return (
     <VocabProvider>
-      <BrowserRouter>
-        <div className="app-layout">
-          <Navbar />
-          <main className="main-content">
-            <div className="container-fluid py-4" style={{ maxWidth: "1200px" }}>
-              <AnimatedRoutes />
-            </div>
-          </main>
-        </div>
+      <Router>
+        {!currentUser ? (
+          <AuthPage onAuthSuccess={(user) => setCurrentUser(user)} />
+        ) : (
+          <div className="app-layout">
+            <Navbar />
+            <main className="main-content">
+              <Breadcrumbs />
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/kanji" element={<KanjiDictionary />} />
+                <Route path="/flashcards" element={<FlashcardMode />} />
+                <Route path="/learn" element={<LearnMode />} />
+                <Route path="/test" element={<TestMode />} />
+                <Route path="/match" element={<MatchMode />} />
+                <Route path="/admin" element={<AdminUsersPage />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+          </div>
+        )}
         <ToastContainer
-          position="top-center"
-          autoClose={1600}
-          hideProgressBar={true}
-          newestOnTop={true}
+          position="top-right"
+          autoClose={2200}
+          hideProgressBar={false}
+          newestOnTop
           closeOnClick
-          rtl={false}
-          pauseOnFocusLoss={false}
-          draggable
           pauseOnHover={false}
-          theme={theme === "dark" ? "dark" : "colored"}
-          style={{ top: "env(safe-area-inset-top, 12px)", zIndex: 20000 }}
+          theme="colored"
         />
-      </BrowserRouter>
+      </Router>
     </VocabProvider>
   );
 }

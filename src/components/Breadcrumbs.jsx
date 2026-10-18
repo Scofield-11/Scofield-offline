@@ -7,10 +7,12 @@ function Breadcrumbs() {
   // Ánh xạ đường dẫn sang tên trang
   const routeNames = {
     '/': 'Quản lý Thư viện',
+    '/kanji': 'Từ điển Kanji',
     '/flashcards': 'Ôn tập Flashcards',
     '/learn': 'Học thuộc',
     '/test': 'Kiểm tra năng lực',
-    '/match': 'Trò chơi Ghép thẻ'
+    '/match': 'Trò chơi Ghép thẻ',
+    '/admin': 'Quản trị tài khoản'
   };
 
   const currentTitle = routeNames[location.pathname];

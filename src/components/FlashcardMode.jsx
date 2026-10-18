@@ -42,6 +42,7 @@ function FlashcardMode() {
       const lang = idStr.replace('lang_', '').replace('all_', '');
       if (lang === 'kanji') return validSets.filter((s) => s.type === 'kanji');
       if (lang === 'en') return validSets.filter((s) => s.type !== 'kanji' && s.language === 'en');
+      if (lang === 'zh') return validSets.filter((s) => s.type !== 'kanji' && s.language === 'zh');
       return validSets.filter((s) => s.type !== 'kanji' && (s.language || 'ja') === 'ja');
     }
     if (idStr.startsWith('folder_')) {
@@ -57,11 +58,18 @@ function FlashcardMode() {
 
   const hasFourFields = (() => {
     if (currentContentType === 'kanji') return true;
-    if (String(selectedSetId).includes('ja') || String(selectedSetId).includes('kanji')) return true;
+    if (
+      String(selectedSetId).includes('ja') ||
+      String(selectedSetId).includes('zh') ||
+      String(selectedSetId).includes('kanji')
+    ) {
+      return true;
+    }
     if (targetSets.length > 0) {
       return targetSets.some(
         (s) =>
           s.language === 'ja' ||
+          s.language === 'zh' ||
           s.type === 'kanji' ||
           (s.vocabularies && s.vocabularies.some((v) => v.hanviet || v.hiragana))
       );
@@ -408,10 +416,10 @@ function FlashcardMode() {
               ) : (
                 <>
                   <input type="text" className="form-control bg-light border-0 mb-3 fw-bold shadow-sm" value={editingVocab.word} onChange={(e) => setEditingVocab({ ...editingVocab, word: e.target.value })} placeholder="Từ vựng" required />
-                  {(editingVocab.language || 'ja') === 'ja' && (
+                  {(editingVocab.language || 'ja') !== 'en' && (
                     <>
                       <input type="text" className="form-control bg-light border-0 mb-3 shadow-sm" value={editingVocab.hanviet || ''} onChange={(e) => setEditingVocab({ ...editingVocab, hanviet: e.target.value })} placeholder="Hán Việt" />
-                      <input type="text" className="form-control bg-light border-0 mb-3 shadow-sm" value={editingVocab.hiragana || ''} onChange={(e) => setEditingVocab({ ...editingVocab, hiragana: e.target.value })} placeholder="Cách đọc" />
+                      <input type="text" className="form-control bg-light border-0 mb-3 shadow-sm" value={editingVocab.hiragana || ''} onChange={(e) => setEditingVocab({ ...editingVocab, hiragana: e.target.value })} placeholder="Cách đọc / Pinyin" />
                     </>
                   )}
                   <input type="text" className="form-control bg-light border-0 mb-4 shadow-sm" value={editingVocab.meaning} onChange={(e) => setEditingVocab({ ...editingVocab, meaning: e.target.value })} placeholder="Ý nghĩa" required />

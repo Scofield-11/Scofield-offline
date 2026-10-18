@@ -74,6 +74,7 @@ function AddVocabularyForm({ onAddSuccess, existingFolders = [], currentPath = '
   };
 
   const jaPlaceholder = '男性 | NAM TÍNH | だんせい | đàn ông\n|  | けが | vết thương\n守ります | Bảo vệ, tuân thủ';
+  const zhPlaceholder = '你好 | NỄ HẢO | nǐ hǎo | Xin chào\n谢谢 | TẠ TẠ | xièxie | Cảm ơn';
   const enPlaceholder = 'Desk | Cái bàn\nAccomplish | Hoàn thành, đạt được';
 
   return (
@@ -114,7 +115,7 @@ function AddVocabularyForm({ onAddSuccess, existingFolders = [], currentPath = '
               <input
                 type="text"
                 className="form-control mb-3 fw-bold text-dark bg-light border-0"
-                placeholder="Tên học phần (VD: Bài 1 - Minna no Nihongo)..."
+                placeholder="Tên học phần (VD: Bài 1 - Minna no Nihongo / HSK 1)..."
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
@@ -143,6 +144,13 @@ function AddVocabularyForm({ onAddSuccess, existingFolders = [], currentPath = '
                       onClick={() => setLanguage('ja')}
                     >
                       🇯🇵 Tiếng Nhật
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn btn-mobile-chip flex-fill ${language === 'zh' ? 'btn-primary text-white' : 'chip-slate'}`}
+                      onClick={() => setLanguage('zh')}
+                    >
+                      🇨🇳 Tiếng Trung
                     </button>
                     <button
                       type="button"
@@ -175,14 +183,20 @@ function AddVocabularyForm({ onAddSuccess, existingFolders = [], currentPath = '
               {importMode === 'text' ? (
                 <div className="mb-3">
                   <label className="text-muted small fw-bold mb-1">
-                    {language === 'ja'
-                      ? 'ĐỊNH DẠNG: Chữ Hán | Hán Việt | Cách đọc | Nghĩa (hoặc Từ | Nghĩa)'
+                    {language === 'ja' || language === 'zh'
+                      ? 'ĐỊNH DẠNG: Chữ Hán | Hán Việt | Phiên âm | Nghĩa (hoặc Từ | Nghĩa)'
                       : 'ĐỊNH DẠNG: Từ vựng | Ý nghĩa'}
                   </label>
                   <textarea
                     className="form-control bg-light border-0 p-3"
                     rows="5"
-                    placeholder={language === 'ja' ? jaPlaceholder : enPlaceholder}
+                    placeholder={
+                      language === 'ja'
+                        ? jaPlaceholder
+                        : language === 'zh'
+                        ? zhPlaceholder
+                        : enPlaceholder
+                    }
                     value={bulkText}
                     onChange={(e) => setBulkText(e.target.value)}
                     style={{ lineHeight: '1.5' }}

@@ -57,10 +57,15 @@ function Flashcard({
   if (!vocab) return null;
 
   const detectLanguage = (text, field) => {
-    if (field === 'kanji' || field === 'hiragana') return 'ja-JP';
-    if (field === 'word') return vocab.language === 'en' ? 'en-US' : 'ja-JP';
+    if (field === 'kanji' || field === 'hiragana') {
+      return vocab.language === 'zh' ? 'zh-CN' : 'ja-JP';
+    }
+    if (field === 'word') {
+      return vocab.language === 'en' ? 'en-US' : vocab.language === 'zh' ? 'zh-CN' : 'ja-JP';
+    }
     if (field === 'hanviet' || field === 'meaning' || field === 'summary') return 'vi-VN';
     if (!text) return 'en-US';
+    if (vocab.language === 'zh') return 'zh-CN';
     const hasJapanese = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(text);
     return hasJapanese ? 'ja-JP' : 'en-US';
   };

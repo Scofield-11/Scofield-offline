@@ -73,8 +73,10 @@ export const speakText = (text, langHint = 'ja', rate = 0.9) => {
   const hasVietnamese = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(cleanText);
 
   let lang = 'ja-JP';
-  if (hasJapanese) {
-    lang = 'ja-JP';
+  if (langHint === 'zh' || langHint === 'zh-CN') {
+    lang = 'zh-CN';
+  } else if (langHint === 'en' || langHint === 'en-US') {
+    lang = 'en-US';
   } else if (
     langHint === 'vi-VN' ||
     langHint === 'vi' ||
@@ -84,8 +86,8 @@ export const speakText = (text, langHint = 'ja', rate = 0.9) => {
     hasVietnamese
   ) {
     lang = 'vi-VN';
-  } else if (langHint === 'en' || langHint === 'en-US') {
-    lang = 'en-US';
+  } else if (langHint === 'ja' || langHint === 'ja-JP' || hasJapanese) {
+    lang = 'ja-JP';
   } else if (/^[a-zA-Z0-9\s.,?!'"()-]+$/.test(cleanText)) {
     lang = 'en-US';
   }

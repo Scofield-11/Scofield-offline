@@ -7,7 +7,13 @@ function TestSetup({ sets, currentContentType, selectedSetId, setSelectedSetId, 
   
   const hasFourFields = (() => {
     if (currentContentType === 'kanji') return true;
-    if (String(selectedSetId).includes('ja') || String(selectedSetId).includes('kanji')) return true;
+    if (
+      String(selectedSetId).includes('ja') ||
+      String(selectedSetId).includes('zh') ||
+      String(selectedSetId).includes('kanji')
+    ) {
+      return true;
+    }
     
     let targetSets = [];
     if (String(selectedSetId).startsWith('folder_')) {
@@ -19,7 +25,13 @@ function TestSetup({ sets, currentContentType, selectedSetId, setSelectedSetId, 
     }
 
     if (targetSets.length > 0) {
-      return targetSets.some(s => s.language === 'ja' || s.type === 'kanji' || (s.vocabularies && s.vocabularies.some(v => v.hanviet || v.hiragana)));
+      return targetSets.some(
+        s =>
+          s.language === 'ja' ||
+          s.language === 'zh' ||
+          s.type === 'kanji' ||
+          (s.vocabularies && s.vocabularies.some(v => v.hanviet || v.hiragana))
+      );
     }
     return false;
   })();

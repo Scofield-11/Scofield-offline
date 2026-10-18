@@ -1,20 +1,32 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, RefreshCw, X, Flame, Sun, Moon, Volume2 } from 'lucide-react';
-import api, { getSyncStatus, autoPullFromCloud, pushToSupabase } from '../api/axiosConfig';
+import { Sparkles, RefreshCw, X, Flame, Sun, Moon, Volume2, LogOut, KeyRound, Shield } from 'lucide-react';
+import api, {
+  getSyncStatus,
+  autoPullFromCloud,
+  pushToSupabase,
+  getCurrentUser,
+  logoutUser,
+} from '../api/axiosConfig';
 import { VocabContext } from '../context/VocabContext';
 import { toast } from 'react-toastify';
 import { speakText } from '../utils/audio';
 
 function Dashboard() {
   const { sets } = useContext(VocabContext);
+  const currentUser = getCurrentUser();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const searchInputRef = useRef(null);
+
+  const [showPassModal, setShowPassModal] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [changingPass, setChangingPass] = useState(false);
 
   const [todayTests, setTodayTests] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);
@@ -174,20 +186,118 @@ function Dashboard() {
     }
   };
 
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (!oldPassword || !newPassword) return toast.warning('Vui lòng nhập đủ mật khẩu!');
+    setChangingPass(true);
+    try {
+      await api.put('/auth/change-password', {
+        old_password: oldPassword,
+        new_password: newPassword,
+      });
+      toast.success('Đổi mật khẩu thành công!');
+      setShowPassModal(false);
+      setOldPassword('');
+      setNewPassword('');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Lỗi khi đổi mật khẩu!');
+    } finally {
+      setChangingPass(false);
+    }
+  };
+
+  const handleLogout = () => {
+    if (window.confirm('Bạn muốn đăng xuất khỏi tài khoản hiện tại?')) {
+      logoutUser();
+      toast.info('Đã đăng xuất!');
+    }
+  };
+
   return (
     <div
       className="container-fluid mt-1 mb-3 mx-auto px-2 px-md-3 position-relative"
       style={{ maxWidth: '1000px', zIndex: 1030 }}
     >
+      {showPassModal && (
+        <div
+          className="set-sheet-backdrop"
+          style={{ zIndex: 3000 }}
+          onClick={() => setShowPassModal(false)}
+        >
+          <div
+            className="card border-0 shadow-lg rounded-4 p-4 bg-white"
+            style={{ width: '92%', maxWidth: '380px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h6 className="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+              <KeyRound size={17} className="text-primary" /> Đổi mật khẩu cá nhân
+            </h6>
+            <form onSubmit={handleChangePassword}>
+              <input
+                type="password"
+                className="form-control mb-2 bg-light border-0 fw-semibold"
+                placeholder="Mật khẩu hiện tại..."
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+                required
+              />
+              <input
+                type="password"
+                className="form-control mb-3 bg-light border-0 fw-semibold"
+                placeholder="Mật khẩu mới (tối thiểu 4 ký tự)..."
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+              <div className="d-flex gap-2 justify-content-end">
+                <button
+                  type="button"
+                  className="btn btn-mobile-chip chip-slate"
+                  onClick={() => setShowPassModal(false)}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-mobile-chip btn-primary text-white"
+                  disabled={changingPass}
+                >
+                  {changingPass ? 'Đang lưu...' : 'Lưu mật khẩu'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="position-relative mb-3" style={{ zIndex: 1040 }}>
         <div className="dashboard-hero-card p-3 p-md-4">
-          <div className="d-flex justify-content-between align-items-center gap-2 mb-3">
-            <div className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill dashboard-hero-badge">
-              <Sparkles size={14} />
-              <span>{totalVocabCount} thẻ • {validSetsCount} bộ</span>
+          <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div className="d-flex align-items-center flex-wrap gap-2">
+              <div className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill dashboard-hero-badge">
+                <Sparkles size={14} />
+                <span>{totalVocabCount} thẻ • {validSetsCount} bộ</span>
+              </div>
+
+              {currentUser && (
+                <div className="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill dashboard-hero-badge">
+                  <span>👤 {currentUser.display_name || currentUser.username}</span>
+                </div>
+              )}
             </div>
 
-            <div className="d-flex align-items-center gap-2">
+            <div className="d-flex align-items-center flex-wrap gap-2">
+              {currentUser?.role === 'admin' && (
+                <Link
+                  to="/admin"
+                  className="cloud-pill-btn text-decoration-none"
+                  title="Quản trị người dùng & Reset mật khẩu"
+                >
+                  <Shield size={13} />
+                  <span>Admin</span>
+                </Link>
+              )}
+
               <button
                 type="button"
                 onClick={handleQuickCloudSync}
@@ -218,6 +328,24 @@ function Dashboard() {
                   size={13}
                   className={syncInfo.state === 'syncing' ? 'spin-anim' : ''}
                 />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowPassModal(true)}
+                className="cloud-pill-btn px-2"
+                title="Đổi mật khẩu"
+              >
+                <KeyRound size={14} />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="cloud-pill-btn px-2"
+                title="Đăng xuất"
+              >
+                <LogOut size={14} />
               </button>
 
               <motion.button

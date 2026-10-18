@@ -53,7 +53,11 @@ export const VocabProvider = ({ children }) => {
       fetchGlobalStats();
     };
     window.addEventListener('scofield-cloud-synced', handleCloudSynced);
-    return () => window.removeEventListener('scofield-cloud-synced', handleCloudSynced);
+    window.addEventListener('scofield-auth-changed', handleCloudSynced);
+    return () => {
+      window.removeEventListener('scofield-cloud-synced', handleCloudSynced);
+      window.removeEventListener('scofield-auth-changed', handleCloudSynced);
+    };
   }, [fetchSets, fetchGlobalStats]);
 
   return (

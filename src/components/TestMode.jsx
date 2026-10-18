@@ -25,6 +25,7 @@ function TestMode() {
       const lang = idStr.replace('lang_', '').replace('all_', '');
       if (lang === 'kanji') return validSets.filter(s => s.type === 'kanji');
       if (lang === 'en') return validSets.filter(s => s.type !== 'kanji' && s.language === 'en');
+      if (lang === 'zh') return validSets.filter((s) => s.type !== 'kanji' && s.language === 'zh');
       return validSets.filter(s => s.type !== 'kanji' && (s.language || 'ja') === 'ja');
     }
     if (idStr.startsWith('folder_')) {
@@ -193,11 +194,18 @@ function TestMode() {
 
   const hasFourFields = (() => {
     if (currentContentType === 'kanji') return true;
-    if (String(selectedSetId).includes('ja') || String(selectedSetId).includes('kanji')) return true;
+    if (
+      String(selectedSetId).includes('ja') ||
+      String(selectedSetId).includes('zh') ||
+      String(selectedSetId).includes('kanji')
+    ) {
+      return true;
+    }
     if (targetSets.length > 0) {
       return targetSets.some(
         (s) =>
           s.language === 'ja' ||
+          s.language === 'zh' ||
           s.type === 'kanji' ||
           (s.vocabularies && s.vocabularies.some((v) => v.hanviet || v.hiragana))
       );
