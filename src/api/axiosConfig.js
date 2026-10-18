@@ -61,20 +61,25 @@ const notifySyncStatus = (state, message = '') => {
 export const getSyncStatus = () => currentSyncStatus;
 
 const supabaseFetch = async (url, options = {}) => {
-  const doCall = (apiKey) =>
-    fetch(url, {
+  const doCall = (apiKey, includeBearer = true) => {
+    const headers = {
+      'Content-Type': 'application/json',
+      apikey: apiKey,
+      ...(options.headers || {}),
+    };
+    if (includeBearer) {
+      headers.Authorization = `Bearer ${apiKey}`;
+    }
+    return fetch(url, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: apiKey,
-        Authorization: `Bearer ${apiKey}`,
-        ...(options.headers || {}),
-      },
+      headers,
     });
+  };
 
-  let res = await doCall(SUPABASE_PUB_KEY);
+  let res = await doCall(SUPABASE_PUB_KEY, true);
   if (!res.ok && (res.status === 401 || res.status === 403 || res.status === 400)) {
-    res = await doCall(SUPABASE_SEC_KEY);
+    const retryRes = await doCall(SUPABASE_PUB_KEY, false);
+    if (retryRes.ok) return retryRes;
   }
   return res;
 };
@@ -653,15 +658,17 @@ const handleRequest = async (method, url, payload = null) => {
   // 0. AUTHENTICATION & ADMIN USERS (SUPABASE app_users)
   if (method === 'POST' && pathname === '/auth/login') {
     const { username, password } = payload || {};
-    const cleanUsername = String(username || '').trim();
+    const cleanUsername = String(username || '').trim().toLowerCase();
     if (!cleanUsername || !password) {
       throw createApiError('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!');
     }
 
-    const queryUrl = `${SUPABASE_USERS_URL}?username=eq.${encodeURIComponent(cleanUsername)}&select=*&limit=1`;
+    const queryUrl = `${SUPABASE_USERS_URL}?username=ilike.${encodeURIComponent(cleanUsername)}&select=*&limit=1`;
     const res = await supabaseFetch(queryUrl, { method: 'GET' });
     if (!res.ok) {
-      throw createApiError('Không thể kết nối máy chủ xác thực Supabase!', 500);
+      const errText = await res.text().catch(() => '');
+      console.error('Supabase Login Error:', res.status, errText);
+      throw createApiError(`Không thể kết nối máy chủ xác thực Supabase (HTTP ${res.status})!`, 500);
     }
 
     const rows = await res.json();
