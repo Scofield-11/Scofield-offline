@@ -299,7 +299,18 @@ function TestMode() {
         scoredAnswers.sort((a, b) => b.itemScore - a.itemScore);
         
         let wrongAnswers = [];
-        const normalizeStr = (text) => text.toLowerCase().replace(/[.\/#!$%\^&\*;:{}=\-_`~()]/g, "").split(',').map(s => s.trim()).filter(Boolean).sort().join(',');
+        const normalizeStr = (text) =>
+          String(text || '')
+            .normalize('NFC')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '')
+            .toLowerCase()
+            .replace(/[.\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+            .replace(/\s+/g, ' ')
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean)
+            .sort()
+            .join(',');
         
         const normalizedCorrect = normalizeStr(correctAnswer);
         const usedNormalizedAnswers = new Set([normalizedCorrect]); 
@@ -370,13 +381,28 @@ function TestMode() {
     setShowSubmitModal(false);
     let correctCount = 0;
     const gradedQuestions = questions.map(q => {
-        const clean = (str) => str.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").replace(/\s{2,}/g," ").trim().toLowerCase();
+        const clean = (str) =>
+          String(str || '')
+            .normalize('NFC')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '')
+            .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toLowerCase();
         let isCorrect = false;
+        const cleanedUser = clean(q.userAnswer);
         
         if (q.type === 'choice') {
-          isCorrect = clean(q.correctAnswer) === clean(q.userAnswer);
+          isCorrect = cleanedUser !== '' && clean(q.correctAnswer) === cleanedUser;
         } else {
-          isCorrect = clean(q.correctAnswer) === clean(q.userAnswer) || q.correctAnswer.split(',').map(s => clean(s)).includes(clean(q.userAnswer));
+          isCorrect =
+            cleanedUser !== '' &&
+            (clean(q.correctAnswer) === cleanedUser ||
+              String(q.correctAnswer || '')
+                .split(/[,;/]+/)
+                .map(s => clean(s))
+                .filter(Boolean)
+                .includes(cleanedUser));
         }
         
         if (isCorrect) correctCount++;

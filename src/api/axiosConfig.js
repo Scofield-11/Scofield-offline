@@ -1042,16 +1042,23 @@ const handleRequest = async (method, url, payload = null) => {
   }
 
   if (method === 'GET' && pathname === '/search') {
-    const q = (params.get('q') || '').trim().toLowerCase();
+    const norm = (str) =>
+      String(str || '')
+        .normalize('NFC')
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+    const q = norm(params.get('q'));
     if (!q) return { data: [] };
     const vocabs = readTable(STORAGE_KEYS.VOCABS);
     const results = vocabs
       .filter(
         (v) =>
-          (v.word && v.word.toLowerCase().includes(q)) ||
-          (v.hanviet && v.hanviet.toLowerCase().includes(q)) ||
-          (v.hiragana && v.hiragana.toLowerCase().includes(q)) ||
-          (v.meaning && v.meaning.toLowerCase().includes(q))
+          norm(v.word).includes(q) ||
+          norm(v.hanviet).includes(q) ||
+          norm(v.hiragana).includes(q) ||
+          norm(v.meaning).includes(q)
       )
       .slice(0, 10);
     return { data: results };

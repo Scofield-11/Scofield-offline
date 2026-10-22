@@ -363,9 +363,12 @@ function LearnMode() {
 
     const wrongAnswers = [];
     const normalizeStr = (text) =>
-      (text || '')
+      String(text || '')
+        .normalize('NFC')
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
         .toLowerCase()
         .replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, '')
+        .replace(/\s+/g, ' ')
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean)
@@ -502,16 +505,21 @@ function LearnMode() {
   const checkFuzzyMatch = (input, correctStr) => {
     if (!correctStr) return false;
     const clean = (str) =>
-      str
+      String(str || '')
+        .normalize('NFC')
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
         .replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, '')
-        .replace(/\s{2,}/g, ' ')
+        .replace(/\s+/g, ' ')
         .trim()
         .toLowerCase();
-    if (clean(input) === clean(correctStr)) return true;
-    return correctStr
-      .split(',')
+    const cleanedInput = clean(input);
+    if (!cleanedInput) return false;
+    if (cleanedInput === clean(correctStr)) return true;
+    return String(correctStr)
+      .split(/[,;/]+/)
       .map((s) => clean(s))
-      .includes(clean(input));
+      .filter(Boolean)
+      .includes(cleanedInput);
   };
 
   const handleTypeSubmit = (e) => {

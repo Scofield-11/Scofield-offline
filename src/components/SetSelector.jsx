@@ -114,12 +114,17 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
   );
 
   const filteredSets = useMemo(() => {
-    const q = searchTerm.trim().toLowerCase();
+    const norm = (str) =>
+      String(str || '')
+        .normalize('NFC')
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+    const q = norm(searchTerm);
     if (!q) return typeFilteredSets;
     return typeFilteredSets.filter(
-      (s) =>
-        s.title.toLowerCase().includes(q) ||
-        (s.folder_path && s.folder_path.toLowerCase().includes(q))
+      (s) => norm(s.title).includes(q) || norm(s.folder_path).includes(q)
     );
   }, [typeFilteredSets, searchTerm]);
 
