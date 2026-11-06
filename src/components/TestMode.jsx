@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import confetti from 'canvas-confetti';
 import api from '../api/axiosConfig';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookMarked, Maximize2, Minimize2 } from 'lucide-react';
+import { BookMarked, Maximize2, Minimize2, ArrowLeft, CheckCircle2, X, AlertTriangle } from 'lucide-react';
 import TestSetup from './TestSetup';
 import TestResult from './TestResult';
 import ExamHistoryTable from './ExamHistoryTable';
@@ -524,7 +524,7 @@ function TestMode() {
           kanjiBack={kanjiBack} setKanjiBack={setKanjiBack}
           generateTest={generateTest}
         />
-        <div className="container mb-5" style={{ maxWidth: '650px' }}>
+        <div className="container mb-5" style={{ maxWidth: '980px' }}>
           <ExamHistoryTable history={history} setViewHistory={setViewHistory} handleClearHistory={handleClearHistory} onLoadMore={() => fetchHistory(false)} hasMore={hasMoreHistory} />
         </div>
       </>
@@ -587,14 +587,36 @@ function TestMode() {
               exit={{ opacity: 0, scale: 0.9, y: 10 }}
               transition={MODAL_SPRING}
               className="card border-0 shadow-lg rounded-4 p-4 text-center"
-              style={{ width: '90%', maxWidth: '400px' }}
+              style={{
+                width: '90%',
+                maxWidth: '400px',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--surface-border)',
+              }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h4 className="fw-bold text-danger mb-3">Cảnh báo</h4>
-              <p className="text-dark mb-4 fs-6">Bạn đang làm bài kiểm tra. Nếu thoát, kết quả hiện tại sẽ bị hủy. Bạn có chắc chắn muốn thoát?</p>
+              <div className="d-flex justify-content-center mb-2">
+                <div
+                  className="d-flex align-items-center justify-content-center rounded-circle"
+                  style={{ width: '56px', height: '56px', background: 'rgba(239, 68, 68, 0.12)' }}
+                >
+                  <AlertTriangle size={28} className="text-danger" />
+                </div>
+              </div>
+              <h5 className="fw-bold text-danger mb-2">Cảnh báo</h5>
+              <p className="mb-4 fs-6" style={{ color: 'var(--text-secondary)' }}>
+                Bạn đang làm bài kiểm tra. Nếu thoát, kết quả hiện tại sẽ bị hủy. Bạn có chắc chắn muốn thoát?
+              </p>
               <div className="d-flex gap-3">
-                <button className="btn btn-danger btn-touch fw-bold w-50 py-2 rounded-3" onClick={confirmExit}>Hủy bài thi</button>
-                <button className="btn btn-light btn-touch fw-bold w-50 py-2 rounded-3" onClick={() => setShowExitModal(false)}>Tiếp tục</button>
+                <button className="btn btn-danger btn-touch fw-bold w-50 py-2 rounded-3" onClick={confirmExit}>
+                  Hủy bài thi
+                </button>
+                <button
+                  className="btn btn-light btn-touch fw-bold w-50 py-2 rounded-3"
+                  onClick={() => setShowExitModal(false)}
+                >
+                  Tiếp tục
+                </button>
               </div>
             </motion.div>
           </motion.div>
@@ -619,14 +641,39 @@ function TestMode() {
               exit={{ opacity: 0, scale: 0.9, y: 10 }}
               transition={MODAL_SPRING}
               className="card border-0 shadow-lg rounded-4 p-4 text-center"
-              style={{ width: '90%', maxWidth: '400px' }}
+              style={{
+                width: '90%',
+                maxWidth: '400px',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--surface-border)',
+              }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h4 className="fw-bold text-primary mb-3">Nộp bài</h4>
-              <p className="text-dark mb-4 fs-6">Bạn đã hoàn thành <strong className="text-success">{answeredCount}/{questions.length}</strong> câu. Bạn có chắc chắn muốn kết thúc bài thi?</p>
+              <div className="d-flex justify-content-center mb-2">
+                <div
+                  className="d-flex align-items-center justify-content-center rounded-circle"
+                  style={{ width: '56px', height: '56px', background: 'rgba(99, 76, 226, 0.12)' }}
+                >
+                  <CheckCircle2 size={28} className="text-primary" />
+                </div>
+              </div>
+              <h5 className="fw-bold text-primary mb-2">Nộp bài</h5>
+              <p className="mb-4 fs-6" style={{ color: 'var(--text-secondary)' }}>
+                Bạn đã hoàn thành <strong className="text-success">{answeredCount}/{questions.length}</strong> câu. Bạn có chắc chắn muốn nộp bài thi?
+              </p>
               <div className="d-flex gap-3">
-                <button className="btn btn-light btn-touch fw-bold w-50 py-2 rounded-3" onClick={() => setShowSubmitModal(false)}>Hủy</button>
-                <button className="btn btn-primary btn-touch fw-bold w-50 py-2 rounded-3" onClick={confirmSubmitTest}>Nộp bài</button>
+                <button
+                  className="btn btn-light btn-touch fw-bold w-50 py-2 rounded-3"
+                  onClick={() => setShowSubmitModal(false)}
+                >
+                  Hủy
+                </button>
+                <button
+                  className="btn btn-primary btn-touch fw-bold w-50 py-2 rounded-3"
+                  onClick={confirmSubmitTest}
+                >
+                  Nộp bài
+                </button>
               </div>
             </motion.div>
           </motion.div>
@@ -636,8 +683,8 @@ function TestMode() {
       <div className="mx-auto has-mobile-bottom-bar" style={{ maxWidth: '900px' }}>
         <div className="mobile-sticky-top d-print-none">
           <div className="d-flex justify-content-between align-items-center mb-2">
-            <button className="btn btn-light text-dark btn-mobile-chip" onClick={handleExit}>
-              ← Thoát
+            <button className="btn btn-light text-dark btn-mobile-chip d-flex align-items-center gap-1.5" onClick={handleExit}>
+              <ArrowLeft size={14} /> <span>Thoát</span>
             </button>
             <span className="fw-bold text-primary">
               Đã làm: {answeredCount} / {questions.length}
@@ -652,7 +699,7 @@ function TestMode() {
             </button>
           </div>
 
-          <div className="progress mb-2" style={{ height: '6px', borderRadius: '8px' }}>
+          <div className="progress mb-2" style={{ height: '6px', borderRadius: '8px', backgroundColor: 'var(--bg-elevated)' }}>
             <div
               className="progress-bar bg-success"
               role="progressbar"
@@ -667,8 +714,17 @@ function TestMode() {
                 <button
                   key={idx}
                   className={`btn ${
-                    isAnswered ? 'btn-primary text-white border-primary' : 'bg-white text-dark border'
+                    isAnswered ? 'btn-primary text-white border-primary' : 'border'
                   }`}
+                  style={
+                    !isAnswered
+                      ? {
+                          backgroundColor: 'var(--bg-elevated)',
+                          color: 'var(--text-secondary)',
+                          borderColor: 'var(--surface-border)',
+                        }
+                      : {}
+                  }
                   onClick={() => scrollToQuestion(idx)}
                 >
                   {idx + 1}
@@ -696,7 +752,7 @@ function TestMode() {
                   </span>
                 </div>
 
-                <h4 className="my-3 fw-bold text-dark" style={{ lineHeight: '1.4' }}>
+                <h4 className="my-3 fw-bold" style={{ color: 'var(--text-main)', lineHeight: '1.4' }}>
                   {q.questionText}
                 </h4>
 
@@ -724,12 +780,16 @@ function TestMode() {
                   <div className="mt-3">
                     <input
                       type="text"
-                      className="form-control form-control-lg py-3 px-3 bg-light fw-bold d-print-none shadow-sm rounded-4 text-center"
+                      className="form-control form-control-lg py-3 px-3 fw-bold d-print-none shadow-sm rounded-4 text-center"
                       placeholder="Gõ đáp án chính xác vào đây..."
                       value={q.userAnswer}
                       onChange={(e) => handleAnswerChange(idx, e.target.value)}
                       autoComplete="off"
-                      style={{ border: '2px solid var(--surface-border)' }}
+                      style={{
+                        backgroundColor: 'var(--bg-elevated)',
+                        color: 'var(--text-main)',
+                        border: '1.5px solid var(--surface-border)',
+                      }}
                     />
                     <div className="print-blank-line d-none d-print-block"></div>
                   </div>
@@ -743,14 +803,19 @@ function TestMode() {
         <div className="mobile-bottom-bar d-print-none">
           <div className="container px-0" style={{ maxWidth: '900px' }}>
             <div className="d-flex gap-2">
-              <button className="btn btn-light text-danger btn-mobile-chip" onClick={handleExit}>
-                ✖ Hủy
+              <button
+                className="btn btn-light text-danger btn-mobile-chip d-flex align-items-center gap-1.5"
+                onClick={handleExit}
+              >
+                <X size={15} />
+                <span>Hủy</span>
               </button>
               <button
-                className="btn btn-success btn-touch flex-grow-1 shadow-sm"
+                className="btn btn-success btn-touch flex-grow-1 shadow-sm d-flex align-items-center justify-content-center gap-1.5 fw-bold"
                 onClick={handleAttemptSubmit}
               >
-                ✅ Nộp bài ngay ({answeredCount}/{questions.length})
+                <CheckCircle2 size={16} />
+                <span>Nộp bài ngay ({answeredCount}/{questions.length})</span>
               </button>
             </div>
           </div>

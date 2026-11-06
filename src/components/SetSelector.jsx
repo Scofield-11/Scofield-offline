@@ -1,11 +1,66 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, X, Check } from 'lucide-react';
+import {
+  ChevronDown,
+  X,
+  Check,
+  Search,
+  Folder,
+  FolderOpen,
+  BookOpen,
+  ScrollText,
+  Home,
+} from 'lucide-react';
 
 const MODAL_SPRING = { type: 'spring', stiffness: 280, damping: 28, mass: 0.7 };
 const TAB_SPRING = { type: 'spring', stiffness: 300, damping: 28, mass: 0.6 };
 const ACCORDION_TRANSITION = { duration: 0.26, ease: [0.16, 1, 0.3, 1] };
+
+// Hàm render Huy hiệu Ngôn ngữ Nổi bật (Vivid Language Badge)
+function renderLanguageBadge(kind, lang) {
+  if (kind === 'kanji' || lang === 'kanji') {
+    return (
+      <div className="set-lang-badge set-lang-badge--kanji" title="Kanji / Hán tự">
+        <ScrollText size={18} strokeWidth={2.4} />
+      </div>
+    );
+  }
+  if (kind === 'zh' || lang === 'zh') {
+    return (
+      <div className="set-lang-badge set-lang-badge--zh" title="Tiếng Trung (Mandarin)">
+        <span className="set-lang-badge-text">中</span>
+      </div>
+    );
+  }
+  if (kind === 'en' || lang === 'en') {
+    return (
+      <div className="set-lang-badge set-lang-badge--en" title="Tiếng Anh (English)">
+        <span className="set-lang-badge-text">EN</span>
+      </div>
+    );
+  }
+  if (kind === 'folder') {
+    return (
+      <div className="set-lang-badge set-lang-badge--folder" title="Thư mục học phần">
+        <Folder size={18} strokeWidth={2.4} />
+      </div>
+    );
+  }
+  if (kind === 'empty') {
+    return (
+      <div className="set-lang-badge set-lang-badge--ja" title="Chưa chọn học phần">
+        <BookOpen size={18} strokeWidth={2.4} />
+      </div>
+    );
+  }
+  // Mặc định: Tiếng Nhật (JA Sakura Red/Violet)
+  return (
+    <div className="set-lang-badge set-lang-badge--ja" title="Tiếng Nhật (Japanese)">
+      <span className="set-lang-badge-text">あ</span>
+    </div>
+  );
+}
 
 function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -162,32 +217,33 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
       const count = validSets
         .filter((s) => s.type === 'kanji')
         .reduce((sum, s) => sum + (s.vocab_count || 0), 0);
-      return { icon: '⛩️', title: 'Tất cả Kanji', subtitle: 'Toàn bộ học phần Hán tự', count };
+      return { kind: 'kanji', lang: 'kanji', title: 'Tất cả Kanji', subtitle: 'Toàn bộ học phần Hán tự', count };
     }
     if (idStr === 'lang_ja' || idStr === 'all_ja') {
       const count = validSets
         .filter((s) => s.type !== 'kanji' && (s.language === 'ja' || !s.language))
         .reduce((sum, s) => sum + (s.vocab_count || 0), 0);
-      return { icon: '🇯🇵', title: 'Tất cả từ vựng Tiếng Nhật', subtitle: 'Gộp toàn bộ học phần JA', count };
+      return { kind: 'ja', lang: 'ja', title: 'Tất cả từ vựng Tiếng Nhật', subtitle: 'Gộp toàn bộ học phần JA', count };
     }
     if (idStr === 'lang_zh' || idStr === 'all_zh') {
       const count = validSets
         .filter((s) => s.type !== 'kanji' && s.language === 'zh')
         .reduce((sum, s) => sum + (s.vocab_count || 0), 0);
-      return { icon: '🇨🇳', title: 'Tất cả từ vựng Tiếng Trung', subtitle: 'Gộp toàn bộ học phần ZH', count };
+      return { kind: 'zh', lang: 'zh', title: 'Tất cả từ vựng Tiếng Trung', subtitle: 'Gộp toàn bộ học phần ZH', count };
     }
     if (idStr === 'lang_en' || idStr === 'all_en') {
       const count = validSets
         .filter((s) => s.type !== 'kanji' && s.language === 'en')
         .reduce((sum, s) => sum + (s.vocab_count || 0), 0);
-      return { icon: '🇬🇧', title: 'Tất cả từ vựng Tiếng Anh', subtitle: 'Gộp toàn bộ học phần EN', count };
+      return { kind: 'en', lang: 'en', title: 'Tất cả từ vựng Tiếng Anh', subtitle: 'Gộp toàn bộ học phần EN', count };
     }
     if (idStr.startsWith('folder_')) {
       const fName = idStr.substring(7);
       const folderSets = validSets.filter((s) => (s.folder_path || '🏠 Thư mục gốc') === fName);
       const count = folderSets.reduce((sum, s) => sum + (s.vocab_count || 0), 0);
       return {
-        icon: '📁',
+        kind: 'folder',
+        lang: 'folder',
         title: fName,
         subtitle: `Thư mục (${folderSets.length} học phần)`,
         count,
@@ -196,23 +252,17 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
 
     const selected = validSets.find((s) => String(s.id) === idStr);
     if (selected) {
-      const icon =
-        selected.type === 'kanji'
-          ? '⛩️'
-          : selected.language === 'en'
-          ? '🇬🇧'
-          : selected.language === 'zh'
-          ? '🇨🇳'
-          : '🇯🇵';
+      const kind = selected.type === 'kanji' ? 'kanji' : (selected.language || 'ja');
       return {
-        icon,
+        kind,
+        lang: selected.language || (selected.type === 'kanji' ? 'kanji' : 'ja'),
         title: selected.title,
-        subtitle: selected.folder_path ? `📁 ${selected.folder_path}` : '🏠 Thư mục gốc',
+        subtitle: selected.folder_path ? selected.folder_path : 'Thư mục gốc',
         count: selected.vocab_count || 0,
       };
     }
 
-    return { icon: '📚', title: 'Chọn học phần...', subtitle: 'Chạm để chọn bộ từ vựng', count: 0 };
+    return { kind: 'empty', lang: 'ja', title: 'Chọn học phần...', subtitle: 'Chạm để chọn bộ từ vựng', count: 0 };
   }, [selectedSetId, validSets]);
 
   const isAllTypeSelected =
@@ -222,10 +272,10 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
     (filterType === 'kanji' && ['lang_kanji', 'all_kanji'].includes(String(selectedSetId)));
 
   const allLangTabs = [
-    { key: 'ja', label: '🇯🇵 Nhật', count: countsByType.ja },
-    { key: 'zh', label: '🇨🇳 Trung', count: countsByType.zh },
-    { key: 'en', label: '🇬🇧 Anh', count: countsByType.en },
-    { key: 'kanji', label: '⛩️ Kanji', count: countsByType.kanji },
+    { key: 'ja', label: 'Tiếng Nhật', count: countsByType.ja },
+    { key: 'zh', label: 'Tiếng Trung', count: countsByType.zh },
+    { key: 'en', label: 'Tiếng Anh', count: countsByType.en },
+    { key: 'kanji', label: 'Kanji', count: countsByType.kanji },
   ];
   const createdLangTabs = allLangTabs.filter((tab) => tab.count > 0);
   const langTabs = createdLangTabs.length > 0 ? createdLangTabs : allLangTabs;
@@ -237,14 +287,16 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
         className="set-selector-trigger"
         onClick={() => setIsOpen(true)}
       >
-        <div className="set-selector-trigger-icon">{triggerInfo.icon}</div>
+        <div className="set-selector-trigger-icon">
+          {renderLanguageBadge(triggerInfo.kind, triggerInfo.lang)}
+        </div>
         <div className="set-selector-trigger-body">
           <div className="set-selector-trigger-title">{triggerInfo.title}</div>
           <div className="set-selector-trigger-sub">{triggerInfo.subtitle}</div>
         </div>
         <div className="set-selector-trigger-right">
           <span className="set-selector-count-pill">{triggerInfo.count} thẻ</span>
-          <ChevronDown size={16} className="set-selector-chevron" />
+          <ChevronDown size={16} strokeWidth={2.2} className="set-selector-chevron" />
         </div>
       </button>
 
@@ -322,7 +374,7 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
                 </div>
 
                 <div className="set-sheet-search">
-                  <span className="set-sheet-search-icon">🔍</span>
+                  <Search size={15} strokeWidth={2.2} className="set-sheet-search-icon" />
                   <input
                     type="text"
                     className="set-sheet-search-input"
@@ -349,14 +401,14 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
                       onClick={() => handleSelect(`lang_${filterType}`)}
                     >
                       <div className="d-flex align-items-center gap-2">
-                        <span className="fs-5">
+                        <span className={`set-item-lang-pill set-item-lang-pill--${filterType}`}>
                           {filterType === 'kanji'
-                            ? '⛩️'
+                            ? '漢'
                             : filterType === 'en'
-                            ? '🇬🇧'
+                            ? 'EN'
                             : filterType === 'zh'
-                            ? '🇨🇳'
-                            : '🇯🇵'}
+                            ? '中'
+                            : 'あ'}
                         </span>
                         <div className="text-start">
                           <div className="fw-bold" style={{ fontSize: '0.88rem' }}>
@@ -375,14 +427,14 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
                       </div>
                       <div className="d-flex align-items-center gap-2">
                         <span className="set-selector-count-pill">{totalVocabsInType} thẻ</span>
-                        {isAllTypeSelected && <Check size={16} />}
+                        {isAllTypeSelected && <Check size={16} strokeWidth={2.4} />}
                       </div>
                     </button>
                   )}
 
                   {groupedSets.length === 0 ? (
                     <div className="text-center py-5 text-muted">
-                      <div className="fs-2 mb-2">📭</div>
+                      <FolderOpen size={40} strokeWidth={1.8} className="text-secondary opacity-60 mb-2" />
                       <div className="fw-semibold small">Không có học phần nào trong mục này</div>
                     </div>
                   ) : (
@@ -406,10 +458,18 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
                                 transition={{ duration: 0.18 }}
                                 className="d-inline-flex align-items-center"
                               >
-                                <ChevronDown size={15} />
+                                <ChevronDown size={15} strokeWidth={2.2} />
                               </motion.span>
                               <span className="text-truncate fw-bold" style={{ fontSize: '0.85rem' }}>
-                                {folder === '🏠 Thư mục gốc' ? '🏠 Thư mục gốc' : `📁 ${folder}`}
+                                {folder === '🏠 Thư mục gốc' ? (
+                                  <span className="d-inline-flex align-items-center gap-1.5">
+                                    <Home size={14} strokeWidth={2.2} /> Thư mục gốc
+                                  </span>
+                                ) : (
+                                  <span className="d-inline-flex align-items-center gap-1.5">
+                                    <Folder size={14} strokeWidth={2.2} /> {folder}
+                                  </span>
+                                )}
                               </span>
                               <span className="text-muted" style={{ fontSize: '0.74rem', flexShrink: 0 }}>
                                 ({folderSets.length})
@@ -440,14 +500,6 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
                                 <div className="set-folder-items">
                                   {folderSets.map((s) => {
                                     const isSelected = String(selectedSetId) === String(s.id);
-                                    const prefix =
-                                      s.type === 'kanji'
-                                        ? '⛩️'
-                                        : s.language === 'en'
-                                        ? '🇬🇧'
-                                        : s.language === 'zh'
-                                        ? '🇨🇳'
-                                        : '🇯🇵';
                                     return (
                                       <button
                                         type="button"
@@ -456,12 +508,24 @@ function SetSelector({ sets, selectedSetId, setSelectedSetId }) {
                                         onClick={() => handleSelect(s.id)}
                                       >
                                         <div className="d-flex align-items-center gap-2 overflow-hidden pe-2">
-                                          <span style={{ fontSize: '0.95rem' }}>{prefix}</span>
+                                          <span
+                                            className={`set-item-lang-pill set-item-lang-pill--${
+                                              s.type === 'kanji' ? 'kanji' : s.language || 'ja'
+                                            }`}
+                                          >
+                                            {s.type === 'kanji'
+                                              ? '漢'
+                                              : s.language === 'en'
+                                              ? 'EN'
+                                              : s.language === 'zh'
+                                              ? '中'
+                                              : 'あ'}
+                                          </span>
                                           <span className="text-truncate fw-semibold">{s.title}</span>
                                         </div>
                                         <div className="d-flex align-items-center gap-2 flex-shrink-0">
                                           <span className="set-item-badge">{s.vocab_count || 0} thẻ</span>
-                                          {isSelected && <Check size={15} className="set-item-check" />}
+                                          {isSelected && <Check size={15} strokeWidth={2.4} className="set-item-check" />}
                                         </div>
                                       </button>
                                     );

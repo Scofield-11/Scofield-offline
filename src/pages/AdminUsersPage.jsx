@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { Shield, KeyRound, Trash2, RefreshCw, Search, Users, UserCheck } from 'lucide-react';
+import { Shield, KeyRound, Trash2, RefreshCw, Search, Users, UserCheck, User } from 'lucide-react';
 import api, { getCurrentUser } from '../api/axiosConfig';
 import { toast } from 'react-toastify';
 
@@ -90,11 +90,11 @@ function AdminUsersPage() {
   };
 
   return (
-    <div className="container-fluid mt-2 mb-5 mx-auto px-2 px-md-3" style={{ maxWidth: '1000px' }}>
+    <div className="container-fluid mt-2 mb-5 mx-auto px-2 px-md-3" style={{ maxWidth: '980px' }}>
       <div className="dashboard-hero-card p-3 p-md-4 mb-3">
         <div className="d-flex flex-wrap justify-content-between align-items-center gap-2">
           <div className="d-flex align-items-center gap-2 text-white">
-            <Shield size={24} />
+            <Shield size={24} strokeWidth={2.2} />
             <div>
               <h4 className="fw-bold mb-0">Quản trị Tài khoản</h4>
               <span className="small opacity-75">
@@ -124,7 +124,7 @@ function AdminUsersPage() {
         <div className="col-6 col-md-4">
           <div className="bento-stat-card h-100">
             <div className="bento-icon-wrap bento-purple">
-              <Users size={20} />
+              <Users size={20} strokeWidth={2.2} />
             </div>
             <div>
               <div className="bento-value">{users.length}</div>
@@ -135,7 +135,7 @@ function AdminUsersPage() {
         <div className="col-6 col-md-4">
           <div className="bento-stat-card h-100">
             <div className="bento-icon-wrap bento-emerald">
-              <UserCheck size={20} />
+              <UserCheck size={20} strokeWidth={2.2} />
             </div>
             <div>
               <div className="bento-value">
@@ -147,7 +147,9 @@ function AdminUsersPage() {
         </div>
         <div className="col-12 col-md-4">
           <div className="bento-stat-card h-100">
-            <div className="bento-icon-wrap bento-amber">🔑</div>
+            <div className="bento-icon-wrap bento-amber">
+              <KeyRound size={20} strokeWidth={2.2} />
+            </div>
             <div>
               <div className="bento-value">123456</div>
               <div className="bento-sub">Mật khẩu Reset mặc định</div>
@@ -186,13 +188,19 @@ function AdminUsersPage() {
               {loading ? (
                 <tr>
                   <td colSpan="6" className="text-center py-5 text-muted fw-bold">
-                    ⏳ Đang tải danh sách tài khoản...
+                    <div className="d-flex align-items-center justify-content-center gap-2">
+                      <RefreshCw size={15} className="spin-anim" />
+                      <span>Đang tải danh sách tài khoản...</span>
+                    </div>
                   </td>
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="text-center py-5 text-muted fw-bold">
-                    📭 Không tìm thấy tài khoản nào
+                    <div className="d-flex align-items-center justify-content-center gap-2">
+                      <Users size={16} />
+                      <span>Không tìm thấy tài khoản nào</span>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -207,12 +215,14 @@ function AdminUsersPage() {
                     </td>
                     <td className="text-center">
                       {u.role === 'admin' ? (
-                        <span className="badge chip-primary rounded-pill px-3 py-1">
-                          🛡️ Admin
+                        <span className="badge chip-primary rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1">
+                          <Shield size={12} strokeWidth={2.4} />
+                          <span>Admin</span>
                         </span>
                       ) : (
-                        <span className="badge chip-slate rounded-pill px-3 py-1">
-                          👤 Học viên
+                        <span className="badge chip-slate rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1">
+                          <User size={12} strokeWidth={2.4} />
+                          <span>Học viên</span>
                         </span>
                       )}
                     </td>
@@ -221,13 +231,13 @@ function AdminUsersPage() {
                       <div className="d-inline-flex align-items-center gap-2">
                         <button
                           type="button"
-                          className="btn btn-mobile-chip chip-warning"
+                          className="btn btn-mobile-chip chip-warning d-inline-flex align-items-center gap-1"
                           disabled={processingId === u.id}
                           onClick={() => handleResetPassword(u)}
                           title="Đặt lại mật khẩu về 123456"
                         >
-                          <KeyRound size={13} />
-                          <span>🔄 Reset MK (123456)</span>
+                          <KeyRound size={13} strokeWidth={2.2} />
+                          <span>Reset MK (123456)</span>
                         </button>
                         {u.role !== 'admin' && (
                           <button

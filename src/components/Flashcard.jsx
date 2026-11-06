@@ -286,7 +286,10 @@ function Flashcard({
             {renderField(frontField, true)}
           </div>
 
-          <div className="p-2 px-3 d-flex justify-content-between align-items-center bg-light border-top">
+          <div
+            className="p-2 px-3 d-flex justify-content-between align-items-center border-top"
+            style={{ backgroundColor: 'var(--bg-elevated)', borderColor: 'var(--surface-border)' }}
+          >
             <button className="btn btn-mobile-chip chip-slate" onClick={handleOpenNote}>
               <BookOpen size={14} /> <span>Sổ tay</span>
             </button>

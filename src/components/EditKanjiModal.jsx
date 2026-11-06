@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2, X, ScrollText } from "lucide-react";
 import api from "../api/axiosConfig";
 
 function EditKanjiModal({ kanjiItem, onClose, onUpdateSuccess }) {
@@ -92,7 +92,12 @@ function EditKanjiModal({ kanjiItem, onClose, onUpdateSuccess }) {
       >
         <div className="set-sheet-grabber d-md-none" />
         <div className="set-sheet-header">
-          <h6 className="fw-bold mb-0 text-dark">⛩️ Chỉnh sửa Từ điển Kanji</h6>
+          <h6 className="fw-bold mb-0 d-flex align-items-center gap-2" style={{ color: "var(--text-main)" }}>
+            <div className="icon-badge-rose" style={{ width: "28px", height: "28px", borderRadius: "8px" }}>
+              <ScrollText size={16} strokeWidth={2.4} />
+            </div>
+            <span>Chỉnh sửa Từ điển Kanji</span>
+          </h6>
           <button type="button" className="btn-icon-soft chip-slate" onClick={onClose}>
             <X size={16} />
           </button>

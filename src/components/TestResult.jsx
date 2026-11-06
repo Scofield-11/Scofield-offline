@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { RefreshCw, Sparkles, BookMarked } from 'lucide-react';
+import { RefreshCw, Sparkles, BookMarked, Printer, ArrowLeft } from 'lucide-react';
 
 function TestResult({ score, questions, onRestart, onCreateMistakeSet, onSaveNote }) {
   const percent = Math.round((score.correct / score.total) * 100) || 0;
@@ -37,8 +37,14 @@ function TestResult({ score, questions, onRestart, onCreateMistakeSet, onSaveNot
 
   return (
     <div className="container mt-4 print-container" style={{ maxWidth: '800px' }}>
-      <div className="card shadow-lg border-0 p-4 p-md-5 mb-5 text-center rounded-4 print-no-shadow bg-white position-relative overflow-hidden">
-        <h3 className="fw-bold text-dark mb-4" style={{ zIndex: 2, position: 'relative' }}>
+      <div
+        className="card shadow-lg border-0 p-4 p-md-5 mb-5 text-center rounded-4 print-no-shadow position-relative overflow-hidden"
+        style={{
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--surface-border)',
+        }}
+      >
+        <h3 className="fw-bold mb-4" style={{ color: 'var(--text-main)', zIndex: 2, position: 'relative' }}>
           Kết quả bài kiểm tra
         </h3>
 
@@ -82,30 +88,36 @@ function TestResult({ score, questions, onRestart, onCreateMistakeSet, onSaveNot
         </p>
 
         <div className="d-flex flex-wrap justify-content-center gap-2 position-relative" style={{ zIndex: 2 }}>
-          <button className="btn btn-primary btn-touch px-4" onClick={onRestart}>
+          <button className="btn btn-primary btn-touch px-4 d-flex align-items-center gap-2" onClick={onRestart}>
             <RefreshCw size={16} /> <span>Làm đề mới</span>
           </button>
           {wrongCount > 0 && (
-            <button className="btn btn-warning btn-touch text-dark px-4" onClick={onCreateMistakeSet}>
+            <button className="btn btn-warning btn-touch text-dark px-4 d-flex align-items-center gap-2" onClick={onCreateMistakeSet}>
               <Sparkles size={16} /> <span>Lưu {wrongCount} câu sai</span>
             </button>
           )}
-          <button className="btn btn-light btn-touch px-3" onClick={() => window.print()}>
-            🖨️ In
+          <button className="btn btn-light btn-touch px-3.5 d-flex align-items-center gap-2" onClick={() => window.print()}>
+            <Printer size={16} /> <span>In đề</span>
           </button>
         </div>
       </div>
 
-      <h4 className="mb-4 fw-bold text-dark">Chi tiết bài làm:</h4>
+      <h4 className="mb-4 fw-bold" style={{ color: 'var(--text-main)' }}>
+        Chi tiết bài làm:
+      </h4>
       {questions.map((q, idx) => (
         <div
           key={idx}
-          className={`card mb-3 border-0 shadow-sm rounded-4 ${q.isCorrect ? 'bg-light' : 'bg-white'}`}
-          style={{ breakInside: 'avoid' }}
+          className="card mb-3 border-0 shadow-sm rounded-4"
+          style={{
+            breakInside: 'avoid',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--surface-border)',
+          }}
         >
           <div className="card-body p-4">
             <div className="d-flex justify-content-between align-items-start mb-3">
-              <h5 className="card-title fw-bold m-0 text-dark" style={{ lineHeight: '1.5' }}>
+              <h5 className="card-title fw-bold m-0" style={{ color: 'var(--text-main)', lineHeight: '1.5' }}>
                 <span className={`badge me-2 ${q.isCorrect ? 'bg-success' : 'bg-danger'}`}>
                   {idx + 1}
                 </span>
@@ -122,7 +134,13 @@ function TestResult({ score, questions, onRestart, onCreateMistakeSet, onSaveNot
               )}
             </div>
 
-            <div className="p-3 rounded-3 bg-white border shadow-sm mb-3">
+            <div
+              className="p-3 rounded-3 border shadow-sm mb-3"
+              style={{
+                backgroundColor: 'var(--bg-elevated)',
+                borderColor: 'var(--surface-border)',
+              }}
+            >
               <span className="text-muted fw-bold d-block mb-1 fs-6">Lựa chọn của bạn:</span>
               <span
                 className={`fs-5 ${
@@ -134,9 +152,17 @@ function TestResult({ score, questions, onRestart, onCreateMistakeSet, onSaveNot
             </div>
 
             {!q.isCorrect && (
-              <div className="p-3 rounded-3 bg-white border border-success border-2 shadow-sm">
+              <div
+                className="p-3 rounded-3 border shadow-sm"
+                style={{
+                  backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                  borderColor: 'rgba(16, 185, 129, 0.35)',
+                }}
+              >
                 <span className="text-success fw-bold d-block mb-1 fs-6">✓ Đáp án đúng:</span>
-                <span className="text-dark fw-bold fs-5">{q.correctAnswer}</span>
+                <span className="fw-bold fs-5" style={{ color: 'var(--text-main)' }}>
+                  {q.correctAnswer}
+                </span>
               </div>
             )}
           </div>
@@ -144,8 +170,8 @@ function TestResult({ score, questions, onRestart, onCreateMistakeSet, onSaveNot
       ))}
 
       <div className="text-center mt-5 mb-4 d-print-none">
-        <button className="btn btn-light btn-touch px-5" onClick={onRestart}>
-          ← Đóng kết quả
+        <button className="btn btn-light btn-touch px-5 d-inline-flex align-items-center gap-2" onClick={onRestart}>
+          <ArrowLeft size={16} /> <span>Đóng kết quả</span>
         </button>
       </div>
     </div>

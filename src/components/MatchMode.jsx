@@ -7,7 +7,21 @@ import api from '../api/axiosConfig';
 import SetSelector from './SetSelector';
 import GameModeSelector from './GameModeSelector';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Maximize2, Minimize2 } from 'lucide-react';
+import {
+  Maximize2,
+  Minimize2,
+  Timer,
+  Flame,
+  Trophy,
+  Gamepad2,
+  ArrowRight,
+  ArrowLeft,
+  AlertTriangle,
+  BookOpen,
+  Layers,
+  Check,
+  Compass,
+} from 'lucide-react';
 
 function MatchMode() {
   const { sets, setSets, loading, fetchSets } = useContext(VocabContext);
@@ -160,7 +174,7 @@ function MatchMode() {
         if (!bestTime || timeElapsed < bestTime) {
           localStorage.setItem(key, timeElapsed);
           setBestTime(timeElapsed);
-          toast.success(`🎉 Kỷ lục mới: ${timeElapsed} giây!`);
+          toast.success(`Kỷ lục mới: ${timeElapsed} giây!`);
         }
       }
     }
@@ -173,7 +187,7 @@ function MatchMode() {
       if (!highScore || score > highScore) {
         localStorage.setItem(`matchScore_${selectedSetId}_${currentContentType}`, score);
         setHighScore(score);
-        toast.success(`🏆 Điểm cao mới: ${score} điểm!`);
+        toast.success(`Điểm cao mới: ${score} điểm!`);
       }
     }
   }, [isFinished, gameMode, score, highScore, selectedSetId, currentContentType]);
@@ -293,193 +307,370 @@ function MatchMode() {
     }
   };
 
+  const totalCardsCount = React.useMemo(() => {
+    return targetSets.reduce(
+      (sum, s) => sum + (s.vocab_count || (s.vocabularies ? s.vocabularies.length : 0)),
+      0
+    );
+  }, [targetSets]);
+
+  const currentSetDisplayTitle = React.useMemo(() => {
+    const idStr = String(selectedSetId);
+    if (idStr === 'lang_ja' || idStr === 'all_ja') return 'Tất cả tiếng Nhật';
+    if (idStr === 'lang_zh' || idStr === 'all_zh') return 'Tất cả tiếng Trung';
+    if (idStr === 'lang_en' || idStr === 'all_en') return 'Tất cả tiếng Anh';
+    if (idStr === 'lang_kanji' || idStr === 'all_kanji') return 'Tất cả Kanji';
+    if (idStr.startsWith('folder_')) return idStr.substring(7);
+    if (targetSets.length === 1) return targetSets[0].title || 'Học phần không tên';
+    if (targetSets.length > 1) return `${targetSets.length} học phần đã chọn`;
+    return 'Chưa chọn học phần';
+  }, [selectedSetId, targetSets]);
+
+  const isZh =
+    String(selectedSetId).includes('zh') ||
+    (targetSets.length > 0 && targetSets.every((s) => s.language === 'zh'));
+  const wordLabel = isZh ? 'Chữ Hán' : 'Từ';
+  const readingLabel = isZh ? 'Pinyin' : 'Phiên âm';
+
+  const currentMatchRuleText = React.useMemo(() => {
+    if (hasFourFields) {
+      const map = isZh
+        ? { kanji: 'Chữ Hán', word: 'Chữ Hán', hanviet: 'Hán Việt', hiragana: 'Pinyin', meaning: 'Ý nghĩa' }
+        : { kanji: 'Từ vựng', word: 'Từ vựng', hanviet: 'Hán Việt', hiragana: 'Phiên âm', meaning: 'Ý nghĩa' };
+      const a = map[kanjiMatchA] || 'Từ';
+      const b = map[kanjiMatchB] || 'Nghĩa';
+      return `${a} ↔ ${b}`;
+    }
+    return isReversed ? 'Nghĩa ↔ Từ' : 'Từ ↔ Nghĩa';
+  }, [hasFourFields, isZh, kanjiMatchA, kanjiMatchB, isReversed]);
+
   if (loading) return <LoadingSkeleton />;
 
   if (!isStarted) {
     return (
-      <div className="container mt-3 fade-in-slide" style={{ maxWidth: '600px' }}>
-        <div className="card shadow-sm border-0 p-3 p-md-4 rounded-4 bg-white">
-          <h4 className="text-center mb-3 fw-bold text-dark">🎮 Ghép Thẻ Phản Xạ</h4>
+      <div className="test-lobby-container">
+        {/* Tiêu đề trang tối giản */}
+        <div className="test-lobby-header">
+          <h2 className="test-lobby-title">Đấu Trường Ghép Thẻ Phản Xạ</h2>
+        </div>
 
-          <div className="mb-3">
-            <label className="form-label fw-bold text-muted small mb-1">Chế độ chơi</label>
-            <div className="gms-grid gms-grid-2">
-              <button
-                type="button"
-                className={`gms-card ${gameMode === 'normal' ? 'gms-card--active' : ''}`}
-                onClick={() => setGameMode('normal')}
-              >
-                <div
-                  className="gms-card-icon"
-                  style={gameMode === 'normal' ? undefined : { backgroundColor: '#dbeafe' }}
-                >
-                  <span className="gms-card-emoji">⏱️</span>
-                </div>
-                <div className="gms-card-content">
-                  <span className="gms-card-title">Tính giờ</span>
-                  <span className="gms-card-desc">Ghép hết các cặp nhanh nhất</span>
-                </div>
-                {gameMode === 'normal' && <div className="gms-card-check">✓</div>}
-              </button>
-
-              <button
-                type="button"
-                className={`gms-card ${gameMode === 'challenge' ? 'gms-card--active' : ''}`}
-                onClick={() => setGameMode('challenge')}
-              >
-                <div
-                  className="gms-card-icon"
-                  style={gameMode === 'challenge' ? undefined : { backgroundColor: '#fee2e2' }}
-                >
-                  <span className="gms-card-emoji">🔥</span>
-                </div>
-                <div className="gms-card-content">
-                  <span className="gms-card-title">Thử thách 60s</span>
-                  <span className="gms-card-desc">Đua điểm & nhân chuỗi Combo</span>
-                </div>
-                {gameMode === 'challenge' && <div className="gms-card-check">✓</div>}
-              </button>
-            </div>
-          </div>
-
-          <div className="mb-3">
-            <label className="form-label fw-bold text-muted small mb-1">Học phần</label>
-            <SetSelector
-              sets={sets}
-              selectedSetId={selectedSetId}
-              setSelectedSetId={setSelectedSetId}
-            />
-          </div>
-
-          <div className="mb-3">
-            {(() => {
-              const isZh =
-                String(selectedSetId).includes('zh') ||
-                (targetSets.length > 0 && targetSets.every((s) => s.language === 'zh'));
-              const wordLabel = isZh ? 'Chữ Hán' : 'Từ';
-              const readingLabel = isZh ? 'Pinyin' : 'Phiên âm';
-
-              return (
-                <GameModeSelector
-                  hasFourFields={hasFourFields}
-                  currentContentType={currentContentType}
-                  currentLanguage={isZh ? 'zh' : 'ja'}
-                  kanjiFront={kanjiMatchA}
-                  setKanjiFront={setKanjiMatchA}
-                  kanjiBack={kanjiMatchB}
-                  setKanjiBack={setKanjiMatchB}
-                  isReversed={isReversed}
-                  setIsReversed={setIsReversed}
-                  onSwap={handleSwap}
-                  sectionLabel="Luật ghép"
-                  presets={[
-                    {
-                      id: 'classic',
-                      icon: isZh ? '🇨🇳' : '🏛️',
-                      iconBg: '#ede9fe',
-                      label: `${wordLabel} ↔ Nghĩa`,
-                      getDesc: (f, b) =>
-                        f === 'meaning' && (b === 'word' || b === 'kanji')
-                          ? `Nghĩa ↔ ${wordLabel}`
-                          : `${wordLabel} ↔ Nghĩa`,
-                      frontKey: (type) => (type === 'kanji' ? 'kanji' : 'word'),
-                      backKey: () => 'meaning',
-                      isActive: (f, b, type) => {
-                        const w = type === 'kanji' ? 'kanji' : 'word';
-                        return (
-                          ((f === w || f === 'kanji' || f === 'word') && b === 'meaning') ||
-                          (f === 'meaning' && (b === w || b === 'kanji' || b === 'word'))
-                        );
-                      },
-                    },
-                    {
-                      id: 'speed',
-                      icon: '⚡',
-                      iconBg: '#fef3c7',
-                      label: `${wordLabel} ↔ ${readingLabel}`,
-                      getDesc: (f, b) =>
-                        f === 'hiragana' && (b === 'word' || b === 'kanji')
-                          ? `${readingLabel} ↔ ${wordLabel}`
-                          : `${wordLabel} ↔ ${readingLabel}`,
-                      frontKey: (type) => (type === 'kanji' ? 'kanji' : 'word'),
-                      backKey: () => 'hiragana',
-                      isActive: (f, b, type) => {
-                        const w = type === 'kanji' ? 'kanji' : 'word';
-                        return (
-                          ((f === w || f === 'kanji' || f === 'word') && b === 'hiragana') ||
-                          (f === 'hiragana' && (b === w || b === 'kanji' || b === 'word'))
-                        );
-                      },
-                    },
-                    {
-                      id: 'hanviet',
-                      icon: '👑',
-                      iconBg: '#fee2e2',
-                      label: 'Hán Việt',
-                      getDesc: (f, b) =>
-                        f === 'meaning' && b === 'hanviet' ? 'Nghĩa ↔ Hán Việt' : 'Hán Việt ↔ Nghĩa',
-                      frontKey: () => 'hanviet',
-                      backKey: () => 'meaning',
-                      isActive: (f, b) =>
-                        (f === 'hanviet' && b === 'meaning') || (f === 'meaning' && b === 'hanviet'),
-                    },
-                    {
-                      id: 'listening',
-                      icon: '🎧',
-                      iconBg: '#dbeafe',
-                      label: `${readingLabel} ↔ Nghĩa`,
-                      getDesc: (f, b) =>
-                        f === 'meaning' && b === 'hiragana'
-                          ? `Nghĩa ↔ ${readingLabel}`
-                          : `${readingLabel} ↔ Nghĩa`,
-                      frontKey: () => 'hiragana',
-                      backKey: () => 'meaning',
-                      isActive: (f, b) =>
-                        (f === 'hiragana' && b === 'meaning') || (f === 'meaning' && b === 'hiragana'),
-                    },
-                  ]}
-              twoFieldPresets={[
-                    { id: 'forward', icon: '🧠', iconBg: '#ede9fe', label: 'Xuôi', description: 'Từ ↔ Nghĩa', reversedValue: false },
-                    { id: 'backward', icon: '🇻🇳', iconBg: '#fef3c7', label: 'Ngược', description: 'Nghĩa ↔ Từ', reversedValue: true },
-                  ]}
-                />
-              );
-            })()}
-          </div>
-
-          <div className="mb-3">
-            <label className="form-label fw-bold text-muted small mb-1">Số cặp thẻ</label>
-            <div className="d-flex gap-2">
-              {[4, 6, 8, 10].map((num) => (
+        {/* Bố cục 2 Cột Studio (Max-width 980px) */}
+        <div className="test-lobby-layout">
+          {/* CỘT TRÁI (7/12): CẤU HÌNH ĐẤU TRƯỜNG */}
+          <div className="test-lobby-config-col">
+            {/* Card 1: Chế độ chơi */}
+            <div className="test-lobby-card">
+              <div className="test-lobby-card-title">Chế độ thi đấu</div>
+              <div className="gms-grid gms-grid-2">
                 <button
-                  key={num}
                   type="button"
-                  className={`btn btn-mobile-chip flex-fill ${difficulty === num ? 'btn-primary text-white' : 'chip-slate'}`}
-                  onClick={() => setDifficulty(num)}
+                  className={`gms-card ${gameMode === 'normal' ? 'gms-card--active' : ''}`}
+                  onClick={() => setGameMode('normal')}
                 >
-                  {num} cặp
+                  <div className="gms-card-icon icon-badge icon-badge-sky">
+                    <Timer size={18} strokeWidth={2.2} />
+                  </div>
+                  <div className="gms-card-content">
+                    <span className="gms-card-title">Tính giờ</span>
+                    <span className="gms-card-desc">Ghép hết các cặp nhanh nhất</span>
+                  </div>
+                  {gameMode === 'normal' && (
+                    <div className="gms-card-check" aria-hidden="true">
+                      <Check size={11} strokeWidth={3} />
+                    </div>
+                  )}
                 </button>
-              ))}
+
+                <button
+                  type="button"
+                  className={`gms-card ${gameMode === 'challenge' ? 'gms-card--active' : ''}`}
+                  onClick={() => setGameMode('challenge')}
+                >
+                  <div className="gms-card-icon icon-badge icon-badge-amber">
+                    <Flame size={18} strokeWidth={2.2} />
+                  </div>
+                  <div className="gms-card-content">
+                    <span className="gms-card-title">Thử thách 60s</span>
+                    <span className="gms-card-desc">Đua điểm & chuỗi Combo</span>
+                  </div>
+                  {gameMode === 'challenge' && (
+                    <div className="gms-card-check" aria-hidden="true">
+                      <Check size={11} strokeWidth={3} />
+                    </div>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Card 2: Chọn học phần */}
+            <div className="test-lobby-card">
+              <div className="test-lobby-card-title">Học phần thi đấu</div>
+              <SetSelector
+                sets={sets}
+                selectedSetId={selectedSetId}
+                setSelectedSetId={setSelectedSetId}
+              />
+            </div>
+
+            {/* Card 3: Luật ghép thẻ */}
+            <div className="test-lobby-card">
+              <GameModeSelector
+                hasFourFields={hasFourFields}
+                currentContentType={currentContentType}
+                currentLanguage={isZh ? 'zh' : 'ja'}
+                kanjiFront={kanjiMatchA}
+                setKanjiFront={setKanjiMatchA}
+                kanjiBack={kanjiMatchB}
+                setKanjiBack={setKanjiMatchB}
+                isReversed={isReversed}
+                setIsReversed={setIsReversed}
+                onSwap={handleSwap}
+                sectionLabel="Luật ghép thẻ"
+                presets={[
+                  {
+                    id: 'classic',
+                    iconType: 'languages',
+                    badgeClass: 'icon-badge-indigo',
+                    label: `${wordLabel} ↔ Nghĩa`,
+                    getDesc: (f, b) =>
+                      f === 'meaning' && (b === 'word' || b === 'kanji')
+                        ? `Nghĩa ↔ ${wordLabel}`
+                        : `${wordLabel} ↔ Nghĩa`,
+                    frontKey: (type) => (type === 'kanji' ? 'kanji' : 'word'),
+                    backKey: () => 'meaning',
+                    isActive: (f, b, type) => {
+                      const w = type === 'kanji' ? 'kanji' : 'word';
+                      return (
+                        ((f === w || f === 'kanji' || f === 'word') && b === 'meaning') ||
+                        (f === 'meaning' && (b === w || b === 'kanji' || b === 'word'))
+                      );
+                    },
+                  },
+                  {
+                    id: 'speed',
+                    iconType: 'forward',
+                    badgeClass: 'icon-badge-amber',
+                    label: `${wordLabel} ↔ ${readingLabel}`,
+                    getDesc: (f, b) =>
+                      f === 'hiragana' && (b === 'word' || b === 'kanji')
+                        ? `${readingLabel} ↔ ${wordLabel}`
+                        : `${wordLabel} ↔ ${readingLabel}`,
+                    frontKey: (type) => (type === 'kanji' ? 'kanji' : 'word'),
+                    backKey: () => 'hiragana',
+                    isActive: (f, b, type) => {
+                      const w = type === 'kanji' ? 'kanji' : 'word';
+                      return (
+                        ((f === w || f === 'kanji' || f === 'word') && b === 'hiragana') ||
+                        (f === 'hiragana' && (b === w || b === 'kanji' || b === 'word'))
+                      );
+                    },
+                  },
+                  {
+                    id: 'hanviet',
+                    iconType: 'hanviet',
+                    badgeClass: 'icon-badge-rose',
+                    label: 'Hán Việt',
+                    getDesc: (f, b) =>
+                      f === 'meaning' && b === 'hanviet' ? 'Nghĩa ↔ Hán Việt' : 'Hán Việt ↔ Nghĩa',
+                    frontKey: () => 'hanviet',
+                    backKey: () => 'meaning',
+                    isActive: (f, b) =>
+                      (f === 'hanviet' && b === 'meaning') || (f === 'meaning' && b === 'hanviet'),
+                  },
+                  {
+                    id: 'listening',
+                    iconType: 'listening',
+                    badgeClass: 'icon-badge-emerald',
+                    label: `${readingLabel} ↔ Nghĩa`,
+                    getDesc: (f, b) =>
+                      f === 'meaning' && b === 'hiragana'
+                        ? `Nghĩa ↔ ${readingLabel}`
+                        : `${readingLabel} ↔ Nghĩa`,
+                    frontKey: () => 'hiragana',
+                    backKey: () => 'meaning',
+                    isActive: (f, b) =>
+                      (f === 'hiragana' && b === 'meaning') || (f === 'meaning' && b === 'hiragana'),
+                  },
+                ]}
+                twoFieldPresets={[
+                  {
+                    id: 'forward',
+                    iconType: 'forward',
+                    badgeClass: 'icon-badge-indigo',
+                    label: 'Xuôi',
+                    description: 'Từ ↔ Nghĩa',
+                    reversedValue: false,
+                  },
+                  {
+                    id: 'backward',
+                    iconType: 'backward',
+                    badgeClass: 'icon-badge-amber',
+                    label: 'Ngược',
+                    description: 'Nghĩa ↔ Từ',
+                    reversedValue: true,
+                  },
+                ]}
+              />
+            </div>
+
+            {/* Card 4: Số cặp thẻ */}
+            <div className="test-lobby-card">
+              <div className="test-lobby-card-title d-flex justify-content-between align-items-center">
+                <span>Quy mô bàn đấu</span>
+                <span className="text-secondary fw-normal">
+                  Tổng thẻ: <strong className="text-primary">{difficulty * 2}</strong> ô
+                </span>
+              </div>
+              <div className="test-lobby-pills-row">
+                {[4, 6, 8, 10].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    className={`test-lobby-pill ${difficulty === num ? 'active' : ''}`}
+                    onClick={() => setDifficulty(num)}
+                  >
+                    {num} cặp ({num * 2} thẻ)
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {gameMode === 'normal' && bestTime !== null && (
-            <div className="chip-primary text-center fw-bold py-2 px-3 mb-3 rounded-3 small">
-              🏆 Kỷ lục: {bestTime} giây
-            </div>
-          )}
-          {gameMode === 'challenge' && highScore !== null && (
-            <div className="chip-warning text-center fw-bold py-2 px-3 mb-3 rounded-3 small">
-              🏆 Điểm cao nhất: {highScore} điểm
-            </div>
-          )}
+          {/* CỘT PHẢI (5/12, Sticky): TẤM VÉ ĐẤU TRƯỜNG PHẢN XẠ */}
+          <div className="test-lobby-ticket-col">
+            <div className="test-lobby-hero-card">
+              {/* Chữ Hán chìm '速' (Tốc - Tốc độ) */}
+              <div className="test-lobby-watermark-kanji" aria-hidden="true">
+                速
+              </div>
 
-          <button
-            className={`btn btn-touch w-100 ${gameMode === 'challenge' ? 'btn-danger text-white' : 'btn-primary'}`}
-            onClick={startGame}
-          >
-            Bắt đầu chơi 🚀
-          </button>
+              <div className="test-lobby-hero-content">
+                {/* Header */}
+                <div className="test-lobby-hero-header">
+                  <span className="test-lobby-hero-title">Tấm vé đấu trường phản xạ</span>
+                  <span
+                    className="badge bg-secondary-subtle text-secondary"
+                    style={{ fontSize: '0.68rem', fontWeight: 600 }}
+                  >
+                    Speed Arena
+                  </span>
+                </div>
+
+                {/* Khối Kỷ lục nổi bật */}
+                <div className="test-lobby-count-hero-block">
+                  <div className="test-lobby-hero-count-label d-flex align-items-center gap-1.5">
+                    <Trophy size={14} strokeWidth={2.4} className="text-warning" />
+                    <span>
+                      {gameMode === 'normal' ? 'Kỷ lục thời gian' : 'Kỷ lục điểm số cao nhất'}
+                    </span>
+                  </div>
+                  <div className="d-flex align-items-baseline">
+                    <span className="test-lobby-hero-count-number">
+                      {gameMode === 'normal'
+                        ? bestTime !== null
+                          ? `${bestTime}s`
+                          : '--'
+                        : highScore !== null
+                        ? `${highScore}`
+                        : '--'}
+                    </span>
+                    <span className="test-lobby-hero-count-unit">
+                      {gameMode === 'normal'
+                        ? 'giây nhanh nhất'
+                        : 'điểm tích lũy'}
+                    </span>
+                  </div>
+                  <div className="test-lobby-progress-track">
+                    <div
+                      className="test-lobby-progress-fill"
+                      style={{
+                        width:
+                          gameMode === 'normal'
+                            ? bestTime !== null
+                              ? '100%'
+                              : '0%'
+                            : highScore !== null
+                            ? '100%'
+                            : '0%',
+                      }}
+                    />
+                  </div>
+                  <div className="test-lobby-progress-sublabel">
+                    {gameMode === 'normal'
+                      ? `Bàn đấu ${difficulty} cặp (${difficulty * 2} thẻ lật)`
+                      : 'Chế độ sinh tồn 60 giây'}
+                  </div>
+                </div>
+
+                {/* Danh sách thông số dạng elevated box */}
+                <div className="test-lobby-params-list">
+                  <div className="test-lobby-param-item">
+                    <div className="test-lobby-param-icon">
+                      <BookOpen size={16} strokeWidth={2.2} />
+                    </div>
+                    <div className="test-lobby-param-details">
+                      <div className="test-lobby-param-label">Học phần</div>
+                      <div className="test-lobby-param-value" title={currentSetDisplayTitle}>
+                        {currentSetDisplayTitle}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="test-lobby-param-item">
+                    <div className="test-lobby-param-icon">
+                      {gameMode === 'normal' ? (
+                        <Timer size={16} strokeWidth={2.2} />
+                      ) : (
+                        <Flame size={16} strokeWidth={2.2} />
+                      )}
+                    </div>
+                    <div className="test-lobby-param-details">
+                      <div className="test-lobby-param-label">Chế độ chơi</div>
+                      <div className="test-lobby-param-value">
+                        {gameMode === 'normal' ? 'Tính giờ phản xạ' : 'Thử thách 60 giây'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="test-lobby-param-item">
+                    <div className="test-lobby-param-icon">
+                      <Gamepad2 size={16} strokeWidth={2.2} />
+                    </div>
+                    <div className="test-lobby-param-details">
+                      <div className="test-lobby-param-label">Quy mô bàn đấu</div>
+                      <div className="test-lobby-param-value">
+                        {difficulty * 2} thẻ ({difficulty} cặp)
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="test-lobby-param-item">
+                    <div className="test-lobby-param-icon">
+                      <Compass size={16} strokeWidth={2.2} />
+                    </div>
+                    <div className="test-lobby-param-details">
+                      <div className="test-lobby-param-label">Luật ghép thẻ</div>
+                      <div className="test-lobby-param-value" title={currentMatchRuleText}>
+                        {currentMatchRuleText}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Nút CTA lớn */}
+                <button
+                  type="button"
+                  className="test-lobby-cta-btn"
+                  onClick={startGame}
+                  disabled={totalCardsCount === 0}
+                >
+                  <Gamepad2 size={18} strokeWidth={2.2} />
+                  <span>Bắt đầu ván đấu</span>
+                  <ArrowRight size={18} strokeWidth={2.4} />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -503,13 +694,26 @@ function MatchMode() {
               initial={{ opacity: 0, scale: 0.9, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              className="card border-0 shadow-lg rounded-4 p-4 text-center bg-white"
-              style={{ width: '90%', maxWidth: '400px' }}
+              className="card border-0 shadow-lg rounded-4 p-4 text-center"
+              style={{
+                width: '90%',
+                maxWidth: '400px',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--surface-border)',
+              }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h4 className="fw-bold text-danger mb-3">⚠️ Cảnh báo</h4>
-              <p className="text-dark mb-4 fs-6">
-                Bạn đang trong ván chơi. Nếu thoát bây giờ sẽ mất toàn bộ tiến trình và điểm số. Chắc chắn thoát?
+              <div className="d-flex justify-content-center mb-2">
+                <div
+                  className="d-flex align-items-center justify-content-center rounded-circle"
+                  style={{ width: '56px', height: '56px', background: 'rgba(239, 68, 68, 0.12)' }}
+                >
+                  <AlertTriangle size={28} className="text-danger" />
+                </div>
+              </div>
+              <h5 className="fw-bold text-danger mb-2">Cảnh báo</h5>
+              <p className="mb-4 fs-6" style={{ color: 'var(--text-secondary)' }}>
+                Bạn đang trong ván chơi. Nếu thoát bây giờ sẽ mất toàn bộ tiến trình và điểm số. Bạn có chắc chắn muốn thoát?
               </p>
               <div className="d-flex gap-3">
                 <button
@@ -535,30 +739,41 @@ function MatchMode() {
       </AnimatePresence>
 
       <div className="mx-auto" style={{ maxWidth: '900px', width: '100%' }}>
-        
         <div className="d-flex justify-content-between align-items-center mb-4">
           <button className="btn-icon-soft chip-slate" onClick={toggleFullscreen} title="Toàn màn hình">
             {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
 
-          <h4 className="fw-bold m-0 text-center flex-grow-1">
+          <h4 className="fw-bold m-0 text-center flex-grow-1" style={{ color: 'var(--text-main)' }}>
             {gameMode === 'challenge' ? 'Còn lại: ' : 'Thời gian: '}
-            <span className={gameMode === 'challenge' && timeElapsed <= 10 ? 'text-danger shake d-inline-block' : 'text-primary'}>{timeElapsed}s</span>
+            <span className={gameMode === 'challenge' && timeElapsed <= 10 ? 'text-danger shake d-inline-block' : 'text-primary'}>
+              {timeElapsed}s
+            </span>
           </h4>
-          
-          <button className="btn btn-mobile-chip chip-slate" onClick={() => setShowExitModal(true)}>Thoát</button>
+
+          <button className="btn btn-mobile-chip chip-slate d-flex align-items-center gap-1" onClick={() => setShowExitModal(true)}>
+            <ArrowLeft size={14} /> <span>Thoát</span>
+          </button>
         </div>
 
         {gameMode === 'challenge' && (
           <div className="mb-4 d-flex flex-column align-items-center gap-2 position-relative">
             <div className="d-flex align-items-center gap-3">
-              <h4 className="fw-bold m-0 border px-4 py-2 rounded-pill bg-white shadow-sm">
+              <h4
+                className="fw-bold m-0 border px-4 py-2 rounded-pill shadow-sm"
+                style={{
+                  backgroundColor: 'var(--bg-surface)',
+                  borderColor: 'var(--surface-border)',
+                  color: 'var(--text-main)',
+                }}
+              >
                 Điểm: <span className="text-success">{score}</span>
               </h4>
               {combo > 1 && (
                 <div className="position-relative">
-                  <span className="badge rounded-pill bg-danger fs-5 px-3 py-2 shadow-sm streak-glow">
-                    Combo x{combo} 🔥
+                  <span className="badge rounded-pill bg-danger fs-5 px-3 py-2 shadow-sm streak-glow d-inline-flex align-items-center gap-1.5">
+                    <span>Combo x{combo}</span>
+                    <Flame size={16} />
                   </span>
                   <div className="position-absolute top-100 start-50 translate-middle-x mt-2 w-100 overflow-hidden rounded-pill" style={{ height: '6px', backgroundColor: 'rgba(220,53,69,0.2)' }}>
                     <div key={combo} className="bg-danger h-100 combo-timer-bar rounded-pill"></div>
@@ -570,14 +785,45 @@ function MatchMode() {
         )}
 
         {isFinished ? (
-          <div className="card shadow-lg border-0 p-5 mt-4 rounded-4 mx-auto bg-white" style={{ maxWidth: '600px' }}>
-            <h2 className="text-success fw-bold mb-3">🎉 Tuyệt vời!</h2>
+          <div
+            className="card shadow-lg border-0 p-5 mt-4 rounded-4 mx-auto text-center"
+            style={{
+              maxWidth: '600px',
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--surface-border)',
+            }}
+          >
+            <div className="d-flex justify-content-center mb-3">
+              <div
+                className="d-flex align-items-center justify-content-center rounded-circle"
+                style={{
+                  width: '76px',
+                  height: '76px',
+                  background: 'rgba(234, 179, 8, 0.15)',
+                  border: '1px solid rgba(234, 179, 8, 0.3)',
+                }}
+              >
+                <Trophy size={40} strokeWidth={2.4} className="text-warning" />
+              </div>
+            </div>
+            <h2 className="text-success fw-bold mb-2">Tuyệt vời! Hoàn thành!</h2>
             {gameMode === 'normal' ? (
-              <p className="fs-5 text-muted mb-4">Bạn đã hoàn thành trong <strong className="text-dark">{timeElapsed} giây</strong>.</p>
+              <p className="fs-5 text-muted mb-4">
+                Bạn đã hoàn thành trong <strong style={{ color: 'var(--text-main)' }}>{timeElapsed} giây</strong>.
+              </p>
             ) : (
-              <p className="fs-5 text-muted mb-4">Tổng điểm của bạn: <strong className="text-danger fs-3">{score}</strong></p>
+              <p className="fs-5 text-muted mb-4">
+                Tổng điểm của bạn: <strong className="text-danger fs-3">{score}</strong>
+              </p>
             )}
-            <button className={`btn btn-touch mt-2 fw-bold w-100 ${gameMode === 'challenge' ? 'btn-danger text-white' : 'btn-primary'}`} onClick={startGame}>Chơi lại</button>
+            <button
+              className={`btn btn-touch mt-2 fw-bold w-100 py-3 ${
+                gameMode === 'challenge' ? 'btn-danger text-white' : 'btn-primary'
+              }`}
+              onClick={startGame}
+            >
+              Chơi lại
+            </button>
           </div>
         ) : (
           <motion.div 
@@ -590,12 +836,13 @@ function MatchMode() {
               const isError = errorCards.includes(card.id);
               const isSuccess = successCards.includes(card.id);
 
-              let cardClasses = 'bg-white text-dark';
+              let cardClasses = '';
               let cardStyles = {
                 cursor: isMatched ? 'default' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                backgroundColor: 'var(--bg-surface)',
                 border: '2px solid var(--surface-border)',
                 pointerEvents: isMatched ? 'none' : 'auto',
                 position: 'relative',

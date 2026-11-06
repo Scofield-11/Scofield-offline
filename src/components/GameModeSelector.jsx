@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
+import {
+  Languages,
+  Volume2,
+  Sparkles,
+  Headphones,
+  ArrowRight,
+  ArrowLeft,
+  ArrowLeftRight,
+  Check,
+} from 'lucide-react';
 import './GameModeSelector.css';
 
 // ── Cấu hình mặc định cho Tiếng Nhật / Kanji (4 trường) ──
 const DEFAULT_JA_PRESETS = [
   {
     id: 'translate',
-    icon: '🧠',
-    iconBg: '#ede9fe',
+    iconType: 'languages',
+    badgeClass: 'icon-badge-indigo',
     label: 'Từ ➔ Nghĩa',
     getDesc: (f, b) => {
       return f === 'meaning' && (b === 'word' || b === 'kanji') ? 'Nghĩa ➔ Từ' : 'Từ ➔ Nghĩa';
@@ -20,8 +30,8 @@ const DEFAULT_JA_PRESETS = [
   },
   {
     id: 'reading',
-    icon: '🗣️',
-    iconBg: '#fef3c7',
+    iconType: 'reading',
+    badgeClass: 'icon-badge-sky',
     label: 'Cách đọc',
     getDesc: (f, b) => {
       return f === 'hiragana' && (b === 'word' || b === 'kanji') ? 'Phiên âm ➔ Từ' : 'Từ ➔ Phiên âm';
@@ -35,8 +45,8 @@ const DEFAULT_JA_PRESETS = [
   },
   {
     id: 'hanviet',
-    icon: '👑',
-    iconBg: '#fee2e2',
+    iconType: 'hanviet',
+    badgeClass: 'icon-badge-amber',
     label: 'Hán Việt',
     getDesc: (f, b) => (f === 'meaning' && b === 'hanviet' ? 'Nghĩa ➔ Hán Việt' : 'Hán Việt ➔ Nghĩa'),
     frontKey: () => 'hanviet',
@@ -45,8 +55,8 @@ const DEFAULT_JA_PRESETS = [
   },
   {
     id: 'listening',
-    icon: '🎧',
-    iconBg: '#dbeafe',
+    iconType: 'listening',
+    badgeClass: 'icon-badge-emerald',
     label: 'Phiên âm',
     getDesc: (f, b) => (f === 'meaning' && b === 'hiragana' ? 'Nghĩa ➔ Kana' : 'Kana ➔ Nghĩa'),
     frontKey: () => 'hiragana',
@@ -59,8 +69,8 @@ const DEFAULT_JA_PRESETS = [
 const DEFAULT_ZH_PRESETS = [
   {
     id: 'zh_translate',
-    icon: '🇨🇳',
-    iconBg: '#fee2e2',
+    iconType: 'languages',
+    badgeClass: 'icon-badge-indigo',
     label: 'Chữ Hán ➔ Nghĩa',
     getDesc: (f, b) => (f === 'meaning' && (b === 'word' || b === 'kanji') ? 'Nghĩa ➔ Chữ Hán' : 'Chữ Hán ➔ Nghĩa'),
     frontKey: () => 'word',
@@ -71,8 +81,8 @@ const DEFAULT_ZH_PRESETS = [
   },
   {
     id: 'zh_pinyin',
-    icon: '🗣️',
-    iconBg: '#fef3c7',
+    iconType: 'reading',
+    badgeClass: 'icon-badge-sky',
     label: 'Luyện Pinyin',
     getDesc: (f, b) => (f === 'hiragana' && (b === 'word' || b === 'kanji') ? 'Pinyin ➔ Chữ Hán' : 'Chữ Hán ➔ Pinyin'),
     frontKey: () => 'word',
@@ -83,8 +93,8 @@ const DEFAULT_ZH_PRESETS = [
   },
   {
     id: 'zh_hanviet',
-    icon: '👑',
-    iconBg: '#ede9fe',
+    iconType: 'hanviet',
+    badgeClass: 'icon-badge-amber',
     label: 'Âm Hán Việt',
     getDesc: (f, b) => (f === 'meaning' && b === 'hanviet' ? 'Nghĩa ➔ Hán Việt' : 'Hán Việt ➔ Nghĩa'),
     frontKey: () => 'hanviet',
@@ -93,8 +103,8 @@ const DEFAULT_ZH_PRESETS = [
   },
   {
     id: 'zh_listening',
-    icon: '🎧',
-    iconBg: '#dbeafe',
+    iconType: 'listening',
+    badgeClass: 'icon-badge-emerald',
     label: 'Pinyin ➔ Nghĩa',
     getDesc: (f, b) => (f === 'meaning' && b === 'hiragana' ? 'Nghĩa ➔ Pinyin' : 'Pinyin ➔ Nghĩa'),
     frontKey: () => 'hiragana',
@@ -107,21 +117,43 @@ const DEFAULT_ZH_PRESETS = [
 const DEFAULT_TWO_FIELD_PRESETS = [
   {
     id: 'forward',
-    icon: '🇬🇧',
-    iconBg: '#dbeafe',
+    iconType: 'forward',
+    badgeClass: 'icon-badge-indigo',
     label: 'Xuôi',
     description: 'Từ ➔ Nghĩa',
     reversedValue: false,
   },
   {
     id: 'backward',
-    icon: '🇻🇳',
-    iconBg: '#fef3c7',
+    iconType: 'backward',
+    badgeClass: 'icon-badge-amber',
     label: 'Ngược',
     description: 'Nghĩa ➔ Từ',
     reversedValue: true,
   },
 ];
+
+function renderPresetIcon(preset) {
+  switch (preset.iconType) {
+    case 'languages':
+      return <Languages size={17} strokeWidth={2.2} />;
+    case 'reading':
+      return <Volume2 size={17} strokeWidth={2.2} />;
+    case 'hanviet':
+      return <Sparkles size={17} strokeWidth={2.2} />;
+    case 'listening':
+      return <Headphones size={17} strokeWidth={2.2} />;
+    case 'forward':
+      return <ArrowRight size={17} strokeWidth={2.2} />;
+    case 'backward':
+      return <ArrowLeft size={17} strokeWidth={2.2} />;
+    default:
+      if (preset.icon && typeof preset.icon === 'string' && preset.icon.length > 2) {
+        return <Languages size={17} strokeWidth={2.2} />;
+      }
+      return <Languages size={17} strokeWidth={2.2} />;
+  }
+}
 
 function GameModeSelector({
   hasFourFields,
@@ -204,7 +236,7 @@ function GameModeSelector({
           title={`Đảo chiều: ${getDirectionLabel()}`}
         >
           <span className="gms-swap-icon" style={{ transform: `rotate(${swapRotation}deg)` }}>
-            🔄
+            <ArrowLeftRight size={13} />
           </span>
           <span className="gms-swap-label">{getDirectionLabel()}</span>
         </button>
@@ -222,17 +254,18 @@ function GameModeSelector({
                 className={`gms-card ${active ? 'gms-card--active' : ''}`}
                 onClick={() => handleFourFieldSelect(preset)}
               >
-                <div
-                  className="gms-card-icon"
-                  style={active ? undefined : { backgroundColor: preset.iconBg || 'var(--bg-elevated)' }}
-                >
-                  <span className="gms-card-emoji">{preset.icon}</span>
+                <div className={`gms-card-icon icon-badge ${preset.badgeClass || 'icon-badge-indigo'}`}>
+                  {renderPresetIcon(preset)}
                 </div>
                 <div className="gms-card-content">
                   <span className="gms-card-title">{preset.label}</span>
                   <span className="gms-card-desc">{desc}</span>
                 </div>
-                {active && <div className="gms-card-check">✓</div>}
+                {active && (
+                  <div className="gms-card-check" aria-hidden="true">
+                    <Check size={11} strokeWidth={3} />
+                  </div>
+                )}
               </button>
             );
           })}
@@ -248,17 +281,18 @@ function GameModeSelector({
                 className={`gms-card ${active ? 'gms-card--active' : ''}`}
                 onClick={() => handleTwoFieldSelect(preset)}
               >
-                <div
-                  className="gms-card-icon"
-                  style={active ? undefined : { backgroundColor: preset.iconBg || 'var(--bg-elevated)' }}
-                >
-                  <span className="gms-card-emoji">{preset.icon}</span>
+                <div className={`gms-card-icon icon-badge ${preset.badgeClass || 'icon-badge-indigo'}`}>
+                  {renderPresetIcon(preset)}
                 </div>
                 <div className="gms-card-content">
                   <span className="gms-card-title">{preset.label}</span>
                   <span className="gms-card-desc">{preset.description}</span>
                 </div>
-                {active && <div className="gms-card-check">✓</div>}
+                {active && (
+                  <div className="gms-card-check" aria-hidden="true">
+                    <Check size={11} strokeWidth={3} />
+                  </div>
+                )}
               </button>
             );
           })}

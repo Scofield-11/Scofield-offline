@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Minus, ChevronDown } from 'lucide-react';
+import { Plus, Minus, ChevronDown, FileText, FileSpreadsheet, UploadCloud, Save } from 'lucide-react';
 import api from '../api/axiosConfig';
 import { toast } from 'react-toastify';
 
@@ -128,9 +128,9 @@ function AddVocabularyForm({ onAddSuccess, existingFolders = [], currentPath = '
                     value={folderPath}
                     onChange={(e) => setFolderPath(e.target.value)}
                   >
-                    <option value="">📁 Thư mục gốc (Mặc định)</option>
+                    <option value="">Thư mục gốc (Mặc định)</option>
                     {existingFolders.map((folder) => (
-                      <option key={folder} value={folder}>📁 {folder}</option>
+                      <option key={folder} value={folder}>{folder}</option>
                     ))}
                   </select>
                 </div>
@@ -140,24 +140,27 @@ function AddVocabularyForm({ onAddSuccess, existingFolders = [], currentPath = '
                   <div className="d-flex gap-2">
                     <button
                       type="button"
-                      className={`btn btn-mobile-chip flex-fill ${language === 'ja' ? 'btn-primary text-white' : 'chip-slate'}`}
+                      className={`btn btn-mobile-chip flex-fill d-flex align-items-center justify-content-center gap-1 ${language === 'ja' ? 'btn-primary text-white' : 'chip-slate'}`}
                       onClick={() => setLanguage('ja')}
                     >
-                      🇯🇵 Tiếng Nhật
+                      <span className="lang-mini-badge lang-badge-ja">あ</span>
+                      <span>Tiếng Nhật</span>
                     </button>
                     <button
                       type="button"
-                      className={`btn btn-mobile-chip flex-fill ${language === 'zh' ? 'btn-primary text-white' : 'chip-slate'}`}
+                      className={`btn btn-mobile-chip flex-fill d-flex align-items-center justify-content-center gap-1 ${language === 'zh' ? 'btn-primary text-white' : 'chip-slate'}`}
                       onClick={() => setLanguage('zh')}
                     >
-                      🇨🇳 Tiếng Trung
+                      <span className="lang-mini-badge lang-badge-zh">中</span>
+                      <span>Tiếng Trung</span>
                     </button>
                     <button
                       type="button"
-                      className={`btn btn-mobile-chip flex-fill ${language === 'en' ? 'btn-primary text-white' : 'chip-slate'}`}
+                      className={`btn btn-mobile-chip flex-fill d-flex align-items-center justify-content-center gap-1 ${language === 'en' ? 'btn-primary text-white' : 'chip-slate'}`}
                       onClick={() => setLanguage('en')}
                     >
-                      🇬🇧 Tiếng Anh
+                      <span className="lang-mini-badge lang-badge-en">EN</span>
+                      <span>Tiếng Anh</span>
                     </button>
                   </div>
                 </div>
@@ -166,17 +169,19 @@ function AddVocabularyForm({ onAddSuccess, existingFolders = [], currentPath = '
               <div className="d-flex gap-2 mb-3">
                 <button
                   type="button"
-                  className={`btn btn-mobile-chip flex-fill ${importMode === 'text' ? 'chip-primary' : 'chip-slate'}`}
+                  className={`btn btn-mobile-chip flex-fill d-flex align-items-center justify-content-center gap-2 ${importMode === 'text' ? 'chip-primary' : 'chip-slate'}`}
                   onClick={() => setImportMode('text')}
                 >
-                  📝 Dán văn bản
+                  <FileText size={15} strokeWidth={2.2} />
+                  <span>Dán văn bản</span>
                 </button>
                 <button
                   type="button"
-                  className={`btn btn-mobile-chip flex-fill ${importMode === 'csv' ? 'chip-primary' : 'chip-slate'}`}
+                  className={`btn btn-mobile-chip flex-fill d-flex align-items-center justify-content-center gap-2 ${importMode === 'csv' ? 'chip-primary' : 'chip-slate'}`}
                   onClick={() => setImportMode('csv')}
                 >
-                  📊 Tải file CSV
+                  <FileSpreadsheet size={15} strokeWidth={2.2} />
+                  <span>Tải file CSV</span>
                 </button>
               </div>
 
@@ -214,8 +219,14 @@ function AddVocabularyForm({ onAddSuccess, existingFolders = [], currentPath = '
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <span className="fs-2 mb-1">{csvFile ? '📄' : '📥'}</span>
-                    <span className="fw-bold">{csvFile ? csvFile.name : 'Chạm để chọn file .CSV'}</span>
+                    <div className="mb-2">
+                      {csvFile ? (
+                        <FileSpreadsheet size={32} strokeWidth={2} className="text-primary" />
+                      ) : (
+                        <UploadCloud size={32} strokeWidth={1.8} className="text-secondary opacity-75" />
+                      )}
+                    </div>
+                    <span className="fw-bold">{csvFile ? csvFile.name : 'Chạm hoặc kéo thả file .CSV vào đây'}</span>
                     <input
                       type="file"
                       ref={fileInputRef}
@@ -230,11 +241,12 @@ function AddVocabularyForm({ onAddSuccess, existingFolders = [], currentPath = '
               )}
 
               <button
-                className="btn btn-primary btn-touch w-100"
+                className="btn btn-primary btn-touch w-100 d-flex align-items-center justify-content-center gap-2 fw-bold"
                 onClick={handleBulkImport}
                 disabled={isLoading}
               >
-                {isLoading ? 'Đang xử lý...' : '💾 Lưu học phần mới'}
+                <Save size={16} strokeWidth={2.2} />
+                <span>{isLoading ? 'Đang xử lý...' : 'Lưu học phần mới'}</span>
               </button>
             </div>
           </motion.div>

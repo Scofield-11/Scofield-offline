@@ -11,6 +11,13 @@ import {
   X,
   Download,
   BookMarked,
+  ScrollText,
+  Home,
+  Folder,
+  FolderPlus,
+  Search,
+  Save,
+  Check,
 } from 'lucide-react';
 import api, { exportSingleItemToJson } from '../api/axiosConfig';
 import { VocabContext } from '../context/VocabContext';
@@ -386,7 +393,7 @@ function KanjiDictionary() {
   if (loading) return <LoadingSkeleton />;
 
   return (
-    <div className="container-fluid mt-1 mx-auto px-2 px-md-3" style={{ maxWidth: '1000px' }}>
+    <div className="container-fluid mt-1 mx-auto px-2 px-md-3" style={{ maxWidth: '980px' }}>
       {/* MODAL XÁC NHẬN TẠO THƯ MỤC / XÓA */}
       {ReactDOM.createPortal(
         <AnimatePresence>
@@ -415,9 +422,14 @@ function KanjiDictionary() {
                       dialogState.type === 'createFolder' ? 'text-dark' : 'text-danger'
                     }`}
                   >
-                    {dialogState.type === 'createFolder'
-                      ? '📁 Tạo thư mục Kanji mới'
-                      : '⚠️ Xác nhận xóa'}
+                    {dialogState.type === 'createFolder' ? (
+                      <span className="d-flex align-items-center gap-2">
+                        <FolderPlus size={18} strokeWidth={2.2} className="text-primary" />
+                        <span>Tạo thư mục Kanji mới</span>
+                      </span>
+                    ) : (
+                      'Xác nhận xóa'
+                    )}
                   </h6>
                   <button
                     type="button"
@@ -533,8 +545,9 @@ function KanjiDictionary() {
             >
               {isFormExpanded ? <Minus size={15} /> : <Plus size={15} />}
             </span>
-            <span className="fw-bold text-dark" style={{ fontSize: '0.9rem' }}>
-              ⛩️ Tạo học phần Kanji mới
+            <span className="fw-bold text-dark d-flex align-items-center gap-2" style={{ fontSize: '0.9rem' }}>
+              <ScrollText size={16} strokeWidth={2.2} className="text-primary" />
+              <span>Tạo học phần Kanji mới</span>
             </span>
           </div>
           <span className="btn-mobile-chip chip-slate">
@@ -577,10 +590,10 @@ function KanjiDictionary() {
                       value={newSetFolder}
                       onChange={(e) => setNewSetFolder(e.target.value)}
                     >
-                      <option value="">📁 Thư mục gốc (Mặc định)</option>
+                      <option value="">Thư mục gốc (Mặc định)</option>
                       {allExistingFolders.map((folder) => (
                         <option key={folder} value={folder}>
-                          📁 {folder}
+                          {folder}
                         </option>
                       ))}
                     </select>
@@ -603,11 +616,12 @@ function KanjiDictionary() {
 
                 <button
                   type="button"
-                  className="btn btn-primary btn-touch w-100 fw-bold"
+                  className="btn btn-primary btn-touch w-100 fw-bold d-flex align-items-center justify-content-center gap-2"
                   onClick={handleCreateKanjiSet}
                   disabled={isCreating}
                 >
-                  {isCreating ? 'Đang tạo...' : '💾 Lưu học phần Kanji'}
+                  <Save size={16} strokeWidth={2.2} />
+                  <span>{isCreating ? 'Đang tạo...' : 'Lưu học phần Kanji'}</span>
                 </button>
               </div>
             </motion.div>
@@ -622,13 +636,17 @@ function KanjiDictionary() {
         </span>
 
         <div className="d-flex align-items-center gap-2" style={{ minWidth: '220px' }}>
-          <input
-            type="text"
-            className="form-control form-control-sm bg-white border rounded-pill px-3 fw-semibold"
-            placeholder="🔍 Tìm học phần Kanji..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+          <div className="position-relative w-100">
+            <Search size={14} className="position-absolute top-50 translate-middle-y text-muted" style={{ left: '10px' }} />
+            <input
+              type="text"
+              className="form-control form-control-sm bg-white border rounded-pill fw-semibold"
+              style={{ paddingLeft: '30px' }}
+              placeholder="Tìm học phần Kanji..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
@@ -636,12 +654,13 @@ function KanjiDictionary() {
       <div className="d-flex align-items-center justify-content-between gap-2 mb-3 bg-white p-2 px-3 rounded-4 border shadow-sm">
         <div className="d-flex align-items-center gap-1 overflow-auto no-scrollbar flex-grow-1">
           <button
-            className={`btn btn-mobile-chip flex-shrink-0 ${
+            className={`btn btn-mobile-chip flex-shrink-0 d-flex align-items-center gap-1 ${
               currentPath === '' ? 'btn-primary text-white' : 'chip-slate'
             }`}
             onClick={() => setCurrentPath('')}
           >
-            🏠 Gốc
+            <Home size={14} strokeWidth={2.2} />
+            <span>Gốc</span>
           </button>
           {currentPath &&
             currentPath.split('/').map((part, idx, arr) => {
@@ -664,11 +683,11 @@ function KanjiDictionary() {
         </div>
 
         <button
-          className="btn btn-mobile-chip chip-primary flex-shrink-0"
+          className="btn btn-mobile-chip chip-primary flex-shrink-0 d-flex align-items-center gap-1"
           onClick={openCreateFolderModal}
           title="Tạo thư mục Kanji mới"
         >
-          <Plus size={14} /> <span>Thư mục</span>
+          <Plus size={14} strokeWidth={2.2} /> <span>Thư mục</span>
         </button>
       </div>
 
@@ -686,7 +705,9 @@ function KanjiDictionary() {
               >
                 <div className="d-flex align-items-center justify-content-between gap-2">
                   <div className="d-flex align-items-center gap-2 overflow-hidden">
-                    <span className="fs-5">📁</span>
+                    <div className="icon-badge icon-badge-rose" style={{ width: 28, height: 28, minWidth: 28, borderRadius: 8, padding: 0 }}>
+                      <Folder size={15} strokeWidth={2.2} />
+                    </div>
                     <span className="fw-bold text-dark text-truncate small" title={folderName}>
                       {folderName}
                     </span>
@@ -699,7 +720,7 @@ function KanjiDictionary() {
                     }}
                     title="Xóa thư mục"
                   >
-                    <X size={14} />
+                    <X size={14} strokeWidth={2.2} />
                   </button>
                 </div>
               </div>

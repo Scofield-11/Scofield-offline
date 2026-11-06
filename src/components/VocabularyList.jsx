@@ -9,6 +9,13 @@ import {
   BookMarked,
   X,
   FolderOpen,
+  Folder,
+  FolderPlus,
+  Home,
+  FileText,
+  FileSpreadsheet,
+  Check,
+  ScrollText,
   Download,
   GripVertical,
   Volume2,
@@ -472,7 +479,7 @@ function VocabularyList() {
   if (loading) return <LoadingSkeleton />;
 
   return (
-    <div className="container-fluid mt-1 mx-auto px-2 px-md-3" style={{ maxWidth: '1000px' }}>
+    <div className="container-fluid mt-1 mx-auto px-2 px-md-3" style={{ maxWidth: '980px' }}>
       <input
         type="file"
         ref={jsonInputRef}
@@ -505,7 +512,14 @@ function VocabularyList() {
                 <div className="set-sheet-grabber d-md-none" />
                 <div className="set-sheet-header">
                   <h6 className={`fw-bold mb-0 ${dialogState.type === 'createFolder' ? 'text-dark' : 'text-danger'}`}>
-                    {dialogState.type === 'createFolder' ? '📁 Tạo thư mục con mới' : '⚠️ Xác nhận xóa'}
+                    {dialogState.type === 'createFolder' ? (
+                      <span className="d-flex align-items-center gap-2">
+                        <FolderPlus size={18} strokeWidth={2.2} className="text-primary" />
+                        <span>Tạo thư mục con mới</span>
+                      </span>
+                    ) : (
+                      'Xác nhận xóa'
+                    )}
                   </h6>
                   <button
                     type="button"
@@ -631,10 +645,11 @@ function VocabularyList() {
       <div className="d-flex align-items-center justify-content-between gap-2 mb-3 bg-white p-2 px-3 rounded-4 border shadow-sm">
         <div className="d-flex align-items-center gap-1 overflow-auto no-scrollbar flex-grow-1">
           <button
-            className={`btn btn-mobile-chip flex-shrink-0 ${currentPath === '' ? 'btn-primary text-white' : 'chip-slate'}`}
+            className={`btn btn-mobile-chip flex-shrink-0 d-flex align-items-center gap-1 ${currentPath === '' ? 'btn-primary text-white' : 'chip-slate'}`}
             onClick={() => setCurrentPath('')}
           >
-            🏠 Gốc
+            <Home size={14} strokeWidth={2.2} />
+            <span>Gốc</span>
           </button>
           {currentPath &&
             currentPath.split('/').map((part, idx, arr) => {
@@ -655,11 +670,11 @@ function VocabularyList() {
         </div>
 
         <button
-          className="btn btn-mobile-chip chip-primary flex-shrink-0"
+          className="btn btn-mobile-chip chip-primary flex-shrink-0 d-flex align-items-center gap-1"
           onClick={openCreateFolderModal}
           title="Tạo thư mục mới"
         >
-          <Plus size={14} /> <span>Thư mục</span>
+          <Plus size={14} strokeWidth={2.2} /> <span>Thư mục</span>
         </button>
       </div>
 
@@ -674,7 +689,9 @@ function VocabularyList() {
               >
                 <div className="d-flex align-items-center justify-content-between gap-2">
                   <div className="d-flex align-items-center gap-2 overflow-hidden">
-                    <span className="fs-5">📁</span>
+                    <div className="icon-badge icon-badge-amber" style={{ width: 28, height: 28, minWidth: 28, borderRadius: 8, padding: 0 }}>
+                      <Folder size={15} strokeWidth={2.2} />
+                    </div>
                     <span className="fw-bold text-dark text-truncate small" title={folderName}>
                       {folderName}
                     </span>
@@ -684,7 +701,7 @@ function VocabularyList() {
                     onClick={(e) => handleDeleteFolder(e, folderName)}
                     title="Xóa thư mục"
                   >
-                    <X size={14} />
+                    <X size={14} strokeWidth={2.2} />
                   </button>
                 </div>
               </div>
@@ -737,8 +754,28 @@ function VocabularyList() {
                           <span className="badge bg-light text-secondary border rounded-pill">
                             {vocabSet.vocab_count} thẻ
                           </span>
-                          <span className="badge chip-primary rounded-pill">
-                            {vocabSet.type === 'kanji' ? '⛩️ KANJI' : vocabSet.language === 'en' ? '🇬🇧 EN' : vocabSet.language === 'zh' ? '🇨🇳 ZH' : '🇯🇵 JA'}
+                          <span className="badge chip-primary rounded-pill d-inline-flex align-items-center gap-1">
+                            {vocabSet.type === 'kanji' ? (
+                              <>
+                                <ScrollText size={11} strokeWidth={2.4} />
+                                <span>KANJI</span>
+                              </>
+                            ) : vocabSet.language === 'en' ? (
+                              <>
+                                <span className="lang-code-dot">EN</span>
+                                <span>Tiếng Anh</span>
+                              </>
+                            ) : vocabSet.language === 'zh' ? (
+                              <>
+                                <span className="lang-code-dot">中</span>
+                                <span>Tiếng Trung</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="lang-code-dot">あ</span>
+                                <span>Tiếng Nhật</span>
+                              </>
+                            )}
                           </span>
                         </div>
 
@@ -780,26 +817,30 @@ function VocabularyList() {
                               <button
                                 className="btn btn-mobile-chip chip-primary"
                                 onClick={(e) => handleDownloadSet(e, vocabSet, 'json')}
+                                title="Xuất file JSON"
                               >
-                                <Download size={13} /> <span>JSON</span>
+                                <Download size={13} strokeWidth={2.2} /> <span>JSON</span>
                               </button>
                               <button
                                 className="btn btn-mobile-chip chip-slate"
                                 onClick={(e) => handleDownloadSet(e, vocabSet, 'txt')}
+                                title="Xuất file TXT"
                               >
-                                <Download size={13} /> <span>TXT</span>
+                                <FileText size={13} strokeWidth={2.2} /> <span>TXT</span>
                               </button>
                               <button
                                 className="btn btn-mobile-chip chip-success"
                                 onClick={(e) => handleDownloadSet(e, vocabSet, 'csv')}
+                                title="Xuất bảng tính Excel"
                               >
-                                <Download size={13} /> <span>Excel</span>
+                                <FileSpreadsheet size={13} strokeWidth={2.2} /> <span>Excel</span>
                               </button>
                               <button
                                 className="btn btn-mobile-chip chip-danger"
                                 onClick={(e) => handleDeleteSet(e, vocabSet.id, vocabSet.title)}
+                                title="Xóa học phần này"
                               >
-                                <Trash2 size={13} /> <span>Xóa bộ</span>
+                                <Trash2 size={13} strokeWidth={2.2} /> <span>Xóa bộ</span>
                               </button>
                             </div>
 
@@ -867,10 +908,11 @@ function VocabularyList() {
                                             Hủy
                                           </button>
                                           <button
-                                            className="btn btn-mobile-chip btn-primary text-white"
+                                            className="btn btn-mobile-chip btn-primary text-white d-flex align-items-center gap-1"
                                             onClick={() => handleSaveEdit(vocab.id, vocabSet.id)}
                                           >
-                                            💾 Lưu
+                                            <Check size={14} strokeWidth={2.4} />
+                                            <span>Lưu</span>
                                           </button>
                                         </div>
                                       </div>
@@ -981,10 +1023,11 @@ function VocabularyList() {
                                         Hủy
                                       </button>
                                       <button
-                                        className="btn btn-mobile-chip btn-primary text-white"
+                                        className="btn btn-mobile-chip btn-primary text-white d-flex align-items-center gap-1"
                                         onClick={() => handleSaveNew(vocabSet.id)}
                                       >
-                                        💾 Lưu thẻ
+                                        <Check size={14} strokeWidth={2.4} />
+                                        <span>Lưu thẻ</span>
                                       </button>
                                     </div>
                                   </div>

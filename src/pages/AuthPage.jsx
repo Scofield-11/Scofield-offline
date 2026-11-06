@@ -90,7 +90,7 @@ function AuthPage({ onAuthSuccess }) {
             />
           </div>
           <h4 className="fw-bold text-white mb-0" style={{ letterSpacing: '0.5px' }}>
-            Scofile
+            Scofield
           </h4>
         </div>
 
@@ -164,7 +164,7 @@ function AuthPage({ onAuthSuccess }) {
               </label>
               <div className="input-group rounded-3 overflow-hidden border">
                 <span className="input-group-text bg-light border-0 text-muted">
-                  <User size={16} />
+                  <User size={16} strokeWidth={2.2} />
                 </span>
                 <input
                   type="text"
@@ -188,7 +188,7 @@ function AuthPage({ onAuthSuccess }) {
                 </label>
                 <div className="input-group rounded-3 overflow-hidden border">
                   <span className="input-group-text bg-light border-0 text-muted">
-                    <Smile size={16} />
+                    <Smile size={16} strokeWidth={2.2} />
                   </span>
                   <input
                     type="text"
@@ -207,7 +207,7 @@ function AuthPage({ onAuthSuccess }) {
               </label>
               <div className="input-group rounded-3 overflow-hidden border">
                 <span className="input-group-text bg-light border-0 text-muted">
-                  <Lock size={16} />
+                  <Lock size={16} strokeWidth={2.2} />
                 </span>
                 <input
                   type="password"
@@ -228,7 +228,7 @@ function AuthPage({ onAuthSuccess }) {
                 </label>
                 <div className="input-group rounded-3 overflow-hidden border">
                   <span className="input-group-text bg-light border-0 text-muted">
-                    <Lock size={16} />
+                    <Lock size={16} strokeWidth={2.2} />
                   </span>
                   <input
                     type="password"
@@ -256,15 +256,18 @@ function AuthPage({ onAuthSuccess }) {
               disabled={submitting}
             >
               {submitting ? (
-                <span>Đang xử lý...</span>
+                <div className="d-flex align-items-center gap-2">
+                  <Sparkles size={18} className="spin-anim" />
+                  <span>Đang xử lý...</span>
+                </div>
               ) : mode === 'login' ? (
                 <>
-                  <LogIn size={18} />
+                  <LogIn size={18} strokeWidth={2.2} />
                   <span>Đăng nhập</span>
                 </>
               ) : (
                 <>
-                  <UserPlus size={18} />
+                  <UserPlus size={18} strokeWidth={2.2} />
                   <span>Đăng ký</span>
                 </>
               )}

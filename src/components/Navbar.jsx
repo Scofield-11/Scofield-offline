@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { RefreshCw, Sun, Moon, Shield } from "lucide-react";
+import {
+  RefreshCw,
+  Sun,
+  Moon,
+  Shield,
+  BookOpen,
+  ScrollText,
+  Layers,
+  Brain,
+  ClipboardCheck,
+  Gamepad2,
+} from "lucide-react";
 import { getSyncStatus, autoPullFromCloud, pushToSupabase, getCurrentUser } from "../api/axiosConfig";
 import { toast } from "react-toastify";
 
@@ -48,12 +59,12 @@ function Navbar() {
   };
 
   const navItems = [
-    { path: "/", label: "Thư viện", icon: "📚" },
-    { path: "/kanji", label: "Kanji", icon: "⛩️" },
-    { path: "/flashcards", label: "Thẻ nhớ", icon: "🗂️" },
-    { path: "/learn", label: "Học thuộc", icon: "🧠" },
-    { path: "/test", label: "Kiểm tra", icon: "📝" },
-    { path: "/match", label: "Ghép thẻ", icon: "🎮" },
+    { path: "/", label: "Thư viện", icon: BookOpen, badgeClass: "icon-badge-indigo" },
+    { path: "/kanji", label: "Kanji", icon: ScrollText, badgeClass: "icon-badge-rose" },
+    { path: "/flashcards", label: "Thẻ nhớ", icon: Layers, badgeClass: "icon-badge-amber" },
+    { path: "/learn", label: "Học thuộc", icon: Brain, badgeClass: "icon-badge-emerald" },
+    { path: "/test", label: "Kiểm tra", icon: ClipboardCheck, badgeClass: "icon-badge-violet" },
+    { path: "/match", label: "Ghép thẻ", icon: Gamepad2, badgeClass: "icon-badge-sky" },
   ];
 
   const getDotColor = () => {
@@ -83,6 +94,7 @@ function Navbar() {
       <div className="nav-menu no-scrollbar" style={{ minHeight: 0 }}>
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
+          const IconComponent = item.icon;
           return (
             <Link
               key={item.path}
@@ -96,8 +108,13 @@ function Navbar() {
                   transition={NAV_SPRING}
                 />
               )}
-              <span className="nav-icon-wrapper position-relative" style={{ zIndex: 2 }}>
-                <span className="nav-icon">{item.icon}</span>
+              <span
+                className={`nav-icon-badge ${item.badgeClass} position-relative ${
+                  isActive ? "active" : ""
+                }`}
+                style={{ zIndex: 2 }}
+              >
+                <IconComponent size={18} strokeWidth={2.2} />
               </span>
               <span className="d-none d-lg-inline nav-text text-truncate position-relative" style={{ zIndex: 2 }}>
                 {item.label}
@@ -121,47 +138,45 @@ function Navbar() {
         {currentUser?.role === "admin" && (
           <Link
             to="/admin"
-            className={`btn nav-sync-btn w-100 d-flex align-items-center justify-content-between text-decoration-none ${
-              location.pathname === "/admin" ? "chip-primary border-primary" : ""
+            className={`btn nav-admin-btn w-100 d-flex align-items-center justify-content-between text-decoration-none ${
+              location.pathname === "/admin" ? "active" : ""
             }`}
             title="Quản trị tài khoản người dùng"
           >
-            <span className="d-flex align-items-center gap-2 text-truncate">
-              <Shield size={15} className="flex-shrink-0" />
-              <span className="text-truncate fw-bold">Quản trị viên</span>
+            <span className="d-flex align-items-center gap-1.5 text-nowrap">
+              <Shield size={14} className="flex-shrink-0" />
+              <span className="fw-semibold">Quản trị viên</span>
             </span>
-            <span className="badge rounded-pill chip-primary" style={{ fontSize: "0.65rem" }}>
-              Admin
-            </span>
+            <span className="badge rounded-pill nav-admin-badge">Admin</span>
           </Link>
         )}
 
-        <div className="d-flex align-items-center gap-2 w-100">
+        <div className="d-flex align-items-center gap-1.5 w-100">
           <button
             type="button"
-            className="btn nav-sync-btn d-flex align-items-center justify-content-between flex-grow-1 overflow-hidden"
+            className="btn nav-sync-btn d-flex align-items-center justify-content-between flex-grow-1"
             onClick={handleManualSync}
             disabled={syncInfo.state === "syncing"}
             title={syncInfo.message || "Đồng bộ dữ liệu"}
           >
-            <span className="d-flex align-items-center gap-2 text-truncate">
+            <span className="d-flex align-items-center gap-1.5 text-nowrap">
               <span
                 className={`sync-status-dot flex-shrink-0 ${syncInfo.state === "syncing" ? "pulse" : ""}`}
                 style={{ backgroundColor: getDotColor() }}
               />
-              <span className="text-truncate">
+              <span className="nav-btn-label">
                 {syncInfo.state === "syncing" ? "Đang lưu..." : "Cloud Sync"}
               </span>
             </span>
             <RefreshCw
-              size={14}
+              size={13}
               className={syncInfo.state === "syncing" ? "spin-anim flex-shrink-0" : "flex-shrink-0"}
             />
           </button>
 
           <motion.button
             type="button"
-            whileTap={{ scale: 0.9, rotate: 25 }}
+            whileTap={{ scale: 0.9, rotate: 20 }}
             className="btn nav-theme-btn d-flex align-items-center justify-content-center flex-shrink-0"
             onClick={toggleTheme}
             title={theme === "dark" ? "Chuyển sang chế độ Sáng" : "Chuyển sang chế độ Tối"}
@@ -174,7 +189,7 @@ function Navbar() {
               transition={{ type: "spring", stiffness: 380, damping: 24, mass: 0.6 }}
               className="d-flex align-items-center justify-content-center"
             >
-              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+              {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
             </motion.div>
           </motion.button>
         </div>

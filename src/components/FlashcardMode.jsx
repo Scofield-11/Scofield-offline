@@ -1,6 +1,23 @@
 import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit3, Maximize2, Minimize2 } from 'lucide-react';
+import {
+  Edit3,
+  Maximize2,
+  Minimize2,
+  Layers,
+  Volume2,
+  PlayCircle,
+  ArrowRight,
+  ArrowLeft,
+  Shuffle,
+  Award,
+  Eye,
+  BookOpen,
+  Clock,
+  Zap,
+  Check,
+  Sparkles,
+} from 'lucide-react';
 import Flashcard from './Flashcard';
 import SaveNoteModal from './SaveNoteModal';
 import { VocabContext } from '../context/VocabContext';
@@ -277,92 +294,288 @@ function FlashcardMode() {
     }
   };
 
+  const totalCardsCount = React.useMemo(() => {
+    return targetSets.reduce(
+      (sum, s) => sum + (s.vocab_count || (s.vocabularies ? s.vocabularies.length : 0)),
+      0
+    );
+  }, [targetSets]);
+
+  const currentFrontDisplay = React.useMemo(() => {
+    if (hasFourFields) {
+      if (kanjiFront === 'meaning') return 'Ý nghĩa';
+      if (kanjiFront === 'hiragana') return currentLanguage === 'zh' ? 'Pinyin' : 'Phiên âm';
+      if (kanjiFront === 'hanviet') return 'Hán Việt';
+      return currentLanguage === 'zh' ? 'Chữ Hán' : 'Từ vựng';
+    }
+    return isReversed ? 'Ý nghĩa' : 'Từ vựng';
+  }, [hasFourFields, kanjiFront, currentLanguage, isReversed]);
+
+  const currentSetDisplayTitle = React.useMemo(() => {
+    const idStr = String(selectedSetId);
+    if (idStr === 'lang_ja' || idStr === 'all_ja') return 'Tất cả tiếng Nhật';
+    if (idStr === 'lang_zh' || idStr === 'all_zh') return 'Tất cả tiếng Trung';
+    if (idStr === 'lang_en' || idStr === 'all_en') return 'Tất cả tiếng Anh';
+    if (idStr === 'lang_kanji' || idStr === 'all_kanji') return 'Tất cả Kanji';
+    if (idStr.startsWith('folder_')) return idStr.substring(7);
+    if (targetSets.length === 1) return targetSets[0].title || 'Học phần không tên';
+    if (targetSets.length > 1) return `${targetSets.length} học phần đã chọn`;
+    return 'Chưa chọn học phần';
+  }, [selectedSetId, targetSets]);
+
   if (loading) return <LoadingSkeleton />;
 
   if (!isStarted) {
     return (
-      <div className="container mt-3" style={{ maxWidth: '600px' }}>
-        <div className="card shadow-sm border-0 p-3 p-md-4 rounded-4 bg-white">
-          <h4 className="text-center mb-3 fw-bold text-dark">🗂️ Thẻ nhớ Flashcards</h4>
+      <div className="test-lobby-container">
+        {/* Tiêu đề trang tối giản */}
+        <div className="test-lobby-header">
+          <h2 className="test-lobby-title">Thẻ nhớ Flashcards 3D</h2>
+        </div>
 
-          <div className="mb-3">
-            <label className="form-label fw-bold text-muted small mb-1">Học phần</label>
-            <SetSelector
-              sets={sets}
-              selectedSetId={selectedSetId}
-              setSelectedSetId={setSelectedSetId}
-            />
-          </div>
+        {/* Bố cục 2 Cột Studio (Max-width 980px) */}
+        <div className="test-lobby-layout">
+          {/* CỘT TRÁI (7/12): CẤU HÌNH THẺ NHỚ */}
+          <div className="test-lobby-config-col">
+            {/* Card 1: Chọn học phần */}
+            <div className="test-lobby-card">
+              <div className="test-lobby-card-title">Học phần mục tiêu</div>
+              <SetSelector
+                sets={sets}
+                selectedSetId={selectedSetId}
+                setSelectedSetId={setSelectedSetId}
+              />
+            </div>
 
-          <div className="mb-3">
-            <GameModeSelector
-              hasFourFields={hasFourFields}
-              currentContentType={currentContentType}
-              currentLanguage={currentLanguage}
-              isReversed={isReversed}
-              setIsReversed={setIsReversed}
-              kanjiFront={kanjiFront}
-              setKanjiFront={setKanjiFront}
-              kanjiBack={kanjiBack}
-              setKanjiBack={setKanjiBack}
-              onSwap={handleSwap}
-              sectionLabel="Mặt trước hiển thị"
-              presets={[
-                {
-                  id: 'recognition',
-                  icon: currentLanguage === 'zh' ? '🇨🇳' : '🧠',
-                  iconBg: '#ede9fe',
-                  label: currentLanguage === 'zh' ? 'Chữ Hán' : 'Từ vựng',
-                  getDesc: () =>
-                    `${currentLanguage === 'zh' ? 'Chữ Hán' : 'Từ vựng'} ➔ Chi tiết`,
-                  frontKey: (type) => (type === 'kanji' ? 'kanji' : 'word'),
-                  backKey: () => 'summary',
-                  isActive: (f, b, type) => {
-                    const w = type === 'kanji' ? 'kanji' : 'word';
-                    return (f === w || f === 'kanji' || f === 'word') && b === 'summary';
+            {/* Card 2: Chọn mặt trước hiển thị */}
+            <div className="test-lobby-card">
+              <GameModeSelector
+                hasFourFields={hasFourFields}
+                currentContentType={currentContentType}
+                currentLanguage={currentLanguage}
+                isReversed={isReversed}
+                setIsReversed={setIsReversed}
+                kanjiFront={kanjiFront}
+                setKanjiFront={setKanjiFront}
+                kanjiBack={kanjiBack}
+                setKanjiBack={setKanjiBack}
+                onSwap={handleSwap}
+                sectionLabel="Mặt trước hiển thị"
+                presets={[
+                  {
+                    id: 'recognition',
+                    iconType: 'languages',
+                    badgeClass: 'icon-badge-indigo',
+                    label: currentLanguage === 'zh' ? 'Chữ Hán' : 'Từ vựng',
+                    getDesc: () =>
+                      `${currentLanguage === 'zh' ? 'Chữ Hán' : 'Từ vựng'} ➔ Chi tiết`,
+                    frontKey: (type) => (type === 'kanji' ? 'kanji' : 'word'),
+                    backKey: () => 'summary',
+                    isActive: (f, b, type) => {
+                      const w = type === 'kanji' ? 'kanji' : 'word';
+                      return (f === w || f === 'kanji' || f === 'word') && b === 'summary';
+                    },
                   },
-                },
-                {
-                  id: 'recall',
-                  icon: '🇻🇳',
-                  iconBg: '#fef3c7',
-                  label: 'Ý nghĩa',
-                  getDesc: () => 'Nghĩa ➔ Chi tiết',
-                  frontKey: () => 'meaning',
-                  backKey: () => 'summary',
-                  isActive: (f, b) => f === 'meaning' && b === 'summary',
-                },
-                {
-                  id: 'reading',
-                  icon: '🗣️',
-                  iconBg: '#dbeafe',
-                  label: currentLanguage === 'zh' ? 'Pinyin' : 'Phiên âm',
-                  getDesc: () => `${currentLanguage === 'zh' ? 'Pinyin' : 'Kana'} ➔ Chi tiết`,
-                  frontKey: () => 'hiragana',
-                  backKey: () => 'summary',
-                  isActive: (f, b) => f === 'hiragana' && b === 'summary',
-                },
-                {
-                  id: 'hanviet',
-                  icon: '👑',
-                  iconBg: '#fee2e2',
-                  label: 'Hán Việt',
-                  getDesc: () => 'Hán Việt ➔ Chi tiết',
-                  frontKey: () => 'hanviet',
-                  backKey: () => 'summary',
-                  isActive: (f, b) => f === 'hanviet' && b === 'summary',
-                },
-              ]}
-              twoFieldPresets={[
-                { id: 'forward', icon: '🧠', iconBg: '#ede9fe', label: 'Từ vựng', description: 'Từ ➔ Nghĩa', reversedValue: false },
-                { id: 'backward', icon: '🇻🇳', iconBg: '#fef3c7', label: 'Ý nghĩa', description: 'Nghĩa ➔ Từ', reversedValue: true },
-              ]}
-            />
+                  {
+                    id: 'recall',
+                    iconType: 'forward',
+                    badgeClass: 'icon-badge-amber',
+                    label: 'Ý nghĩa',
+                    getDesc: () => 'Nghĩa ➔ Chi tiết',
+                    frontKey: () => 'meaning',
+                    backKey: () => 'summary',
+                    isActive: (f, b) => f === 'meaning' && b === 'summary',
+                  },
+                  {
+                    id: 'reading',
+                    iconType: 'reading',
+                    badgeClass: 'icon-badge-sky',
+                    label: currentLanguage === 'zh' ? 'Pinyin' : 'Phiên âm',
+                    getDesc: () => `${currentLanguage === 'zh' ? 'Pinyin' : 'Kana'} ➔ Chi tiết`,
+                    frontKey: () => 'hiragana',
+                    backKey: () => 'summary',
+                    isActive: (f, b) => f === 'hiragana' && b === 'summary',
+                  },
+                  {
+                    id: 'hanviet',
+                    iconType: 'hanviet',
+                    badgeClass: 'icon-badge-rose',
+                    label: 'Hán Việt',
+                    getDesc: () => 'Hán Việt ➔ Chi tiết',
+                    frontKey: () => 'hanviet',
+                    backKey: () => 'summary',
+                    isActive: (f, b) => f === 'hanviet' && b === 'summary',
+                  },
+                ]}
+                twoFieldPresets={[
+                  {
+                    id: 'forward',
+                    iconType: 'forward',
+                    badgeClass: 'icon-badge-indigo',
+                    label: 'Từ vựng',
+                    description: 'Từ ➔ Nghĩa',
+                    reversedValue: false,
+                  },
+                  {
+                    id: 'backward',
+                    iconType: 'backward',
+                    badgeClass: 'icon-badge-amber',
+                    label: 'Ý nghĩa',
+                    description: 'Nghĩa ➔ Từ',
+                    reversedValue: true,
+                  },
+                ]}
+              />
+            </div>
+
+            {/* Card 3: Cấu hình trải nghiệm lật thẻ */}
+            <div className="test-lobby-card">
+              <div className="test-lobby-card-title">Tùy chọn trải nghiệm</div>
+              <div className="lobby-toggle-grid">
+                {/* Toggle 1: Tự động phát âm */}
+                <div
+                  className={`lobby-toggle-card ${autoPlay ? 'active' : ''}`}
+                  onClick={() => setAutoPlay(!autoPlay)}
+                >
+                  <div className="lobby-toggle-left">
+                    <div className="icon-badge icon-badge-emerald" style={{ width: 34, height: 34 }}>
+                      <Volume2 size={17} strokeWidth={2.2} />
+                    </div>
+                    <div>
+                      <div className="lobby-toggle-title">Tự động phát âm</div>
+                      <div className="lobby-toggle-desc">Đọc to mỗi khi lật thẻ</div>
+                    </div>
+                  </div>
+                  <div className="lobby-switch-track">
+                    <div className="lobby-switch-thumb" />
+                  </div>
+                </div>
+
+                {/* Toggle 2: Trình chiếu tự động */}
+                <div
+                  className={`lobby-toggle-card ${isSlideshow ? 'active' : ''}`}
+                  onClick={() => setIsSlideshow(!isSlideshow)}
+                >
+                  <div className="lobby-toggle-left">
+                    <div className="icon-badge icon-badge-sky" style={{ width: 34, height: 34 }}>
+                      <PlayCircle size={17} strokeWidth={2.2} />
+                    </div>
+                    <div>
+                      <div className="lobby-toggle-title">Tự động trình chiếu</div>
+                      <div className="lobby-toggle-desc">Chuyển thẻ sau 3 giây</div>
+                    </div>
+                  </div>
+                  <div className="lobby-switch-track">
+                    <div className="lobby-switch-thumb" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <button className="btn btn-primary btn-touch w-100" onClick={handleStart}>
-            Bắt đầu lật thẻ
-          </button>
+          {/* CỘT PHẢI (5/12, Sticky): TẤM VÉ ÔN TẬP FLASHCARD */}
+          <div className="test-lobby-ticket-col">
+            <div className="test-lobby-hero-card">
+              {/* Chữ Hán chìm '憶' (Ức - Trí nhớ) */}
+              <div className="test-lobby-watermark-kanji" aria-hidden="true">
+                憶
+              </div>
+
+              <div className="test-lobby-hero-content">
+                {/* Header */}
+                <div className="test-lobby-hero-header">
+                  <span className="test-lobby-hero-title">Tấm vé ôn tập Flashcard 3D</span>
+                  <span
+                    className="badge bg-secondary-subtle text-secondary"
+                    style={{ fontSize: '0.68rem', fontWeight: 600 }}
+                  >
+                    3D Active Recall
+                  </span>
+                </div>
+
+                {/* Khối số lượng thẻ */}
+                <div className="test-lobby-count-hero-block">
+                  <div className="test-lobby-hero-count-label">Quy mô bộ thẻ</div>
+                  <div className="d-flex align-items-baseline">
+                    <span className="test-lobby-hero-count-number">{totalCardsCount}</span>
+                    <span className="test-lobby-hero-count-unit">thẻ từ vựng</span>
+                  </div>
+                  <div className="test-lobby-progress-track">
+                    <div
+                      className="test-lobby-progress-fill"
+                      style={{ width: `${totalCardsCount > 0 ? 100 : 0}%` }}
+                    />
+                  </div>
+                  <div className="test-lobby-progress-sublabel">
+                    {totalCardsCount > 0 ? 'Sẵn sàng khởi động không gian 3D' : 'Chưa có từ vựng'}
+                  </div>
+                </div>
+
+                {/* Danh sách thông số dạng elevated box */}
+                <div className="test-lobby-params-list">
+                  <div className="test-lobby-param-item">
+                    <div className="test-lobby-param-icon">
+                      <BookOpen size={16} strokeWidth={2.2} />
+                    </div>
+                    <div className="test-lobby-param-details">
+                      <div className="test-lobby-param-label">Học phần</div>
+                      <div className="test-lobby-param-value" title={currentSetDisplayTitle}>
+                        {currentSetDisplayTitle}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="test-lobby-param-item">
+                    <div className="test-lobby-param-icon">
+                      <Eye size={16} strokeWidth={2.2} />
+                    </div>
+                    <div className="test-lobby-param-details">
+                      <div className="test-lobby-param-label">Mặt trước hiển thị</div>
+                      <div className="test-lobby-param-value">
+                        {currentFrontDisplay} ➔ Chi tiết
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="test-lobby-param-item">
+                    <div className="test-lobby-param-icon">
+                      <Volume2 size={16} strokeWidth={2.2} />
+                    </div>
+                    <div className="test-lobby-param-details">
+                      <div className="test-lobby-param-label">Phát âm tự động</div>
+                      <div className="test-lobby-param-value">
+                        {autoPlay ? 'Bật (Mỗi khi lật thẻ)' : 'Tắt'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="test-lobby-param-item">
+                    <div className="test-lobby-param-icon">
+                      <PlayCircle size={16} strokeWidth={2.2} />
+                    </div>
+                    <div className="test-lobby-param-details">
+                      <div className="test-lobby-param-label">Trình chiếu</div>
+                      <div className="test-lobby-param-value">
+                        {isSlideshow ? 'Tự động (3s / thẻ)' : 'Lật thủ công'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Nút CTA lớn */}
+                <button
+                  type="button"
+                  className="test-lobby-cta-btn"
+                  onClick={handleStart}
+                  disabled={totalCardsCount === 0}
+                >
+                  <Layers size={18} strokeWidth={2.2} />
+                  <span>Bắt đầu lật thẻ</span>
+                  <ArrowRight size={18} strokeWidth={2.4} />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -372,27 +585,39 @@ function FlashcardMode() {
     return (
       <div className="container mt-5 text-center">
         <div
-          className="card shadow-lg border-0 p-5 rounded-4 mx-auto text-white position-relative overflow-hidden"
-          style={{ maxWidth: '500px', background: 'var(--brand-gradient)' }}
+          className="card shadow-lg border-0 p-4 p-md-5 rounded-4 mx-auto text-white position-relative overflow-hidden"
+          style={{ maxWidth: '480px', background: 'var(--brand-gradient)' }}
         >
           <div className="position-relative" style={{ zIndex: 2 }}>
-            <div className="display-1 mb-3">🎓</div>
-            <h2 className="fw-bold mb-3">Chúc mừng!</h2>
-            <p className="fs-5 opacity-75 mb-4">
+            <div className="mb-3 d-flex justify-content-center">
+              <div
+                className="d-flex align-items-center justify-content-center rounded-circle"
+                style={{ width: '76px', height: '76px', background: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(8px)' }}
+              >
+                <Award size={42} strokeWidth={2.4} className="text-warning" />
+              </div>
+            </div>
+            <h2 className="fw-bold mb-2">Chúc mừng!</h2>
+            <p className="fs-6 opacity-85 mb-4">
               Bạn đã ôn tập xong <strong>{vocabsToStudy.length}</strong> thẻ từ vựng.
             </p>
             <div className="d-flex flex-column gap-3">
-              <button className="btn btn-warning btn-touch py-3 fw-bold text-dark fs-5 rounded-4" onClick={handleShuffle}>
-                🔀 Trộn & Học lại
+              <button
+                className="btn btn-warning btn-touch py-3 fw-bold text-dark fs-6 rounded-3 d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                onClick={handleShuffle}
+              >
+                <Shuffle size={18} strokeWidth={2.2} />
+                <span>Trộn & Học lại</span>
               </button>
               <button
-                className="btn btn-light btn-touch py-3 fw-bold fs-5 text-primary rounded-4"
+                className="btn btn-light btn-touch py-3 fw-bold fs-6 text-primary rounded-3 d-flex align-items-center justify-content-center gap-2 shadow-sm"
                 onClick={() => {
                   setIsStarted(false);
                   setIsFullscreen(false);
                 }}
               >
-                Học phần khác
+                <Layers size={18} strokeWidth={2.2} />
+                <span>Học phần khác</span>
               </button>
             </div>
           </div>
@@ -528,15 +753,15 @@ function FlashcardMode() {
         <div className="mobile-sticky-top">
           <div className="d-flex justify-content-between align-items-center mb-2">
             <button
-              className="btn btn-light text-dark btn-mobile-chip"
+              className="btn btn-light text-dark btn-mobile-chip d-flex align-items-center gap-1"
               onClick={() => {
                 setIsStarted(false);
                 setIsFullscreen(false);
               }}
             >
-              ← Thoát
+              <ArrowLeft size={14} /> <span>Thoát</span>
             </button>
-            <span className="fw-bold text-dark">
+            <span className="fw-bold" style={{ color: 'var(--text-main)' }}>
               Thẻ {currentIndex + 1} / {vocabsToStudy.length}
             </span>
             <button
@@ -605,59 +830,65 @@ function FlashcardMode() {
         </div>
 
         <div className="action-grid-2col mt-3">
-          <div
-            className="form-check form-switch bg-white px-3 py-2 rounded-4 shadow-sm border d-flex align-items-center justify-content-center gap-2 m-0"
-            style={{ minHeight: '48px' }}
+          <button
+            type="button"
+            className={`lobby-toggle-card ${autoPlay ? 'active' : ''}`}
+            onClick={() => setAutoPlay(!autoPlay)}
+            style={{ minHeight: '48px', padding: '10px 14px' }}
           >
-            <input
-              className="form-check-input m-0"
-              type="checkbox"
-              id="autoPlaySwitch"
-              checked={autoPlay}
-              onChange={() => setAutoPlay(!autoPlay)}
-            />
-            <label className="form-check-label text-dark fw-bold small m-0" htmlFor="autoPlaySwitch">
-              🔊 Tự phát âm
-            </label>
-          </div>
-          <div
-            className="form-check form-switch bg-white px-3 py-2 rounded-4 shadow-sm border d-flex align-items-center justify-content-center gap-2 m-0"
-            style={{ minHeight: '48px' }}
+            <div className={`icon-badge-${autoPlay ? 'indigo' : 'slate'}`} style={{ width: '30px', height: '30px' }}>
+              <Volume2 size={15} strokeWidth={2.2} />
+            </div>
+            <div className="text-start flex-grow-1">
+              <div className="lobby-toggle-title" style={{ fontSize: '0.85rem' }}>Tự phát âm</div>
+            </div>
+            <div className={`lobby-switch-track ${autoPlay ? 'active' : ''}`}>
+              <div className="lobby-switch-thumb" />
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className={`lobby-toggle-card ${isSlideshow ? 'active' : ''}`}
+            onClick={() => setIsSlideshow(!isSlideshow)}
+            style={{ minHeight: '48px', padding: '10px 14px' }}
           >
-            <input
-              className="form-check-input m-0"
-              type="checkbox"
-              id="slideshowSwitch"
-              checked={isSlideshow}
-              onChange={() => setIsSlideshow(!isSlideshow)}
-            />
-            <label className="form-check-label text-dark fw-bold small m-0" htmlFor="slideshowSwitch">
-              ▶️ Tự lật thẻ
-            </label>
-          </div>
+            <div className={`icon-badge-${isSlideshow ? 'indigo' : 'slate'}`} style={{ width: '30px', height: '30px' }}>
+              <PlayCircle size={15} strokeWidth={2.2} />
+            </div>
+            <div className="text-start flex-grow-1">
+              <div className="lobby-toggle-title" style={{ fontSize: '0.85rem' }}>Tự lật thẻ</div>
+            </div>
+            <div className={`lobby-switch-track ${isSlideshow ? 'active' : ''}`}>
+              <div className="lobby-switch-thumb" />
+            </div>
+          </button>
         </div>
 
         <div className="mobile-bottom-bar">
           <div className="container px-0" style={{ maxWidth: '500px' }}>
             <div className="d-flex gap-2">
               <button
-                className="btn btn-light text-dark btn-mobile-chip flex-fill"
+                className="btn btn-light text-dark btn-mobile-chip flex-fill d-flex align-items-center justify-content-center gap-1.5"
                 onClick={handlePrev}
                 disabled={currentIndex === 0}
               >
-                ← Trước
+                <ArrowLeft size={15} strokeWidth={2.2} />
+                <span>Trước</span>
               </button>
               <button
-                className="btn btn-warning text-dark btn-mobile-chip flex-fill"
+                className="btn btn-warning text-dark btn-mobile-chip flex-fill d-flex align-items-center justify-content-center gap-1.5"
                 onClick={handleShuffle}
               >
-                🔀 Trộn thẻ
+                <Shuffle size={15} strokeWidth={2.2} />
+                <span>Trộn thẻ</span>
               </button>
               <button
-                className="btn btn-primary text-white btn-mobile-chip flex-fill"
+                className="btn btn-primary text-white btn-mobile-chip flex-fill d-flex align-items-center justify-content-center gap-1.5"
                 onClick={handleNext}
               >
-                Tiếp →
+                <span>Tiếp</span>
+                <ArrowRight size={15} strokeWidth={2.2} />
               </button>
             </div>
           </div>

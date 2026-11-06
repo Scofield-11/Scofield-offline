@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from 'react';
 import ReactDOM from 'react-dom';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, RefreshCw, X, Flame, Sun, Moon, Volume2, LogOut, KeyRound, Shield } from 'lucide-react';
+import { Sparkles, RefreshCw, X, Flame, Sun, Moon, Volume2, LogOut, KeyRound, Shield, Search, ArrowUpRight, Layers, Brain, Zap, User } from 'lucide-react';
 import api, {
   getSyncStatus,
   autoPullFromCloud,
@@ -217,7 +217,7 @@ function Dashboard() {
   return (
     <div
       className="container-fluid mt-1 mb-3 mx-auto px-2 px-md-3 position-relative"
-      style={{ maxWidth: '1000px', zIndex: 1030 }}
+      style={{ maxWidth: '980px', zIndex: 1030 }}
     >
       {ReactDOM.createPortal(
         <AnimatePresence>
@@ -325,21 +325,22 @@ function Dashboard() {
 
       <div className="position-relative mb-3" style={{ zIndex: 1040 }}>
         <div className="dashboard-hero-card p-3 p-md-4">
-          <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-            <div className="d-flex align-items-center flex-wrap gap-2">
+          <div className="dashboard-hero-toolbar d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div className="dashboard-hero-badges d-flex align-items-center flex-wrap gap-2">
               <div className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill dashboard-hero-badge">
                 <Sparkles size={14} />
                 <span>{totalVocabCount} thẻ • {validSetsCount} bộ</span>
               </div>
 
               {currentUser && (
-                <div className="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill dashboard-hero-badge">
-                  <span>👤 {currentUser.display_name || currentUser.username}</span>
+                <div className="d-inline-flex align-items-center gap-1 px-3 py-1 rounded-pill dashboard-hero-badge">
+                  <User size={13} strokeWidth={2.4} />
+                  <span>{currentUser.display_name || currentUser.username}</span>
                 </div>
               )}
             </div>
 
-            <div className="d-flex align-items-center flex-wrap gap-2">
+            <div className="dashboard-hero-actions d-flex align-items-center flex-wrap gap-2">
               {currentUser?.role === 'admin' && (
                 <Link
                   to="/admin"
@@ -424,11 +425,13 @@ function Dashboard() {
 
           <div ref={dropdownRef} className="position-relative">
             <div className="dashboard-search-box d-flex align-items-center px-3 py-1">
-              <span className="pe-2 fs-5">🔍</span>
+              <div className="d-flex align-items-center text-primary pe-2">
+                <Search size={18} strokeWidth={2.4} />
+              </div>
               <input
                 ref={searchInputRef}
                 type="text"
-                className="form-control border-0 py-2 fw-semibold text-dark shadow-none bg-transparent"
+                className="form-control border-0 py-2 fw-semibold dashboard-search-input shadow-none bg-transparent"
                 placeholder="Tra cứu từ vựng, Hán tự, Hán Việt, ý nghĩa..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -444,7 +447,7 @@ function Dashboard() {
                     setShowDropdown(false);
                   }}
                 >
-                  <X size={16} />
+                  <X size={16} strokeWidth={2.2} />
                 </button>
               ) : (
                 <span className="d-none d-sm-inline-block search-kbd-hint">Ctrl K</span>
@@ -466,12 +469,14 @@ function Dashboard() {
                     className="p-2"
                   >
                     {isSearching ? (
-                      <div className="text-center p-4 text-muted small fw-bold">
-                        ⏳ Đang tìm kiếm...
+                      <div className="text-center p-4 text-muted small fw-bold d-flex align-items-center justify-content-center gap-2">
+                        <RefreshCw size={14} className="spin-anim" />
+                        <span>Đang tìm kiếm...</span>
                       </div>
                     ) : searchResults.length === 0 ? (
-                      <div className="text-center p-4 text-muted small fw-bold">
-                        📭 Không tìm thấy từ phù hợp
+                      <div className="text-center p-4 text-muted small fw-bold d-flex align-items-center justify-content-center gap-2">
+                        <Search size={14} />
+                        <span>Không tìm thấy từ phù hợp</span>
                       </div>
                     ) : (
                       searchResults.map((item, idx) => {
@@ -522,10 +527,10 @@ function Dashboard() {
       <div className="row g-2 align-items-stretch">
         <div className="col-6 col-lg-3">
           <div className="bento-stat-card h-100">
-            <div className="bento-icon-wrap bento-purple">
-              <Flame size={22} />
+            <div className="bento-icon-wrap bento-amber">
+              <Flame size={22} strokeWidth={2.4} />
             </div>
-            <div className="overflow-hidden flex-grow-1">
+            <div className="bento-stat-content overflow-hidden flex-grow-1">
               <div className="bento-value">{currentStreak} ngày</div>
               <div className="bento-sub">{todayTests} bài hôm nay</div>
               <div className="streak-dots-row" title="7 ngày gần nhất">
@@ -539,31 +544,40 @@ function Dashboard() {
 
         <div className="col-6 col-lg-3">
           <Link to="/flashcards" className="bento-stat-card bento-interactive h-100 text-decoration-none">
-            <div className="bento-icon-wrap bento-indigo">🗂️</div>
-            <div className="overflow-hidden">
-              <div className="bento-value">Flashcards</div>
-              <div className="bento-sub">Lật thẻ 3D →</div>
+            <div className="bento-icon-wrap bento-purple">
+              <Layers size={22} strokeWidth={2.2} />
             </div>
+            <div className="bento-stat-content overflow-hidden flex-grow-1">
+              <div className="bento-value">Flashcards</div>
+              <div className="bento-sub">Lật thẻ 3D</div>
+            </div>
+            <ArrowUpRight size={16} strokeWidth={2.4} className="bento-arrow" />
           </Link>
         </div>
 
         <div className="col-6 col-lg-3">
           <Link to="/learn" className="bento-stat-card bento-interactive h-100 text-decoration-none">
-            <div className="bento-icon-wrap bento-emerald">🧠</div>
-            <div className="overflow-hidden flex-grow-1">
-              <div className="bento-value">Học thuộc</div>
-              <div className="bento-sub">Ghi nhớ sâu →</div>
+            <div className="bento-icon-wrap bento-emerald">
+              <Brain size={22} strokeWidth={2.2} />
             </div>
+            <div className="bento-stat-content overflow-hidden flex-grow-1">
+              <div className="bento-value">Học thuộc</div>
+              <div className="bento-sub">Ghi nhớ sâu</div>
+            </div>
+            <ArrowUpRight size={16} strokeWidth={2.4} className="bento-arrow" />
           </Link>
         </div>
 
         <div className="col-6 col-lg-3">
           <Link to="/test" className="bento-stat-card bento-interactive h-100 text-decoration-none">
-            <div className="bento-icon-wrap bento-amber">⚡</div>
-            <div className="overflow-hidden">
-              <div className="bento-value">Kiểm tra</div>
-              <div className="bento-sub">Luyện phản xạ →</div>
+            <div className="bento-icon-wrap bento-sky">
+              <Zap size={22} strokeWidth={2.2} />
             </div>
+            <div className="bento-stat-content overflow-hidden flex-grow-1">
+              <div className="bento-value">Kiểm tra</div>
+              <div className="bento-sub">Luyện phản xạ</div>
+            </div>
+            <ArrowUpRight size={16} strokeWidth={2.4} className="bento-arrow" />
           </Link>
         </div>
       </div>
