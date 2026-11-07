@@ -14,6 +14,7 @@ import {
   Flame,
   Trophy,
   Gamepad2,
+  FolderOpen,
   ArrowRight,
   ArrowLeft,
   AlertTriangle,
@@ -25,19 +26,17 @@ import {
 
 function MatchMode() {
   const { sets, setSets, loading, fetchSets } = useContext(VocabContext);
-  const [selectedSetId, setSelectedSetId] = useState('lang_ja');
+  const [selectedSetId, setSelectedSetId] = useState('');
   const [difficulty, setDifficulty] = useState(6); 
 
   const targetSets = React.useMemo(() => {
     if (!sets || sets.length === 0) return [];
+    if (!selectedSetId) return [];
     const validSets = sets.filter(s => !s.title?.startsWith('_Thư mục:'));
     const idStr = String(selectedSetId);
-    if (idStr.startsWith('lang_') || idStr.startsWith('all_')) {
-      const lang = idStr.replace('lang_', '').replace('all_', '');
-      if (lang === 'kanji') return validSets.filter(s => s.type === 'kanji');
-      if (lang === 'en') return validSets.filter(s => s.type !== 'kanji' && s.language === 'en');
-      if (lang === 'zh') return validSets.filter((s) => s.type !== 'kanji' && s.language === 'zh');
-      return validSets.filter(s => s.type !== 'kanji' && (s.language || 'ja') === 'ja');
+    if (idStr.startsWith('multi_')) {
+      const ids = idStr.replace('multi_', '').split(',').map(Number);
+      return validSets.filter((s) => ids.includes(Number(s.id)));
     }
     if (idStr.startsWith('folder_')) {
       const folderName = idStr.substring(7);
@@ -85,6 +84,7 @@ function MatchMode() {
   const vibrate = (pattern) => { if (navigator.vibrate) navigator.vibrate(pattern); };
 
   const hasFourFields = (() => {
+    if (!selectedSetId) return true;
     if (currentContentType === 'kanji') return true;
     if (
       String(selectedSetId).includes('ja') ||
@@ -658,16 +658,28 @@ function MatchMode() {
                 </div>
 
                 {/* Nút CTA lớn */}
-                <button
-                  type="button"
-                  className="test-lobby-cta-btn"
-                  onClick={startGame}
-                  disabled={totalCardsCount === 0}
-                >
-                  <Gamepad2 size={18} strokeWidth={2.2} />
-                  <span>Bắt đầu ván đấu</span>
-                  <ArrowRight size={18} strokeWidth={2.4} />
-                </button>
+                {!selectedSetId ? (
+                  <button
+                    type="button"
+                    className="test-lobby-cta-btn"
+                    onClick={() => window.dispatchEvent(new CustomEvent('scofield-open-set-selector'))}
+                  >
+                    <FolderOpen size={18} strokeWidth={2.2} />
+                    <span>Chọn học phần để bắt đầu</span>
+                    <ArrowRight size={18} strokeWidth={2.4} />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="test-lobby-cta-btn"
+                    onClick={startGame}
+                    disabled={totalCardsCount === 0}
+                  >
+                    <Gamepad2 size={18} strokeWidth={2.2} />
+                    <span>Bắt đầu ván đấu</span>
+                    <ArrowRight size={18} strokeWidth={2.4} />
+                  </button>
+                )}
               </div>
             </div>
           </div>

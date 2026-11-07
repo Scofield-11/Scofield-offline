@@ -418,9 +418,8 @@ function KanjiDictionary() {
                 <div className="set-sheet-grabber d-md-none" />
                 <div className="set-sheet-header">
                   <h6
-                    className={`fw-bold mb-0 ${
-                      dialogState.type === 'createFolder' ? 'text-dark' : 'text-danger'
-                    }`}
+                    className="fw-bold mb-0"
+                    style={{ color: dialogState.type === 'createFolder' ? 'var(--text-main)' : '#EF4444' }}
                   >
                     {dialogState.type === 'createFolder' ? (
                       <span className="d-flex align-items-center gap-2">
@@ -445,17 +444,22 @@ function KanjiDictionary() {
                     <form onSubmit={confirmCreateFolder}>
                       <input
                         type="text"
-                        className="form-control bg-light border-0 mb-3 fw-semibold py-2"
+                        className="form-control mb-3 fw-semibold py-2"
                         placeholder="Nhập tên thư mục Kanji..."
                         value={folderInputName}
                         onChange={(e) => setFolderInputName(e.target.value)}
                         autoFocus
                         required
+                        style={{
+                          backgroundColor: 'var(--bg-elevated)',
+                          borderColor: 'var(--surface-border)',
+                          color: 'var(--text-main)',
+                        }}
                       />
                       <div className="d-flex gap-2">
                         <button
                           type="button"
-                          className="btn btn-light btn-touch w-50 fw-bold"
+                          className="btn btn-mobile-chip chip-slate w-50 py-2 fw-bold"
                           onClick={() => setDialogState(null)}
                         >
                           Hủy
@@ -481,7 +485,7 @@ function KanjiDictionary() {
                       <div className="d-flex gap-2">
                         <button
                           type="button"
-                          className="btn btn-light btn-touch w-50 fw-bold"
+                          className="btn btn-mobile-chip chip-slate w-50 py-2 fw-bold"
                           onClick={() => setDialogState(null)}
                         >
                           Hủy
@@ -534,19 +538,15 @@ function KanjiDictionary() {
       {/* FORM TẠO HỌC PHẦN KANJI MỚI */}
       <div className="card border-0 rounded-4 mb-3 overflow-hidden shadow-sm">
         <div
-          className="card-header bg-white py-2 px-3 border-0 d-flex justify-content-between align-items-center rounded-4"
-          style={{ cursor: 'pointer', minHeight: '48px' }}
+          className="card-header py-2 px-3 border-0 d-flex justify-content-between align-items-center rounded-4"
+          style={{ cursor: 'pointer', minHeight: '48px', backgroundColor: 'var(--bg-surface)' }}
           onClick={() => setIsFormExpanded(!isFormExpanded)}
         >
           <div className="d-flex align-items-center gap-2">
-            <span
-              className="btn-icon-soft chip-primary"
-              style={{ width: '30px', height: '30px', minHeight: '30px' }}
-            >
-              {isFormExpanded ? <Minus size={15} /> : <Plus size={15} />}
-            </span>
-            <span className="fw-bold text-dark d-flex align-items-center gap-2" style={{ fontSize: '0.9rem' }}>
-              <ScrollText size={16} strokeWidth={2.2} className="text-primary" />
+            <div className="icon-badge icon-badge-rose" style={{ width: 32, height: 32, minWidth: 32, borderRadius: 10 }}>
+              <ScrollText size={16} strokeWidth={2.2} />
+            </div>
+            <span className="fw-bold d-flex align-items-center gap-2" style={{ fontSize: '0.92rem', color: 'var(--text-main)' }}>
               <span>Tạo học phần Kanji mới</span>
             </span>
           </div>
@@ -571,24 +571,34 @@ function KanjiDictionary() {
               transition={ACCORDION_TRANSITION}
               style={{ overflow: 'hidden' }}
             >
-              <div className="card-body p-3 border-top bg-white">
+              <div className="card-body p-3" style={{ borderTop: '1px solid var(--surface-border)', backgroundColor: 'var(--bg-surface)' }}>
                 <div className="row g-2 mb-3">
                   <div className="col-12 col-md-7">
-                    <label className="text-muted small fw-bold mb-1">TÊN HỌC PHẦN KANJI</label>
+                    <label className="text-secondary small fw-bold mb-1">TÊN HỌC PHẦN KANJI</label>
                     <input
                       type="text"
-                      className="form-control fw-bold text-dark bg-light border-0"
+                      className="form-control fw-bold"
                       placeholder="VD: Kanji N4 - Bài 1..."
                       value={newSetTitle}
                       onChange={(e) => setNewSetTitle(e.target.value)}
+                      style={{
+                        backgroundColor: 'var(--bg-elevated)',
+                        borderColor: 'var(--surface-border)',
+                        color: 'var(--text-main)',
+                      }}
                     />
                   </div>
                   <div className="col-12 col-md-5">
-                    <label className="text-muted small fw-bold mb-1">THƯ MỤC LƯU TRỮ</label>
+                    <label className="text-secondary small fw-bold mb-1">THƯ MỤC LƯU TRỮ</label>
                     <select
-                      className="form-select bg-light border-0 fw-semibold text-dark"
+                      className="form-select fw-semibold"
                       value={newSetFolder}
                       onChange={(e) => setNewSetFolder(e.target.value)}
+                      style={{
+                        backgroundColor: 'var(--bg-elevated)',
+                        borderColor: 'var(--surface-border)',
+                        color: 'var(--text-main)',
+                      }}
                     >
                       <option value="">Thư mục gốc (Mặc định)</option>
                       {allExistingFolders.map((folder) => (
@@ -601,16 +611,22 @@ function KanjiDictionary() {
                 </div>
 
                 <div className="mb-3">
-                  <label className="text-muted small fw-bold mb-1 d-block">
+                  <label className="text-secondary small fw-bold mb-1 d-block">
                     ĐỊNH DẠNG NHẬP (Dòng chữ Hán: Chữ Hán | Âm Ôn | Âm Kun | Hán Việt - Nghĩa • Dòng từ đi kèm bắt đầu bằng `-` đủ 4 trường: Từ vựng | Hán Việt | Phiên âm | Ý nghĩa)
                   </label>
                   <textarea
-                    className="form-control bg-light border-0 p-3"
+                    className="form-control p-3"
                     rows="6"
                     placeholder={kanjiPlaceholder}
                     value={bulkText}
                     onChange={(e) => setBulkText(e.target.value)}
-                    style={{ lineHeight: '1.55', fontSize: '0.9rem' }}
+                    style={{
+                      lineHeight: '1.55',
+                      fontSize: '0.9rem',
+                      backgroundColor: 'var(--bg-elevated)',
+                      borderColor: 'var(--surface-border)',
+                      color: 'var(--text-main)',
+                    }}
                   />
                 </div>
 
@@ -631,7 +647,7 @@ function KanjiDictionary() {
 
       {/* THANH TIÊU ĐỀ & TÌM KIẾM HỌC PHẦN KANJI */}
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2 px-1">
-        <span className="fw-bold text-dark" style={{ fontSize: '0.95rem' }}>
+        <span className="fw-bold" style={{ fontSize: '0.95rem', color: 'var(--text-main)' }}>
           Học phần Kanji ({displaySets.length})
         </span>
 
@@ -640,8 +656,13 @@ function KanjiDictionary() {
             <Search size={14} className="position-absolute top-50 translate-middle-y text-muted" style={{ left: '10px' }} />
             <input
               type="text"
-              className="form-control form-control-sm bg-white border rounded-pill fw-semibold"
-              style={{ paddingLeft: '30px' }}
+              className="form-control form-control-sm rounded-pill fw-semibold"
+              style={{
+                paddingLeft: '30px',
+                backgroundColor: 'var(--bg-elevated)',
+                borderColor: 'var(--surface-border)',
+                color: 'var(--text-main)',
+              }}
               placeholder="Tìm học phần Kanji..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -651,7 +672,13 @@ function KanjiDictionary() {
       </div>
 
       {/* THANH ĐIỀU HƯỚNG THƯ MỤC & TẠO FOLDER */}
-      <div className="d-flex align-items-center justify-content-between gap-2 mb-3 bg-white p-2 px-3 rounded-4 border shadow-sm">
+      <div
+        className="d-flex align-items-center justify-content-between gap-2 mb-3 p-2 px-3 rounded-4 shadow-sm"
+        style={{
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--surface-border)',
+        }}
+      >
         <div className="d-flex align-items-center gap-1 overflow-auto no-scrollbar flex-grow-1">
           <button
             className={`btn btn-mobile-chip flex-shrink-0 d-flex align-items-center gap-1 ${
@@ -668,7 +695,7 @@ function KanjiDictionary() {
               const isLast = idx === arr.length - 1;
               return (
                 <React.Fragment key={idx}>
-                  <span className="text-muted small px-1 flex-shrink-0">/</span>
+                  <span className="text-secondary small px-1 flex-shrink-0">/</span>
                   <button
                     className={`btn btn-mobile-chip flex-shrink-0 ${
                       isLast ? 'btn-primary text-white' : 'chip-slate'
@@ -705,10 +732,10 @@ function KanjiDictionary() {
               >
                 <div className="d-flex align-items-center justify-content-between gap-2">
                   <div className="d-flex align-items-center gap-2 overflow-hidden">
-                    <div className="icon-badge icon-badge-rose" style={{ width: 28, height: 28, minWidth: 28, borderRadius: 8, padding: 0 }}>
+                    <div className="set-folder-icon-box flex-shrink-0" style={{ width: 30, height: 30, borderRadius: 8 }}>
                       <Folder size={15} strokeWidth={2.2} />
                     </div>
-                    <span className="fw-bold text-dark text-truncate small" title={folderName}>
+                    <span className="fw-bold text-truncate small" style={{ color: 'var(--text-main)' }} title={folderName}>
                       {folderName}
                     </span>
                   </div>
@@ -758,9 +785,18 @@ function KanjiDictionary() {
                     className="d-flex align-items-center flex-wrap gap-2"
                     style={{ minWidth: 0, flex: 1 }}
                   >
-                    <span className="fs-5">⛩️</span>
-                    <h6 className="mb-0 fw-bold text-dark text-break">{kSet.title}</h6>
-                    <span className="badge bg-light text-secondary border rounded-pill">
+                    <div className="icon-badge icon-badge-rose" style={{ width: 28, height: 28, minWidth: 28, borderRadius: 8, padding: 0 }}>
+                      <ScrollText size={14} strokeWidth={2.4} />
+                    </div>
+                    <h6 className="mb-0 fw-bold text-break" style={{ color: 'var(--text-main)' }}>{kSet.title}</h6>
+                    <span
+                      className="badge rounded-pill"
+                      style={{
+                        backgroundColor: 'var(--bg-elevated)',
+                        color: 'var(--text-secondary)',
+                        border: '1px solid var(--surface-border)',
+                      }}
+                    >
                       {kSet.vocab_count || kanjiList.length || 0} chữ Kanji
                     </span>
                     <span className="badge chip-primary rounded-pill">KANJI</span>
@@ -820,7 +856,13 @@ function KanjiDictionary() {
                       transition={ACCORDION_TRANSITION}
                       style={{ overflow: 'hidden' }}
                     >
-                      <div className="p-3 border-top bg-light">
+                      <div
+                        className="p-3 border-top"
+                        style={{
+                          backgroundColor: 'var(--bg-elevated)',
+                          borderColor: 'var(--surface-border)',
+                        }}
+                      >
                         {kanjiList.length === 0 ? (
                           <div className="text-center py-4 text-muted small fw-semibold">
                             Chưa có chữ Kanji nào trong học phần này.
@@ -834,7 +876,11 @@ function KanjiDictionary() {
                               return (
                                 <div
                                   key={item.id}
-                                  className="card border-0 shadow-sm rounded-4 bg-white overflow-hidden"
+                                  className="card border-0 shadow-sm rounded-4 overflow-hidden"
+                                  style={{
+                                    backgroundColor: 'var(--bg-surface)',
+                                    border: '1px solid var(--surface-border)',
+                                  }}
                                 >
                                   <div className="row g-0 align-items-stretch">
                                     {/* CỘT TRÁI: CHỮ KANJI + HÁN VIỆT + ÂM ÔN / ÂM KUN */}
@@ -905,10 +951,11 @@ function KanjiDictionary() {
                                       {/* Khung chữ Hán chính giữa */}
                                       <div className="d-flex flex-column align-items-center my-2">
                                         <div
-                                          className="d-flex align-items-center justify-content-center rounded-4 mb-3 bg-white"
+                                          className="d-flex align-items-center justify-content-center rounded-4 mb-3"
                                           style={{
                                             width: '108px',
                                             height: '108px',
+                                            backgroundColor: 'var(--bg-elevated)',
                                             border: '1.5px solid var(--surface-border)',
                                             boxShadow: '0 8px 24px -6px rgba(109, 40, 217, 0.14)',
                                             color: 'var(--brand-primary)',
@@ -932,7 +979,7 @@ function KanjiDictionary() {
                                               {item.hanviet}
                                             </span>
                                           )}
-                                          <span className="fw-bold text-dark">
+                                          <span className="fw-bold" style={{ color: 'var(--text-main)' }}>
                                             {item.meaning}
                                           </span>
                                         </div>
@@ -963,7 +1010,7 @@ function KanjiDictionary() {
                                           >
                                             Âm Ôn
                                           </span>
-                                          <span className="fw-bold text-dark small text-break">
+                                          <span className="fw-bold small text-break" style={{ color: 'var(--text-main)' }}>
                                             {item.onyomi || '—'}
                                           </span>
                                         </div>
@@ -979,7 +1026,7 @@ function KanjiDictionary() {
                                           >
                                             Âm Kun
                                           </span>
-                                          <span className="fw-bold text-dark small text-break">
+                                          <span className="fw-bold small text-break" style={{ color: 'var(--text-main)' }}>
                                             {item.kunyomi || '—'}
                                           </span>
                                         </div>
@@ -1006,43 +1053,69 @@ function KanjiDictionary() {
 
                                       {/* Form thêm nhanh từ đi kèm 4 trường ngay trên Card */}
                                       {isQuickAddingEx && (
-                                        <div className="p-3 mb-3 rounded-3 bg-light border border-primary">
+                                        <div
+                                          className="p-3 mb-3 rounded-3"
+                                          style={{
+                                            backgroundColor: 'var(--bg-surface)',
+                                            border: '1px solid var(--brand-primary)',
+                                          }}
+                                        >
                                           <div className="row g-2 mb-2">
                                             <div className="col-6 col-md-3">
                                               <input
                                                 type="text"
-                                                className="form-control form-control-sm bg-white border-0 fw-bold"
+                                                className="form-control form-control-sm fw-bold"
                                                 placeholder="Từ vựng (行く)"
                                                 value={quickExWord}
                                                 onChange={(e) => setQuickExWord(e.target.value)}
                                                 autoFocus
+                                                style={{
+                                                  backgroundColor: 'var(--bg-elevated)',
+                                                  borderColor: 'var(--surface-border)',
+                                                  color: 'var(--text-main)',
+                                                }}
                                               />
                                             </div>
                                             <div className="col-6 col-md-3">
                                               <input
                                                 type="text"
-                                                className="form-control form-control-sm bg-white border-0 fw-semibold text-primary"
+                                                className="form-control form-control-sm fw-semibold text-primary"
                                                 placeholder="Hán Việt (HÀNH)"
                                                 value={quickExHanviet}
                                                 onChange={(e) => setQuickExHanviet(e.target.value)}
+                                                style={{
+                                                  backgroundColor: 'var(--bg-elevated)',
+                                                  borderColor: 'var(--surface-border)',
+                                                  color: 'var(--text-main)',
+                                                }}
                                               />
                                             </div>
                                             <div className="col-6 col-md-3">
                                               <input
                                                 type="text"
-                                                className="form-control form-control-sm bg-white border-0"
+                                                className="form-control form-control-sm"
                                                 placeholder="Phiên âm (いく)"
                                                 value={quickExReading}
                                                 onChange={(e) => setQuickExReading(e.target.value)}
+                                                style={{
+                                                  backgroundColor: 'var(--bg-elevated)',
+                                                  borderColor: 'var(--surface-border)',
+                                                  color: 'var(--text-main)',
+                                                }}
                                               />
                                             </div>
                                             <div className="col-6 col-md-3">
                                               <input
                                                 type="text"
-                                                className="form-control form-control-sm bg-white border-0"
+                                                className="form-control form-control-sm"
                                                 placeholder="Ý nghĩa (Đi)"
                                                 value={quickExMeaning}
                                                 onChange={(e) => setQuickExMeaning(e.target.value)}
+                                                style={{
+                                                  backgroundColor: 'var(--bg-elevated)',
+                                                  borderColor: 'var(--surface-border)',
+                                                  color: 'var(--text-main)',
+                                                }}
                                               />
                                             </div>
                                           </div>
@@ -1066,7 +1139,13 @@ function KanjiDictionary() {
                                       )}
 
                                       {examples.length === 0 ? (
-                                        <div className="text-muted small fst-italic py-3 text-center bg-light rounded-3 my-auto">
+                                        <div
+                                          className="small fst-italic py-3 text-center rounded-3 my-auto"
+                                          style={{
+                                            backgroundColor: 'var(--bg-surface)',
+                                            color: 'var(--text-secondary)',
+                                          }}
+                                        >
                                           Chưa có từ đi kèm. Hãy bấm "+ Thêm từ đi kèm" ở góc phải nhé!
                                         </div>
                                       ) : (
@@ -1087,10 +1166,11 @@ function KanjiDictionary() {
                                                   style={{ minWidth: 0, flex: 1 }}
                                                 >
                                                   <span
-                                                    className="fw-bold text-dark"
+                                                    className="fw-bold"
                                                     style={{
                                                       fontFamily: 'var(--font-jp-serif)',
                                                       fontSize: '1.1rem',
+                                                      color: 'var(--text-main)',
                                                     }}
                                                   >
                                                     {ex.word}
@@ -1153,59 +1233,90 @@ function KanjiDictionary() {
 
                         {/* FORM THÊM CHỮ KANJI MỚI VÀO HỌC PHẦN */}
                         {addingToSetId === kSet.id ? (
-                          <div className="card border-primary border rounded-4 p-3 mt-3 bg-white">
-                            <h6 className="fw-bold text-dark mb-2">
+                          <div
+                            className="card rounded-4 p-3 mt-3"
+                            style={{
+                              backgroundColor: 'var(--bg-surface)',
+                              border: '1px solid var(--brand-primary)',
+                            }}
+                          >
+                            <h6 className="fw-bold mb-2" style={{ color: 'var(--text-main)' }}>
                               + Thêm chữ Kanji mới vào "{kSet.title}"
                             </h6>
                             <div className="row g-2 mb-2">
                               <div className="col-4 col-md-2">
                                 <input
                                   type="text"
-                                  className="form-control form-control-sm bg-light border-0 fw-bold text-center"
+                                  className="form-control form-control-sm fw-bold text-center"
                                   placeholder="Chữ Hán (行)"
                                   value={singleKanji}
                                   onChange={(e) => setSingleKanji(e.target.value)}
+                                  style={{
+                                    backgroundColor: 'var(--bg-elevated)',
+                                    borderColor: 'var(--surface-border)',
+                                    color: 'var(--text-main)',
+                                  }}
                                 />
                               </div>
                               <div className="col-4 col-md-3">
                                 <input
                                   type="text"
-                                  className="form-control form-control-sm bg-light border-0 fw-bold"
+                                  className="form-control form-control-sm fw-bold"
                                   placeholder="Hán Việt (HÀNH)"
                                   value={singleHanviet}
                                   onChange={(e) => setSingleHanviet(e.target.value)}
+                                  style={{
+                                    backgroundColor: 'var(--bg-elevated)',
+                                    borderColor: 'var(--surface-border)',
+                                    color: 'var(--text-main)',
+                                  }}
                                 />
                               </div>
                               <div className="col-4 col-md-3">
                                 <input
                                   type="text"
-                                  className="form-control form-control-sm bg-light border-0"
+                                  className="form-control form-control-sm"
                                   placeholder="Nghĩa gốc (Đi)"
                                   value={singleMeaning}
                                   onChange={(e) => setSingleMeaning(e.target.value)}
+                                  style={{
+                                    backgroundColor: 'var(--bg-elevated)',
+                                    borderColor: 'var(--surface-border)',
+                                    color: 'var(--text-main)',
+                                  }}
                                 />
                               </div>
                               <div className="col-6 col-md-2">
                                 <input
                                   type="text"
-                                  className="form-control form-control-sm bg-light border-0"
+                                  className="form-control form-control-sm"
                                   placeholder="Âm Ôn (コウ)"
                                   value={singleOnyomi}
                                   onChange={(e) => setSingleOnyomi(e.target.value)}
+                                  style={{
+                                    backgroundColor: 'var(--bg-elevated)',
+                                    borderColor: 'var(--surface-border)',
+                                    color: 'var(--text-main)',
+                                  }}
                                 />
                               </div>
                               <div className="col-6 col-md-2">
                                 <input
                                   type="text"
-                                  className="form-control form-control-sm bg-light border-0"
+                                  className="form-control form-control-sm"
                                   placeholder="Âm Kun (い.く)"
                                   value={singleKunyomi}
                                   onChange={(e) => setSingleKunyomi(e.target.value)}
+                                  style={{
+                                    backgroundColor: 'var(--bg-elevated)',
+                                    borderColor: 'var(--surface-border)',
+                                    color: 'var(--text-main)',
+                                  }}
                                 />
                               </div>
                             </div>
 
-                            <div className="small fw-bold text-muted mb-1">
+                            <div className="small fw-bold text-secondary mb-1">
                               TỪ VỰNG ĐI KÈM (TỪ VỰNG • HÁN VIỆT • PHIÊN ÂM • Ý NGHĨA)
                             </div>
                             <div className="d-flex flex-column gap-2 mb-3">
@@ -1214,45 +1325,65 @@ function KanjiDictionary() {
                                   <div className="col-6 col-md-3 px-1">
                                     <input
                                       type="text"
-                                      className="form-control form-control-sm bg-light border-0 fw-bold"
+                                      className="form-control form-control-sm fw-bold"
                                       placeholder="Từ vựng (行く)"
                                       value={ex.word}
                                       onChange={(e) =>
                                         handleSingleExampleChange(idx, 'word', e.target.value)
                                       }
+                                      style={{
+                                        backgroundColor: 'var(--bg-elevated)',
+                                        borderColor: 'var(--surface-border)',
+                                        color: 'var(--text-main)',
+                                      }}
                                     />
                                   </div>
                                   <div className="col-6 col-md-3 px-1">
                                     <input
                                       type="text"
-                                      className="form-control form-control-sm bg-light border-0 text-primary fw-semibold"
+                                      className="form-control form-control-sm text-primary fw-semibold"
                                       placeholder="Hán Việt (HÀNH)"
                                       value={ex.hanviet}
                                       onChange={(e) =>
                                         handleSingleExampleChange(idx, 'hanviet', e.target.value)
                                       }
+                                      style={{
+                                        backgroundColor: 'var(--bg-elevated)',
+                                        borderColor: 'var(--surface-border)',
+                                        color: 'var(--text-main)',
+                                      }}
                                     />
                                   </div>
                                   <div className="col-5 col-md-3 px-1">
                                     <input
                                       type="text"
-                                      className="form-control form-control-sm bg-light border-0"
+                                      className="form-control form-control-sm"
                                       placeholder="Phiên âm (いく)"
                                       value={ex.reading}
                                       onChange={(e) =>
                                         handleSingleExampleChange(idx, 'reading', e.target.value)
                                       }
+                                      style={{
+                                        backgroundColor: 'var(--bg-elevated)',
+                                        borderColor: 'var(--surface-border)',
+                                        color: 'var(--text-main)',
+                                      }}
                                     />
                                   </div>
                                   <div className="col-5 col-md-2 px-1">
                                     <input
                                       type="text"
-                                      className="form-control form-control-sm bg-light border-0"
+                                      className="form-control form-control-sm"
                                       placeholder="Ý nghĩa (Đi)"
                                       value={ex.meaning}
                                       onChange={(e) =>
                                         handleSingleExampleChange(idx, 'meaning', e.target.value)
                                       }
+                                      style={{
+                                        backgroundColor: 'var(--bg-elevated)',
+                                        borderColor: 'var(--surface-border)',
+                                        color: 'var(--text-main)',
+                                      }}
                                     />
                                   </div>
                                   <div className="col-2 col-md-1 px-1 text-end">

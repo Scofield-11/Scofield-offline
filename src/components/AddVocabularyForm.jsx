@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Minus, ChevronDown, FileText, FileSpreadsheet, UploadCloud, Save } from 'lucide-react';
+import { Plus, Minus, ChevronDown, FileText, FileSpreadsheet, UploadCloud, Save, FolderPlus } from 'lucide-react';
 import api from '../api/axiosConfig';
 import { toast } from 'react-toastify';
 
@@ -78,17 +78,24 @@ function AddVocabularyForm({ onAddSuccess, existingFolders = [], currentPath = '
   const enPlaceholder = 'Desk | Cái bàn\nAccomplish | Hoàn thành, đạt được';
 
   return (
-    <div className="card border-0 rounded-4 mb-3 overflow-hidden">
+    <div
+      className="card border-0 rounded-4 mb-3 overflow-hidden shadow-sm mx-auto"
+      style={{
+        maxWidth: '980px',
+        backgroundColor: 'var(--bg-surface)',
+        border: '1px solid var(--surface-border)',
+      }}
+    >
       <div
-        className="card-header bg-white py-2 px-3 border-0 d-flex justify-content-between align-items-center rounded-4"
-        style={{ cursor: 'pointer', minHeight: '48px' }}
+        className="card-header py-2 px-3 border-0 d-flex justify-content-between align-items-center rounded-4"
+        style={{ cursor: 'pointer', minHeight: '48px', backgroundColor: 'var(--bg-surface)' }}
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="d-flex align-items-center gap-2">
-          <span className="btn-icon-soft chip-primary" style={{ width: '30px', height: '30px', minHeight: '30px' }}>
-            {isExpanded ? <Minus size={15} /> : <Plus size={15} />}
-          </span>
-          <span className="fw-bold text-dark" style={{ fontSize: '0.9rem' }}>Tạo học phần mới</span>
+          <div className="icon-badge icon-badge-indigo" style={{ width: 32, height: 32, minWidth: 32, borderRadius: 10 }}>
+            <FolderPlus size={16} strokeWidth={2.2} />
+          </div>
+          <span className="fw-bold" style={{ fontSize: '0.92rem', color: 'var(--text-main)' }}>Tạo học phần mới</span>
         </div>
         <span className="btn-mobile-chip chip-slate">
           <span>{isExpanded ? 'Thu gọn' : 'Mở'}</span>
@@ -111,22 +118,38 @@ function AddVocabularyForm({ onAddSuccess, existingFolders = [], currentPath = '
             transition={ACCORDION_TRANSITION}
             style={{ overflow: 'hidden' }}
           >
-            <div className="card-body p-3 border-top">
+            <div
+              className="card-body p-3"
+              style={{
+                borderTop: '1px solid var(--surface-border)',
+                backgroundColor: 'var(--bg-surface)',
+              }}
+            >
               <input
                 type="text"
-                className="form-control mb-3 fw-bold text-dark bg-light border-0"
+                className="form-control mb-3 fw-bold"
                 placeholder="Tên học phần (VD: Bài 1 - Minna no Nihongo / HSK 1)..."
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                style={{
+                  backgroundColor: 'var(--bg-elevated)',
+                  borderColor: 'var(--surface-border)',
+                  color: 'var(--text-main)',
+                }}
               />
 
               <div className="row g-2 mb-3">
                 <div className="col-12 col-md-6">
-                  <label className="text-muted small fw-bold mb-1">THƯ MỤC LƯU TRỮ</label>
+                  <label className="text-secondary small fw-bold mb-1">THƯ MỤC LƯU TRỮ</label>
                   <select
-                    className="form-select bg-light border-0 fw-semibold text-dark"
+                    className="form-select fw-semibold"
                     value={folderPath}
                     onChange={(e) => setFolderPath(e.target.value)}
+                    style={{
+                      backgroundColor: 'var(--bg-elevated)',
+                      borderColor: 'var(--surface-border)',
+                      color: 'var(--text-main)',
+                    }}
                   >
                     <option value="">Thư mục gốc (Mặc định)</option>
                     {existingFolders.map((folder) => (
@@ -136,7 +159,7 @@ function AddVocabularyForm({ onAddSuccess, existingFolders = [], currentPath = '
                 </div>
 
                 <div className="col-12 col-md-6">
-                  <label className="text-muted small fw-bold mb-1">NGÔN NGỮ</label>
+                  <label className="text-secondary small fw-bold mb-1">NGÔN NGỮ</label>
                   <div className="d-flex gap-2">
                     <button
                       type="button"
@@ -187,13 +210,13 @@ function AddVocabularyForm({ onAddSuccess, existingFolders = [], currentPath = '
 
               {importMode === 'text' ? (
                 <div className="mb-3">
-                  <label className="text-muted small fw-bold mb-1">
+                  <label className="text-secondary small fw-bold mb-1">
                     {language === 'ja' || language === 'zh'
                       ? 'ĐỊNH DẠNG: Chữ Hán | Hán Việt | Phiên âm | Nghĩa (hoặc Từ | Nghĩa)'
                       : 'ĐỊNH DẠNG: Từ vựng | Ý nghĩa'}
                   </label>
                   <textarea
-                    className="form-control bg-light border-0 p-3"
+                    className="form-control p-3"
                     rows="5"
                     placeholder={
                       language === 'ja'
@@ -204,16 +227,27 @@ function AddVocabularyForm({ onAddSuccess, existingFolders = [], currentPath = '
                     }
                     value={bulkText}
                     onChange={(e) => setBulkText(e.target.value)}
-                    style={{ lineHeight: '1.5' }}
+                    style={{
+                      lineHeight: '1.5',
+                      backgroundColor: 'var(--bg-elevated)',
+                      borderColor: 'var(--surface-border)',
+                      color: 'var(--text-main)',
+                    }}
                   ></textarea>
                 </div>
               ) : (
                 <div className="mb-3">
                   <div
                     className={`d-flex flex-column align-items-center justify-content-center p-4 rounded-4 ${
-                      isDragging ? 'bg-primary text-white' : 'bg-light text-muted'
+                      isDragging ? 'bg-primary text-white' : ''
                     }`}
-                    style={{ border: '2px dashed var(--surface-border)', cursor: 'pointer', minHeight: '140px' }}
+                    style={{
+                      border: '2px dashed var(--surface-border)',
+                      backgroundColor: isDragging ? undefined : 'var(--bg-elevated)',
+                      color: isDragging ? undefined : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      minHeight: '140px',
+                    }}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}

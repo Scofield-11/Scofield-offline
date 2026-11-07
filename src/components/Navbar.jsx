@@ -77,18 +77,21 @@ function Navbar() {
   return (
     <nav className="app-navigation print-d-none" aria-label="Main Navigation">
       <Link
-        className="nav-brand-desktop d-none d-lg-flex align-items-center text-decoration-none"
+        className="nav-brand-desktop d-none d-lg-flex align-items-center justify-content-between text-decoration-none"
         to="/"
       >
-        <div className="nav-logo-box">
-          <img
-            src="/sea_15651557.ico"
-            alt="Scofield Logo"
-            className="w-100 h-100"
-            style={{ objectFit: 'cover', display: 'block' }}
-          />
+        <div className="d-flex align-items-center gap-2">
+          <div className="nav-logo-box">
+            <img
+              src="/sea_15651557.ico"
+              alt="Scofield Logo"
+              className="w-100 h-100"
+              style={{ objectFit: 'cover', display: 'block' }}
+            />
+          </div>
+          <h5 className="fw-black mb-0 nav-brand-title">Scofield</h5>
         </div>
-        <h5 className="fw-black mb-0 ms-2 nav-brand-title">Scofield</h5>
+        <span className="nav-brand-badge">PRO</span>
       </Link>
 
       <div className="nav-menu no-scrollbar" style={{ minHeight: 0 }}>
@@ -134,7 +137,7 @@ function Navbar() {
         })}
       </div>
 
-      <div className="d-none d-lg-flex flex-column gap-2 mt-auto pt-2 w-100" style={{ flexShrink: 0 }}>
+      <div className="d-none d-lg-flex flex-column gap-2 mt-auto w-100 nav-footer-dock" style={{ flexShrink: 0 }}>
         {currentUser?.role === "admin" && (
           <Link
             to="/admin"

@@ -158,12 +158,25 @@ function AdminUsersPage() {
         </div>
       </div>
 
-      <div className="card border-0 rounded-4 p-3 mb-3 bg-white">
-        <div className="d-flex align-items-center gap-2 bg-light rounded-3 px-3 py-1 border">
-          <Search size={16} className="text-muted" />
+      <div
+        className="card border-0 rounded-4 p-3 mb-3 shadow-sm"
+        style={{
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--surface-border)',
+        }}
+      >
+        <div
+          className="d-flex align-items-center gap-2 rounded-3 px-3 py-1"
+          style={{
+            backgroundColor: 'var(--bg-elevated)',
+            border: '1px solid var(--surface-border)',
+          }}
+        >
+          <Search size={16} className="text-secondary" />
           <input
             type="text"
             className="form-control border-0 bg-transparent shadow-none fw-semibold"
+            style={{ color: 'var(--text-main)' }}
             placeholder="Tìm theo tên đăng nhập hoặc tên hiển thị..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -171,23 +184,29 @@ function AdminUsersPage() {
         </div>
       </div>
 
-      <div className="card border-0 rounded-4 overflow-hidden bg-white shadow-sm">
+      <div
+        className="card border-0 rounded-4 overflow-hidden shadow-sm"
+        style={{
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--surface-border)',
+        }}
+      >
         <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th className="py-3 px-3">ID</th>
-                <th className="py-3">Tên đăng nhập</th>
-                <th className="py-3">Tên hiển thị</th>
-                <th className="py-3 text-center">Vai trò</th>
-                <th className="py-3">Ngày tạo</th>
-                <th className="py-3 px-3 text-end">Hành động</th>
+          <table className="table table-hover align-middle mb-0" style={{ color: 'var(--text-main)' }}>
+            <thead style={{ backgroundColor: 'var(--bg-elevated)' }}>
+              <tr style={{ borderBottom: '1px solid var(--surface-border)' }}>
+                <th className="py-3 px-3 text-secondary small fw-bold">ID</th>
+                <th className="py-3 text-secondary small fw-bold">Tên đăng nhập</th>
+                <th className="py-3 text-secondary small fw-bold">Tên hiển thị</th>
+                <th className="py-3 text-center text-secondary small fw-bold">Vai trò</th>
+                <th className="py-3 text-secondary small fw-bold">Ngày tạo</th>
+                <th className="py-3 px-3 text-end text-secondary small fw-bold">Hành động</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-5 text-muted fw-bold">
+                  <td colSpan="6" className="text-center py-5 text-secondary fw-bold">
                     <div className="d-flex align-items-center justify-content-center gap-2">
                       <RefreshCw size={15} className="spin-anim" />
                       <span>Đang tải danh sách tài khoản...</span>
@@ -196,7 +215,7 @@ function AdminUsersPage() {
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-5 text-muted fw-bold">
+                  <td colSpan="6" className="text-center py-5 text-secondary fw-bold">
                     <div className="d-flex align-items-center justify-content-center gap-2">
                       <Users size={16} />
                       <span>Không tìm thấy tài khoản nào</span>
@@ -205,10 +224,10 @@ function AdminUsersPage() {
                 </tr>
               ) : (
                 filteredUsers.map((u) => (
-                  <tr key={u.id}>
-                    <td className="px-3 text-muted fw-bold">#{u.id}</td>
+                  <tr key={u.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
+                    <td className="px-3 text-secondary fw-bold">#{u.id}</td>
                     <td>
-                      <span className="fw-bold text-dark">{u.username}</span>
+                      <span className="fw-bold" style={{ color: 'var(--text-main)' }}>{u.username}</span>
                     </td>
                     <td className="text-secondary fw-semibold">
                       {u.display_name || u.username}
@@ -226,7 +245,7 @@ function AdminUsersPage() {
                         </span>
                       )}
                     </td>
-                    <td className="text-muted small">{formatDate(u.created_at)}</td>
+                    <td className="text-secondary small">{formatDate(u.created_at)}</td>
                     <td className="px-3 text-end">
                       <div className="d-inline-flex align-items-center gap-2">
                         <button

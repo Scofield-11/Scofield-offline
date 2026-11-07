@@ -511,7 +511,7 @@ function VocabularyList() {
               >
                 <div className="set-sheet-grabber d-md-none" />
                 <div className="set-sheet-header">
-                  <h6 className={`fw-bold mb-0 ${dialogState.type === 'createFolder' ? 'text-dark' : 'text-danger'}`}>
+                  <h6 className="fw-bold mb-0" style={{ color: dialogState.type === 'createFolder' ? 'var(--text-main)' : '#EF4444' }}>
                     {dialogState.type === 'createFolder' ? (
                       <span className="d-flex align-items-center gap-2">
                         <FolderPlus size={18} strokeWidth={2.2} className="text-primary" />
@@ -535,15 +535,20 @@ function VocabularyList() {
                     <form onSubmit={confirmCreateFolder}>
                       <input
                         type="text"
-                        className="form-control bg-light border-0 mb-3 fw-semibold py-2"
+                        className="form-control mb-3 fw-semibold py-2"
                         placeholder="Nhập tên thư mục..."
                         value={folderInputName}
                         onChange={(e) => setFolderInputName(e.target.value)}
                         autoFocus
                         required
+                        style={{
+                          backgroundColor: 'var(--bg-elevated)',
+                          borderColor: 'var(--surface-border)',
+                          color: 'var(--text-main)',
+                        }}
                       />
                       <div className="d-flex gap-2">
-                        <button type="button" className="btn btn-light btn-touch w-50 fw-bold" onClick={() => setDialogState(null)}>
+                        <button type="button" className="btn btn-mobile-chip chip-slate w-50 py-2 fw-bold" onClick={() => setDialogState(null)}>
                           Hủy
                         </button>
                         <button type="submit" className="btn btn-primary btn-touch w-50 fw-bold text-white">
@@ -562,7 +567,7 @@ function VocabularyList() {
                           `Xóa từ vựng "${dialogState.word || ''}" khỏi học phần này?`}
                       </p>
                       <div className="d-flex gap-2">
-                        <button type="button" className="btn btn-light btn-touch w-50 fw-bold" onClick={() => setDialogState(null)}>
+                        <button type="button" className="btn btn-mobile-chip chip-slate w-50 py-2 fw-bold" onClick={() => setDialogState(null)}>
                           Hủy
                         </button>
                         <button
@@ -607,7 +612,7 @@ function VocabularyList() {
       )}
 
       <div className="d-flex align-items-center justify-content-between gap-2 mb-2 px-1">
-        <span className="fw-bold text-dark" style={{ fontSize: '0.95rem' }}>
+        <span className="fw-bold" style={{ fontSize: '0.95rem', color: 'var(--text-main)' }}>
           Thư viện ({displaySets.length})
         </span>
 
@@ -629,9 +634,14 @@ function VocabularyList() {
             <Download size={14} /> <span>Lưu</span>
           </button>
           <select
-            className="form-select form-select-sm bg-white border fw-semibold text-secondary shadow-none sort-select-custom"
+            className="form-select form-select-sm fw-semibold shadow-none sort-select-custom"
             value={sortOption}
             onChange={(e) => setSortOption(e.target.value)}
+            style={{
+              backgroundColor: 'var(--bg-elevated)',
+              borderColor: 'var(--surface-border)',
+              color: 'var(--text-main)',
+            }}
           >
             <option value="custom" disabled={customOrder.length === 0}>Kéo thả</option>
             <option value="newest">Mới nhất</option>
@@ -642,7 +652,13 @@ function VocabularyList() {
         </div>
       </div>
 
-      <div className="d-flex align-items-center justify-content-between gap-2 mb-3 bg-white p-2 px-3 rounded-4 border shadow-sm">
+      <div
+        className="d-flex align-items-center justify-content-between gap-2 mb-3 p-2 px-3 rounded-4 shadow-sm"
+        style={{
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--surface-border)',
+        }}
+      >
         <div className="d-flex align-items-center gap-1 overflow-auto no-scrollbar flex-grow-1">
           <button
             className={`btn btn-mobile-chip flex-shrink-0 d-flex align-items-center gap-1 ${currentPath === '' ? 'btn-primary text-white' : 'chip-slate'}`}
@@ -657,7 +673,7 @@ function VocabularyList() {
               const isLast = idx === arr.length - 1;
               return (
                 <React.Fragment key={idx}>
-                  <span className="text-muted small px-1 flex-shrink-0">/</span>
+                  <span className="text-secondary small px-1 flex-shrink-0">/</span>
                   <button
                     className={`btn btn-mobile-chip flex-shrink-0 ${isLast ? 'btn-primary text-white' : 'chip-slate'}`}
                     onClick={() => setCurrentPath(pathToHere)}
@@ -689,10 +705,10 @@ function VocabularyList() {
               >
                 <div className="d-flex align-items-center justify-content-between gap-2">
                   <div className="d-flex align-items-center gap-2 overflow-hidden">
-                    <div className="icon-badge icon-badge-amber" style={{ width: 28, height: 28, minWidth: 28, borderRadius: 8, padding: 0 }}>
+                    <div className="set-folder-icon-box flex-shrink-0" style={{ width: 30, height: 30, borderRadius: 8 }}>
                       <Folder size={15} strokeWidth={2.2} />
                     </div>
-                    <span className="fw-bold text-dark text-truncate small" title={folderName}>
+                    <span className="fw-bold text-truncate small" style={{ color: 'var(--text-main)' }} title={folderName}>
                       {folderName}
                     </span>
                   </div>
@@ -750,8 +766,15 @@ function VocabularyList() {
                           >
                             <GripVertical size={16} />
                           </span>
-                          <h6 className="mb-0 fw-bold text-dark text-break">{vocabSet.title}</h6>
-                          <span className="badge bg-light text-secondary border rounded-pill">
+                          <h6 className="mb-0 fw-bold text-break" style={{ color: 'var(--text-main)' }}>{vocabSet.title}</h6>
+                          <span
+                            className="badge rounded-pill"
+                            style={{
+                              backgroundColor: 'var(--bg-elevated)',
+                              color: 'var(--text-secondary)',
+                              border: '1px solid var(--surface-border)',
+                            }}
+                          >
                             {vocabSet.vocab_count} thẻ
                           </span>
                           <span className="badge chip-primary rounded-pill d-inline-flex align-items-center gap-1">
@@ -795,7 +818,7 @@ function VocabularyList() {
                         </div>
                       </div>
 
-                      <div className="progress rounded-pill bg-light" style={{ height: '5px' }}>
+                      <div className="progress rounded-pill" style={{ height: '5px', backgroundColor: 'var(--bg-elevated)' }}>
                         <div
                           className="progress-bar bg-success rounded-pill"
                           style={{ width: `${vocabSet.progress}%` }}
@@ -812,7 +835,13 @@ function VocabularyList() {
                           transition={ACCORDION_TRANSITION}
                           style={{ overflow: 'hidden' }}
                         >
-                          <div className="px-3 pb-3 pt-1 border-top bg-white">
+                          <div
+                            className="px-3 pb-3 pt-1 border-top"
+                            style={{
+                              backgroundColor: 'var(--bg-surface)',
+                              borderColor: 'var(--surface-border)',
+                            }}
+                          >
                             <div className="action-row-4col my-2">
                               <button
                                 className="btn btn-mobile-chip chip-primary"
@@ -865,40 +894,60 @@ function VocabularyList() {
                                       <div className="d-flex flex-column gap-2 py-1">
                                         <input
                                           type="text"
-                                          className="form-control form-control-sm bg-white"
+                                          className="form-control form-control-sm"
                                           value={editWord}
                                           onChange={(e) => setEditWord(e.target.value)}
                                           autoFocus
                                           placeholder="Từ vựng / Chữ Hán"
+                                          style={{
+                                            backgroundColor: 'var(--bg-elevated)',
+                                            borderColor: 'var(--surface-border)',
+                                            color: 'var(--text-main)',
+                                          }}
                                         />
                                         {isJa && (
                                           <div className="row g-2">
                                             <div className="col-6">
                                               <input
                                                 type="text"
-                                                className="form-control form-control-sm bg-white"
+                                                className="form-control form-control-sm"
                                                 value={editHanviet}
                                                 onChange={(e) => setEditHanviet(e.target.value)}
                                                 placeholder="Hán Việt"
+                                                style={{
+                                                  backgroundColor: 'var(--bg-elevated)',
+                                                  borderColor: 'var(--surface-border)',
+                                                  color: 'var(--text-main)',
+                                                }}
                                               />
                                             </div>
                                             <div className="col-6">
                                               <input
                                                 type="text"
-                                                className="form-control form-control-sm bg-white"
+                                                className="form-control form-control-sm"
                                                 value={editHiragana}
                                                 onChange={(e) => setEditHiragana(e.target.value)}
                                                 placeholder="Cách đọc"
+                                                style={{
+                                                  backgroundColor: 'var(--bg-elevated)',
+                                                  borderColor: 'var(--surface-border)',
+                                                  color: 'var(--text-main)',
+                                                }}
                                               />
                                             </div>
                                           </div>
                                         )}
                                         <input
                                           type="text"
-                                          className="form-control form-control-sm bg-white"
+                                          className="form-control form-control-sm"
                                           value={editMeaning}
                                           onChange={(e) => setEditMeaning(e.target.value)}
                                           placeholder="Ý nghĩa"
+                                          style={{
+                                            backgroundColor: 'var(--bg-elevated)',
+                                            borderColor: 'var(--surface-border)',
+                                            color: 'var(--text-main)',
+                                          }}
                                         />
                                         <div className="d-flex gap-2 justify-content-end">
                                           <button
@@ -980,40 +1029,60 @@ function VocabularyList() {
                                   <div className="d-flex flex-column gap-2">
                                     <input
                                       type="text"
-                                      className="form-control form-control-sm bg-white"
+                                      className="form-control form-control-sm"
                                       value={newWord}
                                       onChange={(e) => setNewWord(e.target.value)}
                                       autoFocus
                                       placeholder="Từ vựng mới"
+                                      style={{
+                                        backgroundColor: 'var(--bg-elevated)',
+                                        borderColor: 'var(--surface-border)',
+                                        color: 'var(--text-main)',
+                                      }}
                                     />
                                     {vocabSet.language !== 'en' && (
                                       <div className="row g-2">
                                         <div className="col-6">
                                           <input
                                             type="text"
-                                            className="form-control form-control-sm bg-white"
+                                            className="form-control form-control-sm"
                                             value={newHanviet}
                                             onChange={(e) => setNewHanviet(e.target.value)}
                                             placeholder="Hán Việt"
+                                            style={{
+                                              backgroundColor: 'var(--bg-elevated)',
+                                              borderColor: 'var(--surface-border)',
+                                              color: 'var(--text-main)',
+                                            }}
                                           />
                                         </div>
                                         <div className="col-6">
                                           <input
                                             type="text"
-                                            className="form-control form-control-sm bg-white"
+                                            className="form-control form-control-sm"
                                             value={newHiragana}
                                             onChange={(e) => setNewHiragana(e.target.value)}
                                             placeholder="Cách đọc"
+                                            style={{
+                                              backgroundColor: 'var(--bg-elevated)',
+                                              borderColor: 'var(--surface-border)',
+                                              color: 'var(--text-main)',
+                                            }}
                                           />
                                         </div>
                                       </div>
                                     )}
                                     <input
                                       type="text"
-                                      className="form-control form-control-sm bg-white"
+                                      className="form-control form-control-sm"
                                       value={newMeaning}
                                       onChange={(e) => setNewMeaning(e.target.value)}
                                       placeholder="Ý nghĩa"
+                                      style={{
+                                        backgroundColor: 'var(--bg-elevated)',
+                                        borderColor: 'var(--surface-border)',
+                                        color: 'var(--text-main)',
+                                      }}
                                     />
                                     <div className="d-flex gap-2 justify-content-end mt-1">
                                       <button

@@ -1,6 +1,6 @@
 :root {
-  --bg-canvas: #f5f4fb;
-  --bg-body: #f5f4fb;
+  --bg-canvas: #f3f1fa;
+  --bg-body: #f3f1fa;
   --bg-surface: #ffffff;
   --bg-elevated: #eeecf8;
   --bg-hover: #e6e3f4;
@@ -16,8 +16,8 @@
 }
 
 [data-theme="dark"] {
-  --bg-canvas: #0c0d16;
-  --bg-body: #0c0d16;
+  --bg-canvas: #090a12;
+  --bg-body: #090a12;
   --bg-surface: #131524;
   --bg-elevated: #1b1e32;
   --bg-hover: #232742;
@@ -38,7 +38,24 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--bg-body);
+  background-image: 
+    radial-gradient(at 15% 0%, rgba(99, 76, 226, 0.12) 0px, transparent 50%),
+    radial-gradient(at 85% 5%, rgba(236, 72, 153, 0.08) 0px, transparent 45%),
+    radial-gradient(rgba(99, 76, 226, 0.07) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 24px 24px;
+  background-attachment: fixed;
   color: var(--text-primary);
+}
+
+[data-theme="dark"] body {
+  background-color: #090a12;
+  background-image: 
+    radial-gradient(at 20% 0%, rgba(124, 58, 237, 0.20) 0px, transparent 55%),
+    radial-gradient(at 85% 10%, rgba(14, 165, 233, 0.12) 0px, transparent 50%),
+    radial-gradient(rgba(167, 139, 250, 0.06) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 24px 24px;
+  background-attachment: fixed;
+  color: #eceaf6;
 }
 
 #root {

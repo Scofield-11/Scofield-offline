@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import confetti from 'canvas-confetti';
 import api from '../api/axiosConfig';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookMarked, Maximize2, Minimize2, ArrowLeft, CheckCircle2, X, AlertTriangle } from 'lucide-react';
+import { BookMarked, Maximize2, Minimize2, ArrowLeft, CheckCircle2, X, AlertTriangle, Calendar } from 'lucide-react';
 import TestSetup from './TestSetup';
 import TestResult from './TestResult';
 import ExamHistoryTable from './ExamHistoryTable';
@@ -14,19 +14,17 @@ const MODAL_SPRING = { type: 'spring', stiffness: 380, damping: 30, mass: 0.8 };
 
 function TestMode() {
   const { sets, setSets, loading, fetchSets } = useContext(VocabContext);
-  const [selectedSetId, setSelectedSetId] = useState('lang_ja');
+  const [selectedSetId, setSelectedSetId] = useState('');
   const [allData, setAllData] = useState([]); 
 
   const targetSets = React.useMemo(() => {
     if (!sets || sets.length === 0) return [];
+    if (!selectedSetId) return [];
     const validSets = sets.filter(s => !s.title?.startsWith('_Thư mục:'));
     const idStr = String(selectedSetId);
-    if (idStr.startsWith('lang_') || idStr.startsWith('all_')) {
-      const lang = idStr.replace('lang_', '').replace('all_', '');
-      if (lang === 'kanji') return validSets.filter(s => s.type === 'kanji');
-      if (lang === 'en') return validSets.filter(s => s.type !== 'kanji' && s.language === 'en');
-      if (lang === 'zh') return validSets.filter((s) => s.type !== 'kanji' && s.language === 'zh');
-      return validSets.filter(s => s.type !== 'kanji' && (s.language || 'ja') === 'ja');
+    if (idStr.startsWith('multi_')) {
+      const ids = idStr.replace('multi_', '').split(',').map(Number);
+      return validSets.filter((s) => ids.includes(Number(s.id)));
     }
     if (idStr.startsWith('folder_')) {
       const folderName = idStr.substring(7);
@@ -46,7 +44,7 @@ function TestMode() {
   const [isTestFinished, setIsTestFinished] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
 
-  const [questionCount, setQuestionCount] = useState(10);
+  const [questionCount, setQuestionCount] = useState(0);
   const [questionFormat, setQuestionFormat] = useState('choice'); 
   
   const [isReversed, setIsReversed] = useState(false); 
@@ -187,12 +185,17 @@ function TestMode() {
   useEffect(() => {
     const size = targetSets.reduce((sum, s) => sum + (s.vocab_count || 0), 0);
     setPoolSize(size);
-    setQuestionCount(size || 10);
-  }, [selectedSetId, sets, currentContentType]);
+    if (size > 0) {
+      setQuestionCount(Math.min(20, size));
+    } else {
+      setQuestionCount(0);
+    }
+  }, [selectedSetId, sets, currentContentType, targetSets]);
 
 
 
   const hasFourFields = (() => {
+    if (!selectedSetId) return true;
     if (currentContentType === 'kanji') return true;
     if (
       String(selectedSetId).includes('ja') ||
@@ -415,8 +418,20 @@ function TestMode() {
     window.scrollTo(0, 0);
 
     // LƯU LỊCH SỬ TEST
-    const isCustom = String(selectedSetId).startsWith('lang_') || String(selectedSetId).startsWith('all_') || String(selectedSetId).startsWith('folder_');
-    const setName = isCustom ? (String(selectedSetId).startsWith('folder_') ? `Thư mục: ${String(selectedSetId).substring(7)}` : 'Nhiều học phần') : (targetSets[0]?.title || 'Học phần tùy chỉnh');
+    const isCustom =
+      String(selectedSetId).startsWith('lang_') ||
+      String(selectedSetId).startsWith('all_') ||
+      String(selectedSetId).startsWith('folder_') ||
+      String(selectedSetId).startsWith('multi_');
+
+    let setName = targetSets[0]?.title || 'Học phần tùy chỉnh';
+    if (String(selectedSetId).startsWith('multi_')) {
+      setName = `Gộp ${targetSets.length} học phần`;
+    } else if (String(selectedSetId).startsWith('folder_')) {
+      setName = `Thư mục: ${String(selectedSetId).substring(7)}`;
+    } else if (isCustom) {
+      setName = 'Nhiều học phần';
+    }
     const wrongDetails = gradedQuestions.filter(q => !q.isCorrect).map(q => ({
       question: q.questionText,
       correct_ans: q.correctAnswer,
@@ -459,49 +474,143 @@ function TestMode() {
   );
 
   if (viewHistory) {
+    const isPerfect = viewHistory.wrongDetails && viewHistory.wrongDetails.length === 0;
+    const scorePercent = viewHistory.total > 0 ? Math.round((viewHistory.score / viewHistory.total) * 100) : 0;
     return (
-      <div className="container mt-4 fade-in-slide" style={{ maxWidth: '800px' }}>
-        {noteModalVocab && <SaveNoteModal vocab={noteModalVocab} sets={sets} onClose={() => setNoteModalVocab(null)} onSaveSuccess={() => fetchSets(false, true)} />}
-        <button className="btn btn-outline-secondary fw-bold rounded-pill mb-4 px-4 shadow-sm" onClick={() => setViewHistory(null)}>← Quay lại danh sách</button>
-        <div className="alert alert-info shadow-sm border-0 mb-4 rounded-4 p-4">
-          <h4 className="fw-bold mb-3 text-primary">{viewHistory.title}</h4>
-          <p className="mb-0 text-dark">
-            Ngày làm: <strong>{viewHistory.date}</strong> <br/>
-            Kết quả: <strong className="text-primary fs-5">{viewHistory.score} / {viewHistory.total}</strong>
-          </p>
+      <div className="container mt-4 mb-5 fade-in-slide mx-auto px-2 px-md-3" style={{ maxWidth: '980px' }}>
+        {noteModalVocab && (
+          <SaveNoteModal
+            vocab={noteModalVocab}
+            sets={sets}
+            onClose={() => setNoteModalVocab(null)}
+            onSaveSuccess={() => fetchSets(false, true)}
+          />
+        )}
+        <div className="d-flex align-items-center justify-content-between mb-3">
+          <button className="btn btn-mobile-chip chip-slate px-3" onClick={() => setViewHistory(null)}>
+            <ArrowLeft size={15} /> <span>Quay lại lịch sử</span>
+          </button>
+        </div>
+
+        {/* SUMMARY HEADER CARD */}
+        <div
+          className="card border-0 rounded-4 p-4 mb-4 shadow-sm"
+          style={{
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--surface-border)',
+          }}
+        >
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+            <div>
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <span className="badge chip-primary rounded-pill px-3 py-1">Lịch sử bài thi</span>
+                {viewHistory.date && (
+                  <span className="text-secondary small d-flex align-items-center gap-1">
+                    <Calendar size={13} />
+                    <span>{viewHistory.date}</span>
+                  </span>
+                )}
+              </div>
+              <h4 className="fw-bold mb-1" style={{ color: 'var(--text-main)' }}>{viewHistory.title}</h4>
+            </div>
+
+            <div className="d-flex align-items-center gap-3">
+              <div
+                className="text-center px-4 py-2 rounded-4"
+                style={{
+                  backgroundColor: 'var(--bg-elevated)',
+                  border: '1px solid var(--surface-border)',
+                }}
+              >
+                <div className="small text-secondary fw-semibold">Điểm số</div>
+                <div className="fs-4 fw-black text-primary">
+                  {viewHistory.score} <span className="fs-6 text-secondary fw-normal">/ {viewHistory.total}</span>
+                </div>
+              </div>
+              <div
+                className="text-center px-3 py-2 rounded-4"
+                style={{
+                  backgroundColor: scorePercent >= 80 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(99, 76, 226, 0.12)',
+                  color: scorePercent >= 80 ? '#10B981' : '#634CE2',
+                  fontWeight: 800,
+                  fontSize: '1.25rem',
+                  border: `1px solid ${scorePercent >= 80 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(99, 76, 226, 0.25)'}`,
+                }}
+              >
+                {scorePercent}%
+              </div>
+            </div>
+          </div>
         </div>
         
-        {viewHistory.wrongDetails && viewHistory.wrongDetails.length === 0 ? (
-          <div className="alert alert-success fw-bold p-4 rounded-4 shadow-sm border-0">Tuyệt vời! Bạn không làm sai câu nào trong phiên này.</div>
+        {isPerfect ? (
+          <div
+            className="p-4 rounded-4 shadow-sm text-center fw-bold mb-4"
+            style={{
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              color: '#10B981',
+            }}
+          >
+            🎉 Tuyệt vời! Bạn không làm sai câu nào trong phiên này.
+          </div>
         ) : (
           <div>
-            <h5 className="text-danger fw-bold mb-4">Các câu làm sai:</h5>
+            <h5 className="fw-bold mb-3 d-flex align-items-center gap-2" style={{ color: '#EF4444' }}>
+              <span>Các câu làm sai ({viewHistory.wrongDetails?.length || 0})</span>
+            </h5>
             {viewHistory.wrongDetails && viewHistory.wrongDetails.map((q, i) => (
-              <div key={i} className="bg-white rounded-4 shadow-sm mb-4 p-4" style={{ transform: 'none' }}>
+              <div
+                key={i}
+                className="rounded-4 shadow-sm mb-3 p-4"
+                style={{
+                  backgroundColor: 'var(--bg-surface)',
+                  border: '1px solid var(--surface-border)',
+                  transform: 'none',
+                }}
+              >
                 <div className="d-flex justify-content-between align-items-start mb-3">
-                  <h5 className="mb-0 text-dark fw-bold">{q.question}</h5>
+                  <h5 className="mb-0 fw-bold" style={{ color: 'var(--text-main)' }}>{q.question}</h5>
                   {q.vocabId && (
-                    <button className="btn-icon-soft chip-primary ms-3 flex-shrink-0" onClick={async () => {
-                      let vocab = sets.flatMap(s => s.vocabularies || []).find(v => v.id === q.vocabId);
-                      if (!vocab) {
-                        try {
-                           const res = await api.get(`/sets/${q.setId || selectedSetId}`);
-                           vocab = res.data.vocabularies.find(v => v.id === q.vocabId);
-                        } catch(e) {}
-                      }
-                      if (vocab) setNoteModalVocab(vocab);
-                    }} title="Lưu vào Note">
+                    <button
+                      className="btn-icon-soft chip-primary ms-3 flex-shrink-0"
+                      onClick={async () => {
+                        let vocab = sets.flatMap(s => s.vocabularies || []).find(v => v.id === q.vocabId);
+                        if (!vocab) {
+                          try {
+                             const res = await api.get(`/sets/${q.setId || selectedSetId}`);
+                             vocab = res.data.vocabularies.find(v => v.id === q.vocabId);
+                          } catch(e) {}
+                        }
+                        if (vocab) setNoteModalVocab(vocab);
+                      }}
+                      title="Lưu vào Note"
+                    >
                       <BookMarked size={16} />
                     </button>
                   )}
                 </div>
-                <div className="p-3 rounded-3 bg-light border shadow-sm mb-3">
-                  <span className="text-muted fw-bold d-block mb-1 fs-6">Lựa chọn của bạn:</span>
-                  <span className="text-danger fw-bold text-decoration-line-through fs-5">{q.user_ans || '(Bỏ trống)'}</span>
+                <div
+                  className="p-3 rounded-3 mb-3"
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    color: '#EF4444',
+                  }}
+                >
+                  <span className="small fw-bold d-block mb-1 opacity-75">Lựa chọn của bạn (Sai):</span>
+                  <span className="fw-bold text-decoration-line-through fs-5">{q.user_ans || '(Bỏ trống)'}</span>
                 </div>
-                <div className="p-3 rounded-3 bg-white border border-success border-2 shadow-sm">
-                  <span className="text-success fw-bold d-block mb-1 fs-6">✓ Đáp án đúng:</span>
-                  <span className="text-dark fw-bold fs-5">{q.correct_ans}</span>
+                <div
+                  className="p-3 rounded-3"
+                  style={{
+                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    color: '#10B981',
+                  }}
+                >
+                  <span className="small fw-bold d-block mb-1 opacity-75">✓ Đáp án đúng:</span>
+                  <span className="fw-bold fs-5">{q.correct_ans}</span>
                 </div>
               </div>
             ))}
@@ -546,7 +655,7 @@ function TestMode() {
 
   if (isTestFinished) {
     return (
-      <div className={`container-fluid py-4 ${isFullscreen ? 'bg-light mobile-fullscreen pt-4' : ''}`} ref={containerRef} style={isFullscreen ? { minHeight: '100vh', overflowY: 'auto' } : {}}>
+      <div className={`container-fluid py-4 ${isFullscreen ? 'mobile-fullscreen pt-4' : ''}`} ref={containerRef} style={isFullscreen ? { minHeight: '100vh', overflowY: 'auto', backgroundColor: 'var(--bg-main)' } : {}}>
         {noteModalVocab && <SaveNoteModal vocab={noteModalVocab} sets={sets} onClose={() => setNoteModalVocab(null)} onSaveSuccess={() => fetchSets(false, true)} />}
         <div className="d-flex justify-content-between align-items-center mx-auto mb-4 d-print-none" style={{ maxWidth: '800px' }}>
           <button className="btn btn-mobile-chip chip-slate px-3" onClick={() => { setIsTestStarted(false); setIsTestFinished(false); window.scrollTo(0,0); }}>
@@ -567,7 +676,7 @@ function TestMode() {
   const answeredCount = questions.filter(q => q.userAnswer.trim() !== '').length;
 
   return (
-    <div className={`container-fluid py-4 ${isFullscreen ? 'bg-light overflow-auto mobile-fullscreen' : ''}`} ref={containerRef} style={isFullscreen ? { minHeight: '100vh' } : {}}>
+    <div className={`container-fluid py-4 ${isFullscreen ? 'overflow-auto mobile-fullscreen' : ''}`} ref={containerRef} style={isFullscreen ? { minHeight: '100vh', backgroundColor: 'var(--bg-main)' } : {}}>
       
       {/* MODAL XÁC NHẬN THOÁT */}
       <AnimatePresence>

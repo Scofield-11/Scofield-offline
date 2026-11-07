@@ -1,8 +1,25 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, { useState, useEffect, useRef, useContext, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, RefreshCw, X, Flame, Sun, Moon, Volume2, LogOut, KeyRound, Shield, Search, ArrowUpRight, Layers, Brain, Zap, User } from 'lucide-react';
+import {
+  Sparkles,
+  RefreshCw,
+  X,
+  Flame,
+  Sun,
+  Moon,
+  Volume2,
+  LogOut,
+  KeyRound,
+  Shield,
+  Search,
+  ArrowUpRight,
+  Layers,
+  Brain,
+  Zap,
+  User,
+} from 'lucide-react';
 import api, {
   getSyncStatus,
   autoPullFromCloud,
@@ -72,15 +89,30 @@ function Dashboard() {
     speakText(item.word, item.language || 'ja');
   };
 
-  const totalVocabCount = React.useMemo(() => {
+  const totalVocabCount = useMemo(() => {
     return (sets || [])
       .filter((s) => !s.title?.startsWith('_Thư mục:'))
       .reduce((sum, s) => sum + (s.vocab_count || 0), 0);
   }, [sets]);
 
-  const validSetsCount = React.useMemo(() => {
+  const validSetsCount = useMemo(() => {
     return (sets || []).filter((s) => !s.title?.startsWith('_Thư mục:')).length;
   }, [sets]);
+
+  const greetingText = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Chào buổi sáng';
+    if (hour < 18) return 'Chào buổi chiều';
+    return 'Chào buổi tối';
+  }, []);
+
+  const displayName = currentUser?.display_name || currentUser?.username || 'Học viên';
+
+  const inspiringSubtitle = useMemo(() => {
+    if (currentStreak >= 3) return `Đang giữ chuỗi ${currentStreak} ngày rực lửa • Hãy tiếp tục giữ vững phong độ!`;
+    if (todayTests > 0) return `Hôm nay bạn đã hoàn thành ${todayTests} bài kiểm tra • Tiến bộ từng ngày!`;
+    return 'Chinh phục từ vựng mỗi ngày — Kiên trì là chìa khóa của sự thành thạo.';
+  }, [currentStreak, todayTests]);
 
   useEffect(() => {
     api
@@ -255,8 +287,8 @@ function Dashboard() {
                       <KeyRound size={16} />
                     </span>
                     <div>
-                      <h6 className="fw-bold mb-0 text-dark">Đổi mật khẩu cá nhân</h6>
-                      <span className="text-muted" style={{ fontSize: '0.75rem' }}>
+                      <h6 className="fw-bold mb-0 text-main">Đổi mật khẩu cá nhân</h6>
+                      <span className="text-secondary" style={{ fontSize: '0.75rem' }}>
                         Tài khoản: {currentUser?.username || 'Học viên'}
                       </span>
                     </div>
@@ -273,7 +305,7 @@ function Dashboard() {
 
                 <form onSubmit={handleChangePassword} className="p-3 pt-2">
                   <div className="mb-3">
-                    <label className="form-label small fw-bold text-muted mb-1">
+                    <label className="form-label small fw-bold text-secondary mb-1">
                       MẬT KHẨU HIỆN TẠI
                     </label>
                     <input
@@ -287,7 +319,7 @@ function Dashboard() {
                     />
                   </div>
                   <div className="mb-4">
-                    <label className="form-label small fw-bold text-muted mb-1">
+                    <label className="form-label small fw-bold text-secondary mb-1">
                       MẬT KHẨU MỚI
                     </label>
                     <input
@@ -323,23 +355,49 @@ function Dashboard() {
         document.body
       )}
 
+      {/* Hero Banner nghệ thuật đa tầng */}
       <div className="position-relative mb-3" style={{ zIndex: 1040 }}>
         <div className="dashboard-hero-card p-3 p-md-4">
-          <div className="dashboard-hero-toolbar d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-            <div className="dashboard-hero-badges d-flex align-items-center flex-wrap gap-2">
-              <div className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill dashboard-hero-badge">
-                <Sparkles size={14} />
-                <span>{totalVocabCount} thẻ • {validSetsCount} bộ</span>
-              </div>
+          {/* Lớp trang trí hậu cảnh riêng (không cắt dropdown tìm kiếm) */}
+          <div className="dashboard-hero-decor" aria-hidden="true">
+            <span className="hero-decor-kanji hero-decor-kanji-1">語</span>
+            <span className="hero-decor-kanji hero-decor-kanji-2">学</span>
+            <svg
+              className="hero-decor-pattern"
+              width="240"
+              height="240"
+              viewBox="0 0 240 240"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle cx="200" cy="40" r="80" stroke="#FFFFFF" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.12" />
+              <circle cx="200" cy="40" r="130" stroke="#FFFFFF" strokeWidth="1.2" strokeDasharray="6 8" opacity="0.08" />
+              <circle cx="200" cy="40" r="180" stroke="#FFFFFF" strokeWidth="1" opacity="0.05" />
+            </svg>
+          </div>
 
-              {currentUser && (
-                <div className="d-inline-flex align-items-center gap-1 px-3 py-1 rounded-pill dashboard-hero-badge">
-                  <User size={13} strokeWidth={2.4} />
-                  <span>{currentUser.display_name || currentUser.username}</span>
+          {/* Dòng chào mừng thông minh + Công cụ quản lý */}
+          <div className="dashboard-hero-header position-relative d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+            <div className="dashboard-greeting-wrap">
+              <h2 className="dashboard-greeting-title text-white mb-1">
+                {greetingText}, {displayName}!
+              </h2>
+              <p className="dashboard-greeting-sub text-white-50 mb-2">
+                {inspiringSubtitle}
+              </p>
+              <div className="d-flex align-items-center flex-wrap gap-2">
+                <div className="dashboard-hero-badge">
+                  <Sparkles size={13} strokeWidth={2.4} />
+                  <span>{totalVocabCount} thẻ • {validSetsCount} bộ học phần</span>
                 </div>
-              )}
+                <div className="dashboard-hero-badge">
+                  <Flame size={13} strokeWidth={2.4} color="#FBBF24" />
+                  <span>{currentStreak} ngày streak liên tiếp</span>
+                </div>
+              </div>
             </div>
 
+            {/* Cụm nút công cụ Frosted Glass Pills */}
             <div className="dashboard-hero-actions d-flex align-items-center flex-wrap gap-2">
               {currentUser?.role === 'admin' && (
                 <Link
@@ -347,7 +405,7 @@ function Dashboard() {
                   className="cloud-pill-btn text-decoration-none"
                   title="Quản trị người dùng & Reset mật khẩu"
                 >
-                  <Shield size={13} />
+                  <Shield size={13} strokeWidth={2.4} />
                   <span>Admin</span>
                 </Link>
               )}
@@ -380,6 +438,7 @@ function Dashboard() {
                 </span>
                 <RefreshCw
                   size={13}
+                  strokeWidth={2.2}
                   className={syncInfo.state === 'syncing' ? 'spin-anim' : ''}
                 />
               </button>
@@ -390,7 +449,7 @@ function Dashboard() {
                 className="cloud-pill-btn px-2"
                 title="Đổi mật khẩu"
               >
-                <KeyRound size={14} />
+                <KeyRound size={14} strokeWidth={2.2} />
               </button>
 
               <button
@@ -399,7 +458,7 @@ function Dashboard() {
                 className="cloud-pill-btn px-2"
                 title="Đăng xuất"
               >
-                <LogOut size={14} />
+                <LogOut size={14} strokeWidth={2.2} />
               </button>
 
               <motion.button
@@ -423,6 +482,7 @@ function Dashboard() {
             </div>
           </div>
 
+          {/* Thanh Tìm Kiếm Spotlight */}
           <div ref={dropdownRef} className="position-relative">
             <div className="dashboard-search-box d-flex align-items-center px-3 py-1">
               <div className="d-flex align-items-center text-primary pe-2">
@@ -432,7 +492,7 @@ function Dashboard() {
                 ref={searchInputRef}
                 type="text"
                 className="form-control border-0 py-2 fw-semibold dashboard-search-input shadow-none bg-transparent"
-                placeholder="Tra cứu từ vựng, Hán tự, Hán Việt, ý nghĩa..."
+                placeholder="Tra cứu từ vựng, Hán tự, Hán Việt, ý nghĩa... (Ctrl + K)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => {
@@ -446,6 +506,7 @@ function Dashboard() {
                     setSearchQuery('');
                     setShowDropdown(false);
                   }}
+                  aria-label="Xóa từ khóa tìm kiếm"
                 >
                   <X size={16} strokeWidth={2.2} />
                 </button>
@@ -491,7 +552,7 @@ function Dashboard() {
                           >
                             <div className="d-flex justify-content-between align-items-center gap-2">
                               <div className="text-truncate d-flex align-items-center gap-2">
-                                <span className="fw-bold text-dark fs-6">{item.word}</span>
+                                <span className="fw-bold text-main fs-6">{item.word}</span>
                                 {item.hanviet && (
                                   <span className="small fw-bold text-primary">
                                     [{item.hanviet}]
@@ -524,13 +585,16 @@ function Dashboard() {
         </div>
       </div>
 
+      {/* 4 Thẻ Bento Stat Cards nâng cấp với Watermark chìm và Top Accent Lines */}
       <div className="row g-2 align-items-stretch">
+        {/* Thẻ 1: Chuỗi Streak */}
         <div className="col-6 col-lg-3">
-          <div className="bento-stat-card h-100">
-            <div className="bento-icon-wrap bento-amber">
+          <div className="bento-stat-card bento-accent-amber h-100">
+            <span className="bento-watermark" aria-hidden="true">火</span>
+            <div className="bento-icon-wrap bento-amber position-relative" style={{ zIndex: 1 }}>
               <Flame size={22} strokeWidth={2.4} />
             </div>
-            <div className="bento-stat-content overflow-hidden flex-grow-1">
+            <div className="bento-stat-content overflow-hidden flex-grow-1 position-relative" style={{ zIndex: 1 }}>
               <div className="bento-value">{currentStreak} ngày</div>
               <div className="bento-sub">{todayTests} bài hôm nay</div>
               <div className="streak-dots-row" title="7 ngày gần nhất">
@@ -542,42 +606,57 @@ function Dashboard() {
           </div>
         </div>
 
+        {/* Thẻ 2: Flashcards */}
         <div className="col-6 col-lg-3">
-          <Link to="/flashcards" className="bento-stat-card bento-interactive h-100 text-decoration-none">
-            <div className="bento-icon-wrap bento-purple">
+          <Link
+            to="/flashcards"
+            className="bento-stat-card bento-accent-purple bento-interactive h-100 text-decoration-none"
+          >
+            <span className="bento-watermark" aria-hidden="true">憶</span>
+            <div className="bento-icon-wrap bento-purple position-relative" style={{ zIndex: 1 }}>
               <Layers size={22} strokeWidth={2.2} />
             </div>
-            <div className="bento-stat-content overflow-hidden flex-grow-1">
+            <div className="bento-stat-content overflow-hidden flex-grow-1 position-relative" style={{ zIndex: 1 }}>
               <div className="bento-value">Flashcards</div>
               <div className="bento-sub">Lật thẻ 3D</div>
             </div>
-            <ArrowUpRight size={16} strokeWidth={2.4} className="bento-arrow" />
+            <ArrowUpRight size={16} strokeWidth={2.4} className="bento-arrow position-relative" style={{ zIndex: 1 }} />
           </Link>
         </div>
 
+        {/* Thẻ 3: Học thuộc */}
         <div className="col-6 col-lg-3">
-          <Link to="/learn" className="bento-stat-card bento-interactive h-100 text-decoration-none">
-            <div className="bento-icon-wrap bento-emerald">
+          <Link
+            to="/learn"
+            className="bento-stat-card bento-accent-emerald bento-interactive h-100 text-decoration-none"
+          >
+            <span className="bento-watermark" aria-hidden="true">習</span>
+            <div className="bento-icon-wrap bento-emerald position-relative" style={{ zIndex: 1 }}>
               <Brain size={22} strokeWidth={2.2} />
             </div>
-            <div className="bento-stat-content overflow-hidden flex-grow-1">
+            <div className="bento-stat-content overflow-hidden flex-grow-1 position-relative" style={{ zIndex: 1 }}>
               <div className="bento-value">Học thuộc</div>
               <div className="bento-sub">Ghi nhớ sâu</div>
             </div>
-            <ArrowUpRight size={16} strokeWidth={2.4} className="bento-arrow" />
+            <ArrowUpRight size={16} strokeWidth={2.4} className="bento-arrow position-relative" style={{ zIndex: 1 }} />
           </Link>
         </div>
 
+        {/* Thẻ 4: Kiểm tra */}
         <div className="col-6 col-lg-3">
-          <Link to="/test" className="bento-stat-card bento-interactive h-100 text-decoration-none">
-            <div className="bento-icon-wrap bento-sky">
+          <Link
+            to="/test"
+            className="bento-stat-card bento-accent-sky bento-interactive h-100 text-decoration-none"
+          >
+            <span className="bento-watermark" aria-hidden="true">試</span>
+            <div className="bento-icon-wrap bento-sky position-relative" style={{ zIndex: 1 }}>
               <Zap size={22} strokeWidth={2.2} />
             </div>
-            <div className="bento-stat-content overflow-hidden flex-grow-1">
+            <div className="bento-stat-content overflow-hidden flex-grow-1 position-relative" style={{ zIndex: 1 }}>
               <div className="bento-value">Kiểm tra</div>
               <div className="bento-sub">Luyện phản xạ</div>
             </div>
-            <ArrowUpRight size={16} strokeWidth={2.4} className="bento-arrow" />
+            <ArrowUpRight size={16} strokeWidth={2.4} className="bento-arrow position-relative" style={{ zIndex: 1 }} />
           </Link>
         </div>
       </div>

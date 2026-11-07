@@ -5,6 +5,7 @@ import {
   Shuffle,
   Check,
   BookOpen,
+  FolderOpen,
   Clock,
   Zap,
   Compass,
@@ -33,6 +34,7 @@ function TestSetup({
 }) {
   // Logic kiểm tra chế độ 4 trường (Kanji / Tiếng Nhật / Tiếng Trung) nguyên bản
   const hasFourFields = useMemo(() => {
+    if (!selectedSetId) return true;
     if (currentContentType === 'kanji') return true;
     if (
       String(selectedSetId).includes('ja') ||
@@ -43,8 +45,14 @@ function TestSetup({
     }
 
     let targetSets = [];
-    if (String(selectedSetId).startsWith('folder_')) {
-      const folderName = String(selectedSetId).substring(7);
+    const idStr = String(selectedSetId);
+    if (!idStr) {
+      targetSets = [];
+    } else if (idStr.startsWith('multi_')) {
+      const ids = idStr.replace('multi_', '').split(',').map(Number);
+      targetSets = (sets || []).filter((s) => ids.includes(Number(s.id)));
+    } else if (idStr.startsWith('folder_')) {
+      const folderName = idStr.substring(7);
       targetSets = (sets || []).filter((s) => (s.folder_path || '🏠 Thư mục gốc') === folderName);
     } else {
       const s = (sets || []).find((set) => set.id == selectedSetId);
@@ -474,15 +482,27 @@ function TestSetup({
               </div>
 
               {/* Nút CTA chuẩn phong cách Linear */}
-              <button
-                type="button"
-                className="test-lobby-cta-btn"
-                onClick={generateTest}
-                disabled={!poolSize || poolSize <= 0 || !questionCount || questionCount <= 0}
-              >
-                <span>Bắt đầu làm bài</span>
-                <ArrowRight size={18} strokeWidth={2.4} />
-              </button>
+              {!selectedSetId ? (
+                <button
+                  type="button"
+                  className="test-lobby-cta-btn"
+                  onClick={() => window.dispatchEvent(new CustomEvent('scofield-open-set-selector'))}
+                >
+                  <FolderOpen size={18} strokeWidth={2.2} />
+                  <span>Chọn học phần để bắt đầu</span>
+                  <ArrowRight size={18} strokeWidth={2.4} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="test-lobby-cta-btn"
+                  onClick={generateTest}
+                  disabled={!poolSize || poolSize <= 0 || !questionCount || questionCount <= 0}
+                >
+                  <span>Bắt đầu làm bài</span>
+                  <ArrowRight size={18} strokeWidth={2.4} />
+                </button>
+              )}
             </div>
           </div>
         </div>

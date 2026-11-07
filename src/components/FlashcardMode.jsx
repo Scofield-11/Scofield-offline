@@ -5,6 +5,7 @@ import {
   Maximize2,
   Minimize2,
   Layers,
+  FolderOpen,
   Volume2,
   PlayCircle,
   ArrowRight,
@@ -49,18 +50,16 @@ const CARD_VARIANTS = {
 
 function FlashcardMode() {
   const { sets, setSets, loading, fetchSets } = useContext(VocabContext);
-  const [selectedSetId, setSelectedSetId] = useState('lang_ja');
+  const [selectedSetId, setSelectedSetId] = useState('');
 
   const targetSets = React.useMemo(() => {
     if (!sets || sets.length === 0) return [];
+    if (!selectedSetId) return [];
     const validSets = sets.filter((s) => !s.title?.startsWith('_Thư mục:'));
     const idStr = String(selectedSetId);
-    if (idStr.startsWith('lang_') || idStr.startsWith('all_')) {
-      const lang = idStr.replace('lang_', '').replace('all_', '');
-      if (lang === 'kanji') return validSets.filter((s) => s.type === 'kanji');
-      if (lang === 'en') return validSets.filter((s) => s.type !== 'kanji' && s.language === 'en');
-      if (lang === 'zh') return validSets.filter((s) => s.type !== 'kanji' && s.language === 'zh');
-      return validSets.filter((s) => s.type !== 'kanji' && (s.language || 'ja') === 'ja');
+    if (idStr.startsWith('multi_')) {
+      const ids = idStr.replace('multi_', '').split(',').map(Number);
+      return validSets.filter((s) => ids.includes(Number(s.id)));
     }
     if (idStr.startsWith('folder_')) {
       const folderName = idStr.substring(7);
@@ -83,6 +82,7 @@ function FlashcardMode() {
   }, [selectedSetId, targetSets]);
 
   const hasFourFields = (() => {
+    if (!selectedSetId) return true;
     if (currentContentType === 'kanji') return true;
     if (
       String(selectedSetId).includes('ja') ||
@@ -563,16 +563,28 @@ function FlashcardMode() {
                 </div>
 
                 {/* Nút CTA lớn */}
-                <button
-                  type="button"
-                  className="test-lobby-cta-btn"
-                  onClick={handleStart}
-                  disabled={totalCardsCount === 0}
-                >
-                  <Layers size={18} strokeWidth={2.2} />
-                  <span>Bắt đầu lật thẻ</span>
-                  <ArrowRight size={18} strokeWidth={2.4} />
-                </button>
+                {!selectedSetId ? (
+                  <button
+                    type="button"
+                    className="test-lobby-cta-btn"
+                    onClick={() => window.dispatchEvent(new CustomEvent('scofield-open-set-selector'))}
+                  >
+                    <FolderOpen size={18} strokeWidth={2.2} />
+                    <span>Chọn học phần để bắt đầu</span>
+                    <ArrowRight size={18} strokeWidth={2.4} />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="test-lobby-cta-btn"
+                    onClick={handleStart}
+                    disabled={totalCardsCount === 0}
+                  >
+                    <Layers size={18} strokeWidth={2.2} />
+                    <span>Bắt đầu lật thẻ</span>
+                    <ArrowRight size={18} strokeWidth={2.4} />
+                  </button>
+                )}
               </div>
             </div>
           </div>
