@@ -4,6 +4,9 @@
 
 .gms-container {
   margin-bottom: 0.5rem;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .gms-header {
@@ -13,6 +16,9 @@
   margin-bottom: 0.75rem;
   gap: 0.5rem;
   flex-wrap: wrap;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .gms-section-label {
@@ -40,6 +46,7 @@
   min-height: 28px;
   flex-shrink: 0;
   outline: none;
+  max-width: 100%;
 }
 
 .gms-swap-btn:hover {
@@ -66,6 +73,9 @@
 .gms-grid {
   display: grid;
   gap: 0.55rem;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .gms-grid-4,
@@ -73,10 +83,25 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-@media (max-width: 540px) {
+@media (max-width: 575.98px) {
+  .gms-header {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+
+  .gms-swap-btn {
+    max-width: 100% !important;
+    padding: 4px 8px !important;
+    font-size: 0.72rem !important;
+  }
+
   .gms-grid-4,
   .gms-grid-2 {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 }
 
@@ -96,6 +121,9 @@
   min-height: 52px;
   outline: none;
   font-family: inherit;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 @media (hover: hover) {

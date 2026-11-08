@@ -99,20 +99,7 @@ function Dashboard() {
     return (sets || []).filter((s) => !s.title?.startsWith('_Thư mục:')).length;
   }, [sets]);
 
-  const greetingText = useMemo(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Chào buổi sáng';
-    if (hour < 18) return 'Chào buổi chiều';
-    return 'Chào buổi tối';
-  }, []);
-
   const displayName = currentUser?.display_name || currentUser?.username || 'Học viên';
-
-  const inspiringSubtitle = useMemo(() => {
-    if (currentStreak >= 3) return `Đang giữ chuỗi ${currentStreak} ngày rực lửa • Hãy tiếp tục giữ vững phong độ!`;
-    if (todayTests > 0) return `Hôm nay bạn đã hoàn thành ${todayTests} bài kiểm tra • Tiến bộ từng ngày!`;
-    return 'Chinh phục từ vựng mỗi ngày — Kiên trì là chìa khóa của sự thành thạo.';
-  }, [currentStreak, todayTests]);
 
   useEffect(() => {
     api
@@ -376,37 +363,22 @@ function Dashboard() {
             </svg>
           </div>
 
-          {/* Dòng chào mừng thông minh + Công cụ quản lý */}
-          <div className="dashboard-hero-header position-relative d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
-            <div className="dashboard-greeting-wrap">
-              <h2 className="dashboard-greeting-title text-white mb-1">
-                {greetingText}, {displayName}!
-              </h2>
-              <p className="dashboard-greeting-sub text-white-50 mb-2">
-                {inspiringSubtitle}
-              </p>
-              <div className="d-flex align-items-center flex-wrap gap-2">
-                <div className="dashboard-hero-badge">
-                  <Sparkles size={13} strokeWidth={2.4} />
-                  <span>{totalVocabCount} thẻ • {validSetsCount} bộ học phần</span>
-                </div>
-                <div className="dashboard-hero-badge">
-                  <Flame size={13} strokeWidth={2.4} color="#FBBF24" />
-                  <span>{currentStreak} ngày streak liên tiếp</span>
-                </div>
-              </div>
-            </div>
+          {/* Hàng 1: Dòng chào mừng + Cụm công cụ quản lý */}
+          <div className="dashboard-hero-header position-relative d-flex justify-content-between align-items-center mb-2">
+            <h2 className="dashboard-greeting-title text-white mb-0 text-truncate">
+              Chào, {displayName}
+            </h2>
 
-            {/* Cụm nút công cụ Frosted Glass Pills */}
-            <div className="dashboard-hero-actions d-flex align-items-center flex-wrap gap-2">
+            {/* Cụm nút công cụ Frosted Glass Pills (Cố định 1 hàng không rơi rớt) */}
+            <div className="dashboard-hero-actions d-flex align-items-center flex-nowrap">
               {currentUser?.role === 'admin' && (
                 <Link
                   to="/admin"
                   className="cloud-pill-btn text-decoration-none"
                   title="Quản trị người dùng & Reset mật khẩu"
                 >
-                  <Shield size={13} strokeWidth={2.4} />
-                  <span>Admin</span>
+                  <Shield size={14} strokeWidth={2.4} />
+                  <span className="d-none d-md-inline">Admin</span>
                 </Link>
               )}
 
@@ -429,7 +401,7 @@ function Dashboard() {
                         : '#cbd5e1',
                   }}
                 />
-                <span>
+                <span className="d-none d-md-inline">
                   {syncInfo.state === 'syncing'
                     ? 'Đang lưu...'
                     : syncInfo.state === 'synced'
@@ -446,8 +418,9 @@ function Dashboard() {
               <button
                 type="button"
                 onClick={() => setShowPassModal(true)}
-                className="cloud-pill-btn px-2"
+                className="cloud-pill-btn btn-action-square"
                 title="Đổi mật khẩu"
+                aria-label="Đổi mật khẩu"
               >
                 <KeyRound size={14} strokeWidth={2.2} />
               </button>
@@ -455,8 +428,9 @@ function Dashboard() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="cloud-pill-btn px-2"
+                className="cloud-pill-btn btn-action-square"
                 title="Đăng xuất"
+                aria-label="Đăng xuất"
               >
                 <LogOut size={14} strokeWidth={2.2} />
               </button>
@@ -465,7 +439,7 @@ function Dashboard() {
                 type="button"
                 whileTap={{ scale: 0.9, rotate: 25 }}
                 onClick={toggleTheme}
-                className="cloud-pill-btn d-lg-none px-2"
+                className="cloud-pill-btn btn-action-square d-lg-none"
                 title={theme === 'dark' ? 'Chế độ Sáng' : 'Chế độ Tối'}
                 aria-label="Đổi giao diện Sáng/Tối"
               >
@@ -482,6 +456,18 @@ function Dashboard() {
             </div>
           </div>
 
+          {/* Hàng 2: Huy hiệu thống kê (Badge Row - Nằm ngay dưới Hàng 1, trên thanh Search) */}
+          <div className="dashboard-hero-badges-row d-flex align-items-center flex-wrap gap-2 mb-3">
+            <div className="dashboard-hero-badge">
+              <Sparkles size={12} strokeWidth={2.4} />
+              <span>⚡ {totalVocabCount} từ • {validSetsCount} bộ</span>
+            </div>
+            <div className="dashboard-hero-badge">
+              <Flame size={12} strokeWidth={2.4} color="#FBBF24" />
+              <span>🔥 {currentStreak} ngày</span>
+            </div>
+          </div>
+
           {/* Thanh Tìm Kiếm Spotlight */}
           <div ref={dropdownRef} className="position-relative">
             <div className="dashboard-search-box d-flex align-items-center px-3 py-1">
@@ -492,7 +478,7 @@ function Dashboard() {
                 ref={searchInputRef}
                 type="text"
                 className="form-control border-0 py-2 fw-semibold dashboard-search-input shadow-none bg-transparent"
-                placeholder="Tra cứu từ vựng, Hán tự, Hán Việt, ý nghĩa... (Ctrl + K)"
+                placeholder="Tìm từ vựng, Kanji, ý nghĩa..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => {
@@ -596,7 +582,7 @@ function Dashboard() {
             </div>
             <div className="bento-stat-content overflow-hidden flex-grow-1 position-relative" style={{ zIndex: 1 }}>
               <div className="bento-value">{currentStreak} ngày</div>
-              <div className="bento-sub">{todayTests} bài hôm nay</div>
+              <div className="bento-sub">{todayTests} bài hoàn thành</div>
               <div className="streak-dots-row" title="7 ngày gần nhất">
                 {last7DaysActive.map((active, i) => (
                   <span key={i} className={`streak-dot ${active ? 'active' : ''}`} />
@@ -618,7 +604,7 @@ function Dashboard() {
             </div>
             <div className="bento-stat-content overflow-hidden flex-grow-1 position-relative" style={{ zIndex: 1 }}>
               <div className="bento-value">Flashcards</div>
-              <div className="bento-sub">Lật thẻ 3D</div>
+              <div className="bento-sub">Lật thẻ</div>
             </div>
             <ArrowUpRight size={16} strokeWidth={2.4} className="bento-arrow position-relative" style={{ zIndex: 1 }} />
           </Link>
@@ -654,7 +640,7 @@ function Dashboard() {
             </div>
             <div className="bento-stat-content overflow-hidden flex-grow-1 position-relative" style={{ zIndex: 1 }}>
               <div className="bento-value">Kiểm tra</div>
-              <div className="bento-sub">Luyện phản xạ</div>
+              <div className="bento-sub">Luyện thi</div>
             </div>
             <ArrowUpRight size={16} strokeWidth={2.4} className="bento-arrow position-relative" style={{ zIndex: 1 }} />
           </Link>

@@ -13,6 +13,13 @@
   --text-primary: #1a1630;
   --text-secondary: #656080;
   --text-muted: #8b86a3;
+
+  /* Soft Amethyst to Muted Berry-Rose Dashboard Tokens (Light) */
+  --dashboard-hero-bg: radial-gradient(at 88% 15%, rgba(232, 107, 167, 0.28) 0px, transparent 55%), radial-gradient(at 15% 85%, rgba(124, 58, 237, 0.22) 0px, transparent 55%), linear-gradient(135deg, #381B54 0%, #52236E 48%, #7E2964 100%);
+  --dashboard-hero-border: rgba(255, 255, 255, 0.16);
+  --dashboard-hero-shadow: 0 10px 28px -8px rgba(56, 27, 84, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  --dashboard-search-bg: rgba(255, 255, 255, 0.96);
+  --dashboard-search-border: rgba(255, 255, 255, 0.4);
 }
 
 [data-theme="dark"] {
@@ -30,6 +37,39 @@
   --text-primary: #eceaf6;
   --text-secondary: #9896b0;
   --text-muted: #6e6b87;
+
+  /* Obsidian Aurora Dashboard Tokens (Dark) */
+  --dashboard-hero-bg: radial-gradient(at 8% 15%, rgba(139, 92, 246, 0.20) 0px, transparent 50%), radial-gradient(at 92% 20%, rgba(219, 39, 119, 0.18) 0px, transparent 55%), linear-gradient(160deg, #1B152B 0%, #141020 100%);
+  --dashboard-hero-border: rgba(232, 121, 249, 0.14);
+  --dashboard-hero-shadow: 0 14px 34px -10px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --dashboard-search-bg: rgba(255, 255, 255, 0.06);
+  --dashboard-search-border: rgba(255, 255, 255, 0.11);
+}
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+  margin: 0;
+  padding: 0;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
@@ -58,8 +98,3 @@ body {
   color: #eceaf6;
 }
 
-#root {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}

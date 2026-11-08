@@ -23,7 +23,7 @@ export default defineConfig({
         navigateFallback: '/index.html'
       },
       manifest: {
-        name: 'Scofield Offline',
+        name: 'Scofield',
         short_name: 'Scofield',
         description: 'Ứng dụng học từ vựng & luyện thi Offline 100%',
         theme_color: '#863bff',
