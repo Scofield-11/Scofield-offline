@@ -1,4 +1,7 @@
 :root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
   --bg-canvas: #f3f1fa;
   --bg-body: #f3f1fa;
   --bg-surface: #ffffff;

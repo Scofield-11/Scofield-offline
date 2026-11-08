@@ -1,4 +1,7 @@
 :root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
   --font-sans: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-jp-serif: 'Shippori Mincho', 'Noto Sans JP', serif;
 
@@ -658,6 +661,25 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
    MOBILE GLASSMORPHISM FLOATING DOCK & MOBILE LAYOUT OVERRIDES (< 992px)
    ========================================================================== */
 @media (max-width: 991.98px) {
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--safe-top);
+    background: var(--bg-body, #f8fafc);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 9000;
+    pointer-events: none;
+  }
+
+  [data-theme="dark"] body::before {
+    background: var(--bg-body, #0f0d18);
+  }
+
+  /* Đẩy toàn bộ nội dung chính xuống dưới khu vực Giờ & Pin của iPhone */
   .main-content {
     width: 100% !important;
     max-width: 100vw !important;
@@ -665,8 +687,21 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
     padding-right: 12px !important;
     margin-left: 0 !important;
     margin-right: 0 !important;
-    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-top: calc(var(--safe-top) + 10px) !important;
+    padding-bottom: calc(64px + var(--safe-bottom)) !important;
     overflow-x: hidden !important;
+  }
+
+  /* Đảm bảo chế độ Toàn màn hình (Flashcard, Learn, Test, Match) không đè lên Giờ & Pin */
+  .mobile-fullscreen {
+    padding-top: calc(var(--safe-top) + 12px) !important;
+    padding-bottom: calc(20px + var(--safe-bottom)) !important;
+  }
+
+  /* Đảm bảo thanh Sticky Top trong lúc học nằm ngay dưới vùng Giờ & Pin */
+  .mobile-sticky-top {
+    top: var(--safe-top) !important;
+    padding-top: 8px !important;
   }
 
   .test-lobby-container {
@@ -695,26 +730,35 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
   }
 
   .app-navigation {
-    position: fixed;
-    top: auto;
-    bottom: 0;
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
     max-width: 100vw !important;
-    height: calc(64px + env(safe-area-inset-bottom, 0px));
-    padding: 4px 6px calc(4px + env(safe-area-inset-bottom, 0px)) 6px;
-    border-radius: 0;
-    border: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding-top: 4px !important;
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    /* Tối ưu đệm đáy vừa khít thanh gạch ngang iPhone, không làm dày thanh navbar */
+    padding-bottom: clamp(4px, calc(var(--safe-bottom) * 0.55), 16px) !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-right: none !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
     background: #261239 !important;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     box-shadow: 0 -8px 24px rgba(33, 16, 51, 0.45) !important;
-    z-index: 1050;
+    z-index: 1050 !important;
     transform: none;
     display: flex;
-    align-items: center;
     overflow: visible;
     box-sizing: border-box !important;
   }
@@ -729,26 +773,31 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
   .app-navigation .nav-menu {
     display: grid !important;
     grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    align-items: center !important;
     width: 100% !important;
-    height: 100%;
-    gap: 2px !important;
-    padding: 4px 6px !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    max-height: 46px !important;
+    padding: 0 !important;
     margin: 0 !important;
-    align-items: center;
-    overflow: visible;
+    gap: 2px !important;
+    flex: none !important;
+    overflow: hidden !important;
   }
 
   .app-navigation .nav-link-custom {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    padding: 6px 2px !important;
-    height: 54px;
-    overflow: hidden !important;
-    border-radius: 12px;
-    position: relative;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    padding: 2px 1px !important;
+    margin: 0 !important;
+    gap: 2px !important;
+    border-radius: 10px !important;
+    position: relative !important;
     text-decoration: none;
     min-width: 0 !important;
     width: 100% !important;
@@ -759,17 +808,19 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
     background: transparent;
   }
 
+  /* Thu gọn hộp icon trên mobile để thanh điều hướng thanh thoát */
   .app-navigation .nav-icon-badge {
-    width: 28px !important;
-    height: 28px !important;
-    min-width: 28px !important;
-    min-height: 28px !important;
-    border-radius: 8px !important;
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    min-height: 26px !important;
+    border-radius: 7px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     padding: 0 !important;
     box-shadow: none !important;
+    margin: 0 !important;
     transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
@@ -780,16 +831,18 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
 
   .app-navigation .mobile-label {
     display: block !important;
-    font-size: 0.65rem !important;
-    font-weight: 700;
-    line-height: 1.1;
-    color: #E2D9E2;
+    font-size: 0.62rem !important;
+    line-height: 1.05 !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+    padding: 0 !important;
     white-space: nowrap !important;
     text-align: center;
     letter-spacing: -0.01em;
-    max-width: 100% !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
+    max-width: 100% !important;
+    color: #E2D9E2;
     transition: color 0.18s ease;
   }
 
@@ -802,21 +855,34 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
     color: #FFFFFF !important;
   }
 
-  .nav-active-pill {
-    display: none !important;
+  .app-navigation .nav-active-pill {
+    position: absolute !important;
+    inset: 1px 3px !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
   }
 
-  .nav-active-dot {
-    position: absolute;
-    bottom: 2px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
+  .app-navigation .nav-active-dot {
+    position: absolute !important;
+    bottom: 1px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 12px !important;
+    height: 2.5px !important;
+    border-radius: 99px !important;
     background-color: #F472B6 !important;
     box-shadow: none !important;
     display: block !important;
+    z-index: 3 !important;
+  }
+
+  /* Đồng bộ thanh điều khiển phụ ở đáy trong chế độ Flashcard (.mobile-bottom-bar) */
+  .mobile-bottom-bar {
+    padding-top: 8px !important;
+    padding-bottom: max(10px, calc(var(--safe-bottom) * 0.65)) !important;
   }
 }
 
