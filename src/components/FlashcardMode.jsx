@@ -762,41 +762,59 @@ function FlashcardMode() {
       )}
 
       <div className="mx-auto has-mobile-bottom-bar" style={{ maxWidth: '500px' }}>
-        <div className="mobile-sticky-top">
-          <div className="d-flex justify-content-between align-items-center mb-2">
+        <div
+          className="card border-0 rounded-4 p-3 mb-4 shadow-sm"
+          style={{
+            position: 'relative',
+            top: 'auto',
+            zIndex: 20,
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--surface-border)',
+          }}
+        >
+          <div className="d-flex justify-content-between align-items-center mb-2.5">
             <button
-              className="btn btn-light text-dark btn-mobile-chip d-flex align-items-center gap-1"
+              className="btn btn-mobile-chip chip-slate d-flex align-items-center gap-1.5"
               onClick={() => {
+                if (document.fullscreenElement && document.exitFullscreen) {
+                  document.exitFullscreen().catch(() => {});
+                } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+                  document.webkitExitFullscreen();
+                }
                 setIsStarted(false);
                 setIsFullscreen(false);
               }}
             >
               <ArrowLeft size={14} /> <span>Thoát</span>
             </button>
-            <span className="fw-bold" style={{ color: 'var(--text-main)' }}>
+            <span className="fw-bold" style={{ color: 'var(--text-main)', fontSize: '0.95rem' }}>
               Thẻ {currentIndex + 1} / {vocabsToStudy.length}
             </span>
             <button
-              className="btn btn-light text-dark btn-mobile-chip"
+              className="btn btn-icon-soft chip-primary"
               onClick={toggleFullscreen}
               title="Toàn màn hình"
             >
               {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
             </button>
           </div>
-          <div className="progress" style={{ height: '6px', borderRadius: '10px' }}>
+          <div
+            className="progress overflow-hidden"
+            style={{ height: '6px', borderRadius: '10px', backgroundColor: 'var(--bg-elevated)' }}
+          >
             <div
               className="progress-bar bg-primary"
               role="progressbar"
               style={{
                 width: `${((currentIndex + 1) / vocabsToStudy.length) * 100}%`,
+                transition: 'width 0.3s ease',
               }}
             ></div>
           </div>
         </div>
 
         {/* CARD STACK DEPTH & POP-LAYOUT SWIPE */}
-        <div className="flashcard-stage">
+        <div className="flashcard-stage" style={{ marginTop: '20px', position: 'relative', zIndex: 5 }}>
           {currentIndex + 2 < vocabsToStudy.length && <div className="flashcard-stack-layer flashcard-stack-2" />}
           {currentIndex + 1 < vocabsToStudy.length && <div className="flashcard-stack-layer flashcard-stack-1" />}
 

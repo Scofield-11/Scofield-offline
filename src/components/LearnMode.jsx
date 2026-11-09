@@ -85,6 +85,8 @@ function LearnMode() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef(null);
   const timerRef = useRef(null);
+  const typingInputRef = useRef(null);
+  const inputLockRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -415,6 +417,12 @@ function LearnMode() {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
+    // Khóa input tạm thời và ép đóng phiên gõ IME (tránh nhân đôi ちち -> ちちちち trên mobile)
+    inputLockRef.current = true;
+    if (typingInputRef.current) {
+      typingInputRef.current.value = '';
+      typingInputRef.current.blur();
+    }
     setSelectedCorrectId(null);
     setFeedback(null);
     setInputText('');
@@ -546,11 +554,20 @@ function LearnMode() {
     e.preventDefault();
     const currentWord = currentRoundWords[currentWordIndex];
     const correctAnsStr = getAnswerText(currentWord);
+    const submittedValue = inputText;
 
-    if (checkFuzzyMatch(inputText, correctAnsStr)) {
+    // Ngắt ngay composition của bộ gõ IME trước khi chuyển câu
+    inputLockRef.current = true;
+    if (typingInputRef.current) {
+      typingInputRef.current.blur();
+      typingInputRef.current.value = '';
+    }
+    setInputText('');
+
+    if (checkFuzzyMatch(submittedValue, correctAnsStr)) {
       handleCorrectAnswer(currentWord);
     } else {
-      handleWrongAnswer(currentWord, correctAnsStr, inputText.trim() || '(Để trống)');
+      handleWrongAnswer(currentWord, correctAnsStr, submittedValue.trim() || '(Để trống)');
     }
   };
 
@@ -561,13 +578,38 @@ function LearnMode() {
       handleNextAfterFeedback();
       return;
     }
+    inputLockRef.current = true;
+    if (typingInputRef.current) {
+      typingInputRef.current.blur();
+      typingInputRef.current.value = '';
+    }
+    setInputText('');
     const currentWord = currentRoundWords[currentWordIndex];
     handleWrongAnswer(currentWord, getAnswerText(currentWord), 'Chưa nhớ từ này');
   };
 
+  // Mở khóa input, làm sạch giá trị thừa của IME và tự động focus khi sang từ mới ở chế độ gõ
+  useEffect(() => {
+    if (!isStarted || isFinished || feedback || mode !== 'typing') {
+      inputLockRef.current = false;
+      return;
+    }
+    setInputText('');
+    const focusTimer = setTimeout(() => {
+      inputLockRef.current = false;
+      if (typingInputRef.current) {
+        typingInputRef.current.value = '';
+        typingInputRef.current.focus({ preventScroll: true });
+      }
+    }, 50);
+    return () => clearTimeout(focusTimer);
+  }, [isStarted, isFinished, feedback, mode, currentWordIndex, currentRoundIndex]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (isStarted && !isFinished && !feedback && mode === 'choice') {
+      if (!isStarted || isFinished || feedback) return;
+
+      if (mode === 'choice') {
         const key = parseInt(e.key, 10);
         if (key >= 1 && key <= options.length) {
           if (selectedCorrectId !== null) {
@@ -577,6 +619,18 @@ function LearnMode() {
           } else {
             handleChoiceSubmit(options[key - 1]);
           }
+        }
+      } else if (mode === 'typing') {
+        // Tự động focus vào ô nhập ngay khi người dùng gõ phím mà không cần click chuột trước
+        if (
+          typingInputRef.current &&
+          document.activeElement !== typingInputRef.current &&
+          !e.ctrlKey &&
+          !e.metaKey &&
+          !e.altKey &&
+          e.key.length === 1
+        ) {
+          typingInputRef.current.focus({ preventScroll: true });
         }
       }
     };
@@ -1118,12 +1172,23 @@ function LearnMode() {
                       <form onSubmit={handleTypeSubmit} className="mt-4">
                         <div className="position-relative mb-4">
                           <input
+                            ref={typingInputRef}
+                            key={`typing-input-${currentRoundIndex}-${currentWordIndex}`}
                             type="text"
                             className="form-control form-control-lg text-center py-3.5 fw-bold shadow-sm"
                             placeholder={`Nhập ${getBackLabel().toLowerCase()} vào đây...`}
                             value={inputText}
-                            onChange={(e) => setInputText(e.target.value)}
+                            onChange={(e) => {
+                              // Chặn hoàn toàn onChange rò rỉ từ thẻ cũ đang chạy animation thoát hoặc lúc đang khóa IME
+                              if (inputLockRef.current) return;
+                              if (typingInputRef.current && e.target !== typingInputRef.current) return;
+                              setInputText(e.target.value);
+                            }}
                             autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="off"
+                            spellCheck={false}
+                            enterKeyHint="done"
                             autoFocus
                             style={{
                               fontSize: '1.3rem',
