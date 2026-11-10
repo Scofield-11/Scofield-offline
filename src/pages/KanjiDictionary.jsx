@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import KanjiStrokeOrder from '../components/KanjiStrokeOrder';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -18,6 +19,7 @@ import {
   Search,
   Save,
   Check,
+  Maximize2,
 } from 'lucide-react';
 import api, { exportSingleItemToJson } from '../api/axiosConfig';
 import { VocabContext } from '../context/VocabContext';
@@ -66,8 +68,9 @@ function KanjiDictionary() {
   const [quickExReading, setQuickExReading] = useState('');
   const [quickExMeaning, setQuickExMeaning] = useState('');
 
-  // Modal chỉnh sửa Kanji & Modal xóa/tạo thư mục & Sổ tay
+  // Modal chỉnh sửa Kanji, Modal phóng to toàn màn hình & Modal xóa/tạo thư mục & Sổ tay
   const [editingKanji, setEditingKanji] = useState(null);
+  const [selectedKanjiDetail, setSelectedKanjiDetail] = useState(null);
   const [noteModalVocab, setNoteModalVocab] = useState(null);
   const [dialogState, setDialogState] = useState(null);
   const [folderInputName, setFolderInputName] = useState('');
@@ -535,6 +538,202 @@ function KanjiDictionary() {
         />
       )}
 
+      {/* MODAL PHÓNG TO CHI TIẾT KANJI TOÀN MÀN HÌNH */}
+      {ReactDOM.createPortal(
+        <AnimatePresence>
+          {selectedKanjiDetail && (() => {
+            const parentSet = kanjiSets.find((s) => s.id === selectedKanjiDetail.setId);
+            const liveItem =
+              parentSet?.kanjis?.find((k) => k.id === selectedKanjiDetail.item.id) ||
+              selectedKanjiDetail.item;
+            const modalExamples = Array.isArray(liveItem.examples) ? liveItem.examples : [];
+
+            return (
+              <motion.div
+                className="kanji-fullscreen-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                onClick={() => setSelectedKanjiDetail(null)}
+              >
+                <motion.div
+                  className="kanji-fullscreen-sheet"
+                  initial={{ y: 36, opacity: 0, scale: 0.97 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  exit={{ y: 36, opacity: 0, scale: 0.97 }}
+                  transition={MODAL_SPRING}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Header cố định trên cùng */}
+                  <div className="kanji-fullscreen-topbar">
+                    <div className="d-flex align-items-center gap-2 overflow-hidden">
+                      <span className="badge chip-primary rounded-pill px-3 py-1.5 text-truncate">
+                        {parentSet?.title || selectedKanjiDetail.setTitle || 'Chi tiết Kanji'}
+                      </span>
+                    </div>
+
+                    <div className="d-flex align-items-center gap-1.5">
+                      <button
+                        type="button"
+                        className="btn-icon-soft chip-slate"
+                        onClick={() =>
+                          setEditingKanji({ item: liveItem, setId: selectedKanjiDetail.setId })
+                        }
+                        title="Chỉnh sửa chữ Kanji"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-icon-soft chip-danger"
+                        onClick={() => {
+                          const targetInfo = {
+                            type: 'deleteKanji',
+                            kanjiId: liveItem.id,
+                            setId: selectedKanjiDetail.setId,
+                            kanjiChar: liveItem.kanji || liveItem.word,
+                          };
+                          setSelectedKanjiDetail(null);
+                          setDialogState(targetInfo);
+                        }}
+                        title="Xóa chữ Kanji"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-icon-soft chip-primary ms-1"
+                        onClick={() => setSelectedKanjiDetail(null)}
+                        title="Đóng toàn màn hình"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Nội dung chi tiết cuộn mượt */}
+                  <div className="kanji-fullscreen-body">
+                    <div className="kanji-fullscreen-hero">
+                      {/* Khung vẽ nét chữ Hán cỡ lớn 188px */}
+                      <KanjiStrokeOrder
+                        text={liveItem.kanji || liveItem.word}
+                        size={188}
+                        autoStart={true}
+                        compact={false}
+                      />
+
+                      <div className="kanji-fullscreen-meaning-block">
+                        <div className="d-flex align-items-center justify-content-center flex-wrap gap-2 mb-3">
+                          {liveItem.hanviet && (
+                            <span className="vocab-hanviet-pill" style={{ fontSize: '0.88rem', padding: '4px 12px' }}>
+                              {liveItem.hanviet}
+                            </span>
+                          )}
+                          <span className="fw-bold fs-4" style={{ color: 'var(--text-main)' }}>
+                            {liveItem.meaning}
+                          </span>
+                        </div>
+
+                        <div className="kanji-readings-box mx-auto" style={{ maxWidth: '460px' }}>
+                          <div className="kanji-reading-row">
+                            <span className="kanji-reading-pill kanji-reading-on">Âm Ôn</span>
+                            <span className="kanji-reading-val">{liveItem.onyomi || '—'}</span>
+                          </div>
+                          <div className="kanji-reading-divider" />
+                          <div className="kanji-reading-row">
+                            <span className="kanji-reading-pill kanji-reading-kun">Âm Kun</span>
+                            <span className="kanji-reading-val">{liveItem.kunyomi || '—'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Danh sách từ đi kèm trong chế độ phóng to */}
+                    <div className="kanji-examples-section mt-4 pt-3">
+                      <div className="kanji-examples-header mb-3">
+                        <span className="kanji-examples-title">
+                          DANH SÁCH TỪ KANJI ĐI KÈM ({modalExamples.length})
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn-mobile-chip chip-primary py-1 px-3"
+                          onClick={() =>
+                            setEditingKanji({ item: liveItem, setId: selectedKanjiDetail.setId })
+                          }
+                        >
+                          <Plus size={14} /> <span>Thêm / Sửa từ đi kèm</span>
+                        </button>
+                      </div>
+
+                      {modalExamples.length === 0 ? (
+                        <div
+                          className="small fst-italic py-4 text-center rounded-4"
+                          style={{
+                            backgroundColor: 'var(--bg-elevated)',
+                            color: 'var(--text-secondary)',
+                          }}
+                        >
+                          Chưa có từ đi kèm cho chữ Hán này.
+                        </div>
+                      ) : (
+                        <div className="kanji-examples-list">
+                          {modalExamples.map((ex, exIdx) => {
+                            const exReading = ex.hiragana || ex.reading || '';
+                            return (
+                              <div key={exIdx} className="kanji-example-item">
+                                <div className="kanji-example-content">
+                                  <div className="kanji-example-top-line">
+                                    <span className="kanji-example-word">{ex.word}</span>
+                                    {ex.hanviet && (
+                                      <span className="vocab-hanviet-pill">{ex.hanviet}</span>
+                                    )}
+                                  </div>
+                                  {(exReading || ex.meaning) && (
+                                    <div className="kanji-example-bottom-line">
+                                      {exReading && (
+                                        <span className="vocab-kana-pill">{exReading}</span>
+                                      )}
+                                      {ex.meaning && (
+                                        <span className="kanji-example-meaning">{ex.meaning}</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="kanji-example-actions">
+                                  <button
+                                    type="button"
+                                    className="btn-icon-soft chip-primary kanji-ex-action-btn"
+                                    onClick={() =>
+                                      setNoteModalVocab({
+                                        word: ex.word,
+                                        hanviet: ex.hanviet || '',
+                                        hiragana: exReading,
+                                        meaning: ex.meaning || '',
+                                        language: 'ja',
+                                      })
+                                    }
+                                    title="Lưu vào Sổ tay (Note)"
+                                  >
+                                    <BookMarked size={15} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            );
+          })()}
+        </AnimatePresence>,
+        document.body
+      )}
+
       {/* FORM TẠO HỌC PHẦN KANJI MỚI */}
       <div className="card border-0 rounded-4 mb-3 overflow-hidden shadow-sm">
         <div
@@ -774,7 +973,7 @@ function KanjiDictionary() {
             const kanjiList = kSet.kanjis || [];
 
             return (
-              <div key={kSet.id} className="card smooth-list-item overflow-hidden">
+              <div key={kSet.id} className="card smooth-list-item kanji-set-card-static overflow-hidden">
                 {/* HEADER HỌC PHẦN KANJI */}
                 <div
                   className="p-3 d-flex justify-content-between align-items-center gap-2"
@@ -876,52 +1075,56 @@ function KanjiDictionary() {
                               return (
                                 <div
                                   key={item.id}
-                                  className="card border-0 shadow-sm rounded-4 overflow-hidden"
+                                  className="card border-0 shadow-sm rounded-4 overflow-hidden kanji-interactive-card"
                                   style={{
                                     backgroundColor: 'var(--bg-surface)',
                                     border: '1px solid var(--surface-border)',
+                                    cursor: 'pointer',
                                   }}
+                                  onClick={() =>
+                                    setSelectedKanjiDetail({
+                                      item,
+                                      setId: kSet.id,
+                                      setTitle: kSet.title,
+                                    })
+                                  }
                                 >
                                   <div className="row g-0 align-items-stretch">
                                     {/* CỘT TRÁI: CHỮ KANJI + HÁN VIỆT + ÂM ÔN / ÂM KUN */}
-                                    <div
-                                      className="col-12 col-lg-4 p-3 p-md-4 d-flex flex-column justify-content-between"
-                                      style={{
-                                        borderRight:
-                                          window.innerWidth >= 992
-                                            ? '1px solid var(--surface-border)'
-                                            : 'none',
-                                        borderBottom:
-                                          window.innerWidth < 992
-                                            ? '1px solid var(--surface-border)'
-                                            : 'none',
-                                      }}
-                                    >
-                                      {/* Thanh trên: Nhãn bộ + 3 nút Loa / Sửa / Xóa */}
-                                      <div className="d-flex justify-content-between align-items-center mb-3">
+                                    <div className="col-12 col-lg-4 p-3 p-md-4 d-flex flex-column justify-content-between kanji-card-left-pane">
+                                      {/* Thanh trên: Nhãn bộ + Nút Phóng to / Sửa / Xóa */}
+                                      <div className="d-flex justify-content-between align-items-center mb-2 mb-lg-3">
                                         <span
                                           className="badge chip-primary rounded-pill px-3 py-1 text-truncate"
-                                          style={{ maxWidth: '150px', fontSize: '0.75rem' }}
+                                          style={{ maxWidth: '140px', fontSize: '0.74rem' }}
                                         >
                                           {kSet.title}
                                         </span>
 
-                                        <div className="d-flex align-items-center gap-1">
+                                        <div
+                                          className="d-flex align-items-center"
+                                          style={{ gap: '6px' }}
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
                                           <button
                                             type="button"
-                                            className="btn-icon-soft chip-slate"
-                                            style={{ width: '34px', height: '34px' }}
+                                            className="btn-icon-soft chip-primary"
+                                            style={{ width: '32px', height: '32px' }}
                                             onClick={() =>
-                                              speakText(item.kanji || item.word, 'ja-JP')
+                                              setSelectedKanjiDetail({
+                                                item,
+                                                setId: kSet.id,
+                                                setTitle: kSet.title,
+                                              })
                                             }
-                                            title="Nghe âm chữ Hán"
+                                            title="Phóng to xem nét viết toàn màn hình"
                                           >
-                                            <Volume2 size={15} />
+                                            <Maximize2 size={14} />
                                           </button>
                                           <button
                                             type="button"
                                             className="btn-icon-soft chip-slate"
-                                            style={{ width: '34px', height: '34px' }}
+                                            style={{ width: '32px', height: '32px' }}
                                             onClick={() =>
                                               setEditingKanji({ item, setId: kSet.id })
                                             }
@@ -932,7 +1135,7 @@ function KanjiDictionary() {
                                           <button
                                             type="button"
                                             className="btn-icon-soft chip-danger"
-                                            style={{ width: '34px', height: '34px' }}
+                                            style={{ width: '32px', height: '32px' }}
                                             onClick={() =>
                                               setDialogState({
                                                 type: 'deleteKanji',
@@ -948,104 +1151,65 @@ function KanjiDictionary() {
                                         </div>
                                       </div>
 
-                                      {/* Khung chữ Hán chính giữa */}
-                                      <div className="d-flex flex-column align-items-center my-2">
-                                        <div
-                                          className="d-flex align-items-center justify-content-center rounded-4 mb-3"
-                                          style={{
-                                            width: '108px',
-                                            height: '108px',
-                                            backgroundColor: 'var(--bg-elevated)',
-                                            border: '1.5px solid var(--surface-border)',
-                                            boxShadow: '0 8px 24px -6px rgba(109, 40, 217, 0.14)',
-                                            color: 'var(--brand-primary)',
-                                            fontFamily: 'var(--font-jp-serif)',
-                                            fontSize: '3.4rem',
-                                            fontWeight: 700,
-                                            lineHeight: 1,
-                                            cursor: 'pointer',
-                                          }}
-                                          onClick={() =>
-                                            speakText(item.kanji || item.word, 'ja-JP')
-                                          }
-                                          title="Bấm để nghe phát âm"
-                                        >
-                                          {item.kanji || item.word}
-                                        </div>
+                                      {/* HIỂN THỊ HOẠT ẢNH NÉT VIẾT TRỰC TIẾP TRÊN CẢ MOBILE & PC */}
+                                      <div className="d-flex flex-column align-items-center my-auto w-100">
+                                        <KanjiStrokeOrder
+                                          text={item.kanji || item.word}
+                                          size={124}
+                                          autoStart={true}
+                                          compact={true}
+                                        />
 
-                                        <div className="d-flex align-items-center justify-content-center flex-wrap gap-2 text-center">
+                                        <div className="kanji-card-meaning-row">
                                           {item.hanviet && (
                                             <span className="vocab-hanviet-pill">
                                               {item.hanviet}
                                             </span>
                                           )}
-                                          <span className="fw-bold" style={{ color: 'var(--text-main)' }}>
+                                          <span
+                                            className="kanji-main-meaning"
+                                            style={{ color: 'var(--text-main)' }}
+                                          >
                                             {item.meaning}
                                           </span>
                                         </div>
-                                      </div>
 
-                                      {/* Bảng Âm Ôn & Âm Kun */}
-                                      <div
-                                        className="rounded-3 p-2 px-3 mt-3"
-                                        style={{
-                                          backgroundColor: 'var(--bg-elevated)',
-                                          border: '1px solid var(--surface-border)',
-                                        }}
-                                      >
-                                        <div
-                                          className="d-flex align-items-center gap-2 py-1"
-                                          style={{
-                                            borderBottom: '1px solid var(--surface-border)',
-                                          }}
-                                        >
-                                          <span
-                                            className="badge rounded-2 flex-shrink-0"
-                                            style={{
-                                              backgroundColor: '#fee2e2',
-                                              color: '#dc2626',
-                                              fontSize: '0.7rem',
-                                              fontWeight: 700,
-                                            }}
-                                          >
-                                            Âm Ôn
-                                          </span>
-                                          <span className="fw-bold small text-break" style={{ color: 'var(--text-main)' }}>
-                                            {item.onyomi || '—'}
-                                          </span>
-                                        </div>
-                                        <div className="d-flex align-items-center gap-2 pt-2 pb-1">
-                                          <span
-                                            className="badge rounded-2 flex-shrink-0"
-                                            style={{
-                                              backgroundColor: '#d1fae5',
-                                              color: '#059669',
-                                              fontSize: '0.7rem',
-                                              fontWeight: 700,
-                                            }}
-                                          >
-                                            Âm Kun
-                                          </span>
-                                          <span className="fw-bold small text-break" style={{ color: 'var(--text-main)' }}>
-                                            {item.kunyomi || '—'}
-                                          </span>
+                                        <div className="kanji-readings-box w-100">
+                                          <div className="kanji-reading-row">
+                                            <span className="kanji-reading-pill kanji-reading-on">
+                                              Âm Ôn
+                                            </span>
+                                            <span className="kanji-reading-val">
+                                              {item.onyomi || '—'}
+                                            </span>
+                                          </div>
+                                          <div className="kanji-reading-divider" />
+                                          <div className="kanji-reading-row">
+                                            <span className="kanji-reading-pill kanji-reading-kun">
+                                              Âm Kun
+                                            </span>
+                                            <span className="kanji-reading-val">
+                                              {item.kunyomi || '—'}
+                                            </span>
+                                          </div>
                                         </div>
                                       </div>
                                     </div>
 
-                                    {/* CỘT PHẢI: DANH SÁCH TỪ KANJI ĐI KÈM (4 TRƯỜNG) */}
+                                    {/* CỘT PHẢI: DANH SÁCH TỪ KANJI ĐI KÈM (2 tầng cố định, đồng nhất trên mọi màn hình) */}
                                     <div className="col-12 col-lg-8 p-3 p-md-4 d-flex flex-column">
-                                      <div className="d-flex justify-content-between align-items-center gap-2 mb-3">
-                                        <span
-                                          className="fw-bold text-secondary"
-                                          style={{ fontSize: '0.8rem', letterSpacing: '0.4px' }}
-                                        >
-                                          DANH SÁCH TỪ KANJI ĐI KÈM ({examples.length})
+                                      <div className="kanji-examples-header">
+                                        <span className="kanji-examples-title">
+                                          TỪ KANJI ĐI KÈM ({examples.length})
                                         </span>
                                         <button
                                           type="button"
-                                          className="btn btn-mobile-chip chip-primary py-1 px-3"
-                                          onClick={() => openQuickAddExample(item)}
+                                          className="btn btn-mobile-chip chip-primary py-1 px-2.5 flex-shrink-0"
+                                          style={{ fontSize: '0.76rem' }}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            openQuickAddExample(item);
+                                          }}
                                         >
                                           <Plus size={14} /> <span>Thêm từ đi kèm</span>
                                         </button>
@@ -1059,6 +1223,7 @@ function KanjiDictionary() {
                                             backgroundColor: 'var(--bg-surface)',
                                             border: '1px solid var(--brand-primary)',
                                           }}
+                                          onClick={(e) => e.stopPropagation()}
                                         >
                                           <div className="row g-2 mb-2">
                                             <div className="col-6 col-md-3">
@@ -1149,61 +1314,51 @@ function KanjiDictionary() {
                                           Chưa có từ đi kèm. Hãy bấm "+ Thêm từ đi kèm" ở góc phải nhé!
                                         </div>
                                       ) : (
-                                        <div className="d-flex flex-column gap-2">
+                                        <div className="kanji-examples-list">
                                           {examples.map((ex, exIdx) => {
                                             const exReading = ex.hiragana || ex.reading || '';
                                             return (
                                               <div
                                                 key={exIdx}
-                                                className="d-flex align-items-center justify-content-between gap-2 p-2 px-3 rounded-3"
-                                                style={{
-                                                  backgroundColor: 'var(--bg-elevated)',
-                                                  border: '1px solid var(--surface-border)',
-                                                }}
+                                                className="kanji-example-item"
                                               >
-                                                <div
-                                                  className="d-flex align-items-center flex-wrap gap-2"
-                                                  style={{ minWidth: 0, flex: 1 }}
-                                                >
-                                                  <span
-                                                    className="fw-bold"
-                                                    style={{
-                                                      fontFamily: 'var(--font-jp-serif)',
-                                                      fontSize: '1.1rem',
-                                                      color: 'var(--text-main)',
-                                                    }}
-                                                  >
-                                                    {ex.word}
-                                                  </span>
-                                                  {ex.hanviet && (
-                                                    <span className="vocab-hanviet-pill">
-                                                      {ex.hanviet}
+                                                <div className="kanji-example-content">
+                                                  {/* Tầng 1 cố định: Từ vựng Kanji + Badge Hán Việt */}
+                                                  <div className="kanji-example-top-line">
+                                                    <span className="kanji-example-word">
+                                                      {ex.word}
                                                     </span>
+                                                    {ex.hanviet && (
+                                                      <span className="vocab-hanviet-pill">
+                                                        {ex.hanviet}
+                                                      </span>
+                                                    )}
+                                                  </div>
+
+                                                  {/* Tầng 2 cố định: Badge Phiên âm (Kana) + Ý nghĩa */}
+                                                  {(exReading || ex.meaning) && (
+                                                    <div className="kanji-example-bottom-line">
+                                                      {exReading && (
+                                                        <span className="vocab-kana-pill">
+                                                          {exReading}
+                                                        </span>
+                                                      )}
+                                                      {ex.meaning && (
+                                                        <span className="kanji-example-meaning">
+                                                          {ex.meaning}
+                                                        </span>
+                                                      )}
+                                                    </div>
                                                   )}
-                                                  {exReading && (
-                                                    <span className="vocab-kana-pill">
-                                                      {exReading}
-                                                    </span>
-                                                  )}
-                                                  <span className="text-secondary fw-semibold small">
-                                                    — {ex.meaning}
-                                                  </span>
                                                 </div>
 
-                                                <div className="d-flex align-items-center gap-1 flex-shrink-0">
+                                                <div
+                                                  className="kanji-example-actions"
+                                                  onClick={(e) => e.stopPropagation()}
+                                                >
                                                   <button
                                                     type="button"
-                                                    className="btn-icon-soft chip-slate"
-                                                    style={{ width: '32px', height: '32px' }}
-                                                    onClick={() => speakText(ex.word, 'ja-JP')}
-                                                    title="Nghe phát âm"
-                                                  >
-                                                    <Volume2 size={14} />
-                                                  </button>
-                                                  <button
-                                                    type="button"
-                                                    className="btn-icon-soft chip-primary"
-                                                    style={{ width: '32px', height: '32px' }}
+                                                    className="btn-icon-soft chip-primary kanji-ex-action-btn"
                                                     onClick={() =>
                                                       setNoteModalVocab({
                                                         word: ex.word,
