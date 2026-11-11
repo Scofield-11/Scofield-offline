@@ -567,16 +567,17 @@ function KanjiDictionary() {
                 >
                   {/* Header cố định trên cùng */}
                   <div className="kanji-fullscreen-topbar">
-                    <div className="d-flex align-items-center gap-2 overflow-hidden">
-                      <span className="badge chip-primary rounded-pill px-3 py-1.5 text-truncate">
+                    <div className="d-flex align-items-center gap-2 overflow-hidden" style={{ minWidth: 0, flex: 1 }}>
+                      <span className="badge chip-primary rounded-pill px-3 py-2 text-truncate">
                         {parentSet?.title || selectedKanjiDetail.setTitle || 'Chi tiết Kanji'}
                       </span>
                     </div>
 
-                    <div className="d-flex align-items-center gap-1.5">
+                    <div className="d-flex align-items-center flex-shrink-0" style={{ gap: '8px' }}>
                       <button
                         type="button"
                         className="btn-icon-soft chip-slate"
+                        style={{ width: '36px', height: '36px' }}
                         onClick={() =>
                           setEditingKanji({ item: liveItem, setId: selectedKanjiDetail.setId })
                         }
@@ -587,6 +588,7 @@ function KanjiDictionary() {
                       <button
                         type="button"
                         className="btn-icon-soft chip-danger"
+                        style={{ width: '36px', height: '36px' }}
                         onClick={() => {
                           const targetInfo = {
                             type: 'deleteKanji',
@@ -603,7 +605,8 @@ function KanjiDictionary() {
                       </button>
                       <button
                         type="button"
-                        className="btn-icon-soft chip-primary ms-1"
+                        className="btn-icon-soft chip-primary"
+                        style={{ width: '36px', height: '36px' }}
                         onClick={() => setSelectedKanjiDetail(null)}
                         title="Đóng toàn màn hình"
                       >

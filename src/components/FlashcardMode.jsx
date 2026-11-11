@@ -772,9 +772,12 @@ function FlashcardMode() {
             border: '1px solid var(--surface-border)',
           }}
         >
-          <div className="d-flex justify-content-between align-items-center mb-2.5">
+          <div
+            className="d-flex justify-content-between align-items-center mb-3"
+            style={{ marginBottom: '12px' }}
+          >
             <button
-              className="btn btn-mobile-chip chip-slate d-flex align-items-center gap-1.5"
+              className="btn btn-mobile-chip chip-slate d-flex align-items-center gap-2"
               onClick={() => {
                 if (document.fullscreenElement && document.exitFullscreen) {
                   document.exitFullscreen().catch(() => {});

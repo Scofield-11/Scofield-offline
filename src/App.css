@@ -4949,19 +4949,27 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
 .kanji-fullscreen-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 3050;
+  z-index: 2000;
   background: rgba(15, 23, 42, 0.62);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  padding: 0;
+  padding-top: max(calc(var(--safe-top, 0px) + 12px), 56px);
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0;
 }
 
 .kanji-fullscreen-sheet {
   width: 100vw;
-  height: 100dvh;
+  height: calc(100dvh - max(calc(var(--safe-top, 0px) + 12px), 56px));
+  max-height: calc(100dvh - max(calc(var(--safe-top, 0px) + 12px), 56px));
   background: var(--bg-surface, #ffffff);
+  border-radius: 24px 24px 0 0;
+  border-top: 1px solid var(--surface-border);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.28);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -4969,6 +4977,7 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
 
 @media (min-width: 768px) {
   .kanji-fullscreen-backdrop {
+    align-items: center;
     padding: 20px;
   }
 
@@ -4992,12 +5001,24 @@ a, button, .card, .flashcard-container, .nav-link-custom, .list-group-item {
   border-bottom: 1px solid var(--surface-border, #e2e8f0);
   background: var(--bg-surface, #ffffff);
   flex-shrink: 0;
+  position: relative;
+  z-index: 5;
 }
 
 .kanji-fullscreen-body {
-  padding: 20px 16px 32px;
+  padding: 20px 16px calc(32px + var(--safe-bottom, 0px));
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   flex: 1;
+}
+
+/* Đảm bảo Modal Sửa Kanji & Sổ tay luôn nổi lên trên màn hình phóng to Kanji */
+.modal {
+  z-index: 2150 !important;
+}
+
+.modal-backdrop {
+  z-index: 2140 !important;
 }
 
 @media (min-width: 768px) {
