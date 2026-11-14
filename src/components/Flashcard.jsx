@@ -5,7 +5,14 @@ import { Star, Volume2, BookOpen, Edit3 } from 'lucide-react';
 import api from '../api/axiosConfig';
 import { toast } from 'react-toastify';
 
-const FLIP_SPRING = { type: 'spring', stiffness: 210, damping: 24, mass: 0.65 };
+const FLIP_SPRING = {
+  type: 'spring',
+  stiffness: 135,
+  damping: 19,
+  mass: 0.85,
+  restDelta: 0.01,
+  restSpeed: 0.01,
+};
 
 function Flashcard({
   vocab,
@@ -29,9 +36,9 @@ function Flashcard({
   const isDraggingRef = useRef(false);
 
   const dragX = useMotionValue(0);
-  const rotateZ = useTransform(dragX, [-180, 180], [-7, 7]);
-  const nextBadgeOpacity = useTransform(dragX, [-75, -15], [1, 0]);
-  const prevBadgeOpacity = useTransform(dragX, [15, 75], [0, 1]);
+  const rotateZ = useTransform(dragX, [-220, 220], [-6, 6]);
+  const nextBadgeOpacity = useTransform(dragX, [-85, -18], [1, 0]);
+  const prevBadgeOpacity = useTransform(dragX, [18, 85], [0, canSwipePrev ? 1 : 0]);
 
   useEffect(() => {
     if (vocab) setIsStarred(vocab.is_starred || false);
@@ -244,17 +251,17 @@ function Flashcard({
     <motion.div
       className="flashcard-container"
       style={{
-        perspective: '1200px',
         x: dragX,
         rotate: rotateZ,
         touchAction: 'pan-y',
         userSelect: 'none',
         WebkitUserSelect: 'none',
       }}
+      transformTemplate={(_, generated) => (Math.abs(dragX.get()) < 0.5 ? 'none' : generated)}
       drag="x"
       dragDirectionLock
       dragMomentum={false}
-      dragElastic={0.92}
+      dragElastic={0.82}
       onDragStart={() => {
         isDraggingRef.current = true;
       }}
@@ -265,17 +272,23 @@ function Flashcard({
 
         const offsetX = info.offset.x;
         const velocityX = info.velocity.x;
-        const swipePower = offsetX + velocityX * 0.18;
+        const swipePower = offsetX + velocityX * 0.16;
 
-        if (offsetX < -42 || velocityX < -220 || swipePower < -65) {
+        if (offsetX < -48 || velocityX < -250 || swipePower < -72) {
           if (onSwipeNext) {
-            animate(dragX, -220, { duration: 0.14, ease: 'easeOut' });
+            animate(dragX, Math.min(offsetX - 36, -72), {
+              duration: 0.26,
+              ease: [0.22, 1, 0.36, 1],
+            });
             onSwipeNext();
             return;
           }
-        } else if ((offsetX > 42 || velocityX > 220 || swipePower > 65) && canSwipePrev) {
+        } else if ((offsetX > 48 || velocityX > 250 || swipePower > 72) && canSwipePrev) {
           if (onSwipePrev) {
-            animate(dragX, 220, { duration: 0.14, ease: 'easeOut' });
+            animate(dragX, Math.max(offsetX + 36, 72), {
+              duration: 0.26,
+              ease: [0.22, 1, 0.36, 1],
+            });
             onSwipePrev();
             return;
           }
@@ -283,9 +296,11 @@ function Flashcard({
 
         animate(dragX, 0, {
           type: 'spring',
-          stiffness: 420,
-          damping: 30,
-          mass: 0.6,
+          stiffness: 250,
+          damping: 25,
+          mass: 0.75,
+          restDelta: 0.5,
+          onComplete: () => dragX.set(0),
         });
       }}
       onClick={handleFlip}
@@ -297,67 +312,75 @@ function Flashcard({
         ← Quay lại
       </motion.div>
 
-      <motion.div
-        className="w-100 h-100 position-relative"
-        initial={false}
-        animate={{ rotateY: flipped ? 180 : 0 }}
-        transition={FLIP_SPRING}
-        style={{ transformStyle: 'preserve-3d' }}
-      >
-        {/* MẶT TRƯỚC */}
-        <div
-          className="position-absolute w-100 h-100 d-flex flex-column rounded-4 flashcard-front-surface"
-          style={{
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            transform: 'rotateY(0deg) translateZ(1px)',
-            overflow: 'hidden',
-            pointerEvents: flipped ? 'none' : 'auto',
+      <div className="w-100 h-100 position-relative" style={{ perspective: '1200px' }}>
+        <motion.div
+          className="w-100 h-100 position-relative"
+          initial={false}
+          animate={{ rotateY: flipped ? 180 : 0 }}
+          transition={FLIP_SPRING}
+          style={{ transformStyle: 'preserve-3d' }}
+          transformTemplate={({ rotateY }, generated) => {
+            const ry = parseFloat(rotateY) || 0;
+            if (Math.abs(ry) < 0.1) return 'none';
+            if (Math.abs(ry - 180) < 0.1) return 'rotateY(180deg)';
+            return generated;
           }}
         >
-          {renderStarButton()}
-
-          <div className="flex-grow-1 p-3 d-flex align-items-center justify-content-center text-center">
-            {renderField(frontField, true)}
-          </div>
-
+          {/* MẶT TRƯỚC */}
           <div
-            className="p-2 px-3 d-flex justify-content-between align-items-center border-top"
-            style={{ backgroundColor: 'var(--bg-elevated)', borderColor: 'var(--surface-border)' }}
+            className="position-absolute w-100 h-100 d-flex flex-column rounded-4 flashcard-front-surface"
+            style={{
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              overflow: 'hidden',
+              zIndex: flipped ? 1 : 2,
+              pointerEvents: flipped ? 'none' : 'auto',
+            }}
           >
-            <button className="btn btn-mobile-chip chip-slate" onClick={handleOpenNote}>
-              <BookOpen size={14} /> <span>Sổ tay</span>
-            </button>
-            <span className="text-muted" style={{ fontSize: '0.72rem' }}>Chạm để lật • Vuốt chuyển</span>
-            <button
-              className="btn btn-mobile-chip chip-primary"
-              onClick={(e) => playAudio(e, frontText, frontLang)}
-            >
-              <Volume2 size={14} /> <span>Nghe</span>
-            </button>
-          </div>
-        </div>
+            {renderStarButton()}
 
-        {/* MẶT SAU */}
-        <div
-          className="position-absolute w-100 h-100 d-flex flex-column rounded-4"
-          style={{
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            transform: 'rotateY(180deg) translateZ(1px)',
-            background: 'var(--brand-gradient)',
-            border: '1.5px solid var(--brand-primary)',
-            boxShadow: '0 12px 28px -6px rgba(109, 40, 217, 0.3)',
-            overflow: 'hidden',
-            pointerEvents: flipped ? 'auto' : 'none',
-          }}
-        >
-          <motion.div
-            className="flashcard-glare"
-            initial={false}
-            animate={{ x: flipped ? ['-100%', '100%'] : '-100%' }}
-            transition={{ duration: 0.65, ease: 'easeOut' }}
-          />
+            <div className="flex-grow-1 p-3 d-flex align-items-center justify-content-center text-center">
+              {renderField(frontField, true)}
+            </div>
+
+            <div
+              className="p-2 px-3 d-flex justify-content-between align-items-center border-top"
+              style={{ backgroundColor: 'var(--bg-elevated)', borderColor: 'var(--surface-border)' }}
+            >
+              <button className="btn btn-mobile-chip chip-slate" onClick={handleOpenNote}>
+                <BookOpen size={14} /> <span>Sổ tay</span>
+              </button>
+              <span className="text-muted" style={{ fontSize: '0.72rem' }}>Chạm để lật • Vuốt chuyển</span>
+              <button
+                className="btn btn-mobile-chip chip-primary"
+                onClick={(e) => playAudio(e, frontText, frontLang)}
+              >
+                <Volume2 size={14} /> <span>Nghe</span>
+              </button>
+            </div>
+          </div>
+
+          {/* MẶT SAU */}
+          <div
+            className="position-absolute w-100 h-100 d-flex flex-column rounded-4"
+            style={{
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
+              background: 'var(--brand-gradient)',
+              border: '1.5px solid var(--brand-primary)',
+              boxShadow: '0 12px 28px -6px rgba(109, 40, 217, 0.3)',
+              overflow: 'hidden',
+              zIndex: flipped ? 2 : 1,
+              pointerEvents: flipped ? 'auto' : 'none',
+            }}
+          >
+            <motion.div
+              className="flashcard-glare"
+              initial={false}
+              animate={{ x: flipped ? ['-100%', '100%'] : '-100%' }}
+              transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+            />
           {renderStarButton()}
 
           <button
@@ -391,8 +414,9 @@ function Flashcard({
               <Volume2 size={14} /> <span>Nghe</span>
             </button>
           </div>
-        </div>
-      </motion.div>
+          </div>
+        </motion.div>
+      </div>
     </motion.div>
   );
 }
