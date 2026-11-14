@@ -831,7 +831,7 @@ function FlashcardMode() {
               exit="exit"
               transition={{ type: 'spring', stiffness: 380, damping: 30, mass: 0.6 }}
               className="w-100 h-100"
-              style={{ willChange: 'transform, opacity' }}
+              style={{ position: 'relative', zIndex: 10 }}
             >
               <Flashcard
                 vocab={vocabsToStudy[currentIndex]}

@@ -227,6 +227,8 @@ function Flashcard({
       className="btn-icon-soft position-absolute top-0 start-0 m-3"
       style={{
         zIndex: 20,
+        backfaceVisibility: 'hidden',
+        WebkitBackfaceVisibility: 'hidden',
         backgroundColor: isStarred ? 'rgba(245, 158, 11, 0.18)' : 'var(--bg-elevated)',
         borderColor: isStarred ? 'rgba(245, 158, 11, 0.45)' : 'var(--surface-border)',
         color: isStarred ? '#f59e0b' : 'var(--text-secondary)',
@@ -248,7 +250,6 @@ function Flashcard({
         touchAction: 'pan-y',
         userSelect: 'none',
         WebkitUserSelect: 'none',
-        willChange: 'transform',
       }}
       drag="x"
       dragDirectionLock
@@ -308,7 +309,10 @@ function Flashcard({
           className="position-absolute w-100 h-100 d-flex flex-column rounded-4 flashcard-front-surface"
           style={{
             backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            transform: 'rotateY(0deg) translateZ(1px)',
             overflow: 'hidden',
+            pointerEvents: flipped ? 'none' : 'auto',
           }}
         >
           {renderStarButton()}
@@ -339,11 +343,13 @@ function Flashcard({
           className="position-absolute w-100 h-100 d-flex flex-column rounded-4"
           style={{
             backfaceVisibility: 'hidden',
-            transform: 'rotateY(180deg)',
+            WebkitBackfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg) translateZ(1px)',
             background: 'var(--brand-gradient)',
             border: '1.5px solid var(--brand-primary)',
             boxShadow: '0 12px 28px -6px rgba(109, 40, 217, 0.3)',
             overflow: 'hidden',
+            pointerEvents: flipped ? 'auto' : 'none',
           }}
         >
           <motion.div
