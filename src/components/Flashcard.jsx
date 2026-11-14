@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { playSound, speakText } from '../utils/audio';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { Star, Volume2, BookOpen, Edit3 } from 'lucide-react';
 import api from '../api/axiosConfig';
 import { toast } from 'react-toastify';
 
-const FLIP_SPRING = { type: 'spring', stiffness: 180, damping: 22, mass: 0.7 };
+const FLIP_SPRING = { type: 'spring', stiffness: 210, damping: 24, mass: 0.65 };
 
 function Flashcard({
   vocab,
@@ -18,6 +18,7 @@ function Flashcard({
   onFlip,
   onSwipeNext,
   onSwipePrev,
+  canSwipePrev = true,
   onEdit,
   onSaveNote,
 }) {
@@ -28,9 +29,9 @@ function Flashcard({
   const isDraggingRef = useRef(false);
 
   const dragX = useMotionValue(0);
-  const rotateZ = useTransform(dragX, [-200, 200], [-10, 10]);
-  const nextBadgeOpacity = useTransform(dragX, [-110, -25], [1, 0]);
-  const prevBadgeOpacity = useTransform(dragX, [25, 110], [0, 1]);
+  const rotateZ = useTransform(dragX, [-180, 180], [-7, 7]);
+  const nextBadgeOpacity = useTransform(dragX, [-75, -15], [1, 0]);
+  const prevBadgeOpacity = useTransform(dragX, [15, 75], [0, 1]);
 
   useEffect(() => {
     if (vocab) setIsStarred(vocab.is_starred || false);
@@ -202,7 +203,9 @@ function Flashcard({
 
   useEffect(() => {
     if (controlledFlipped === undefined) setInternalFlipped(false);
-    if (autoPlay) setTimeout(() => speak(frontText, frontLang), 250);
+    if (!autoPlay) return;
+    const timer = setTimeout(() => speak(frontText, frontLang), 220);
+    return () => clearTimeout(timer);
   }, [vocab, autoPlay, contentType, isReversed]);
 
   const handleFlip = () => {
@@ -238,23 +241,51 @@ function Flashcard({
   return (
     <motion.div
       className="flashcard-container"
-      style={{ perspective: '1200px', x: dragX, rotate: rotateZ }}
+      style={{
+        perspective: '1200px',
+        x: dragX,
+        rotate: rotateZ,
+        touchAction: 'pan-y',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        willChange: 'transform',
+      }}
       drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.55}
-      dragTransition={{ bounceStiffness: 260, bounceDamping: 26 }}
+      dragDirectionLock
+      dragMomentum={false}
+      dragElastic={0.92}
       onDragStart={() => {
         isDraggingRef.current = true;
       }}
       onDragEnd={(_, info) => {
         setTimeout(() => {
           isDraggingRef.current = false;
-        }, 60);
-        if (info.offset.x < -85 || info.velocity.x < -500) {
-          if (onSwipeNext) onSwipeNext();
-        } else if (info.offset.x > 85 || info.velocity.x > 500) {
-          if (onSwipePrev) onSwipePrev();
+        }, 50);
+
+        const offsetX = info.offset.x;
+        const velocityX = info.velocity.x;
+        const swipePower = offsetX + velocityX * 0.18;
+
+        if (offsetX < -42 || velocityX < -220 || swipePower < -65) {
+          if (onSwipeNext) {
+            animate(dragX, -220, { duration: 0.14, ease: 'easeOut' });
+            onSwipeNext();
+            return;
+          }
+        } else if ((offsetX > 42 || velocityX > 220 || swipePower > 65) && canSwipePrev) {
+          if (onSwipePrev) {
+            animate(dragX, 220, { duration: 0.14, ease: 'easeOut' });
+            onSwipePrev();
+            return;
+          }
         }
+
+        animate(dragX, 0, {
+          type: 'spring',
+          stiffness: 420,
+          damping: 30,
+          mass: 0.6,
+        });
       }}
       onClick={handleFlip}
     >

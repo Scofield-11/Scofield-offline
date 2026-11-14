@@ -32,9 +32,9 @@ import GameModeSelector from './GameModeSelector';
 
 const CARD_VARIANTS = {
   enter: (dir) => ({
-    x: dir > 0 ? 48 : -48,
+    x: dir > 0 ? 80 : -80,
     opacity: 0,
-    scale: 0.96,
+    scale: 0.95,
   }),
   center: {
     x: 0,
@@ -42,9 +42,9 @@ const CARD_VARIANTS = {
     scale: 1,
   },
   exit: (dir) => ({
-    x: dir > 0 ? -48 : 48,
+    x: dir > 0 ? -80 : 80,
     opacity: 0,
-    scale: 0.96,
+    scale: 0.95,
   }),
 };
 
@@ -140,7 +140,7 @@ function FlashcardMode() {
     localStorage.setItem('flashcardAutoPlay', autoPlay);
   }, [autoPlay]);
 
-  const vibrate = (ms = 40) => {
+  const vibrate = (ms = 15) => {
     if (navigator.vibrate) navigator.vibrate(ms);
   };
 
@@ -821,7 +821,7 @@ function FlashcardMode() {
           {currentIndex + 2 < vocabsToStudy.length && <div className="flashcard-stack-layer flashcard-stack-2" />}
           {currentIndex + 1 < vocabsToStudy.length && <div className="flashcard-stack-layer flashcard-stack-1" />}
 
-          <AnimatePresence mode="popLayout" custom={direction}>
+          <AnimatePresence mode="popLayout" custom={direction} initial={false}>
             <motion.div
               key={currentIndex}
               custom={direction}
@@ -829,8 +829,9 @@ function FlashcardMode() {
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ type: 'spring', stiffness: 380, damping: 30, mass: 0.6 }}
               className="w-100 h-100"
+              style={{ willChange: 'transform, opacity' }}
             >
               <Flashcard
                 vocab={vocabsToStudy[currentIndex]}
@@ -843,6 +844,7 @@ function FlashcardMode() {
                 onFlip={setFlipped}
                 onSwipeNext={handleNext}
                 onSwipePrev={handlePrev}
+                canSwipePrev={currentIndex > 0}
                 onEdit={setEditingVocab}
                 onSaveNote={(item) => {
                   if (currentContentType === 'kanji') {
