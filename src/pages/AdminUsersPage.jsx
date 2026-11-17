@@ -29,10 +29,6 @@ function AdminUsersPage() {
     }
   }, []);
 
-  if (!currentUser || currentUser.role !== 'admin') {
-    return <Navigate to="/" replace />;
-  }
-
   const filteredUsers = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     if (!q) return users;
@@ -42,6 +38,10 @@ function AdminUsersPage() {
         (u.display_name && u.display_name.toLowerCase().includes(q))
     );
   }, [users, searchTerm]);
+
+  if (!currentUser || currentUser.role !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
 
   const handleResetPassword = async (user) => {
     if (!window.confirm(`Reset mật khẩu của tài khoản "${user.username}" về mặc định "123456"?`)) {

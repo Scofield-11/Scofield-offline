@@ -33,6 +33,8 @@ import { toast } from 'react-toastify';
 import { speakText } from '../utils/audio';
 import LoadingSkeleton from './LoadingSkeleton';
 import EmptyState from './EmptyState';
+import ChineseVocabularyCard from './ChineseVocabularyCard';
+import ChineseVocabularyModal from './ChineseVocabularyModal';
 
 const ACCORDION_TRANSITION = { duration: 0.28, ease: [0.16, 1, 0.3, 1] };
 const MODAL_SPRING = { type: 'spring', stiffness: 280, damping: 26, mass: 0.7 };
@@ -86,6 +88,7 @@ function VocabularyList() {
   }, [sortOption]);
 
   const [noteModalVocab, setNoteModalVocab] = useState(null);
+  const [chineseDetail, setChineseDetail] = useState(null);
   const [testHistories, setTestHistories] = useState([]);
 
   useEffect(() => {
@@ -489,6 +492,9 @@ function VocabularyList() {
       />
 
       {/* INLINE MODAL THAY THẾ PROMPT / CONFIRM */}
+      <AnimatePresence>
+        {chineseDetail && <ChineseVocabularyModal vocab={chineseDetail} onClose={() => setChineseDetail(null)} />}
+      </AnimatePresence>
       {ReactDOM.createPortal(
         <AnimatePresence>
           {dialogState && (
@@ -965,6 +971,14 @@ function VocabularyList() {
                                           </button>
                                         </div>
                                       </div>
+                                    ) : vocabSet.language === 'zh' ? (
+                                      <ChineseVocabularyCard vocab={vocab}
+                                        onOpen={() => setChineseDetail({ ...vocab, language: 'zh' })}
+                                        onSpeak={(event) => speakVocab(event, vocab, 'zh')}
+                                        onNote={() => setNoteModalVocab({ ...vocab, language: 'zh' })}
+                                        onEdit={() => handleEditClick(vocab)}
+                                        onDelete={() => handleDeleteVocab(vocab.id, vocabSet.id, vocab.word)}
+                                      />
                                     ) : (
                                       <div className="d-flex justify-content-between align-items-center gap-2 py-1">
                                         <div style={{ minWidth: 0, flex: 1 }}>

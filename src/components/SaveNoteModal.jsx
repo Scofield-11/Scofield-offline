@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import { motion } from 'framer-motion';
-import { X, BookMarked } from 'lucide-react';
-import api from '../api/axiosConfig';
+import React, { useState } from 'react';
+import AccessibleModal from './AccessibleModal';
+import api, { importDataFromJson } from '../api/axiosConfig';
+import { snapshotVocab } from '../utils/vocabHelper';
 import { toast } from 'react-toastify';
 
 function SaveNoteModal({ vocab, sets, onClose, onSaveSuccess }) {
-  const [selectedSetId, setSelectedSetId] = useState('new');
   const [noteSetName, setNoteSetName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -14,15 +12,11 @@ function SaveNoteModal({ vocab, sets, onClose, onSaveSuccess }) {
   const noteSets = (sets || []).filter(
     (s) =>
       !s.title?.startsWith('_Thư mục:') &&
+      s.type !== 'kanji' && (s.language || 'ja') === (vocab?.language || 'ja') &&
       (s.folder_path === 'Note' || (s.folder_path && s.folder_path.startsWith('Note/')))
   );
 
-  useEffect(() => {
-    if (noteSets.length > 0) setSelectedSetId(noteSets[0].id);
-  }, []);
-
-  const hasExtraFields =
-    vocab && ((vocab.hanviet && vocab.hanviet.trim()) || (vocab.hiragana && vocab.hiragana.trim()));
+  const [selectedSetId, setSelectedSetId] = useState(() => noteSets[0]?.id || 'new');
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -34,33 +28,23 @@ function SaveNoteModal({ vocab, sets, onClose, onSaveSuccess }) {
           setIsSaving(false);
           return;
         }
-        let rawText;
-        if (hasExtraFields) {
-          rawText = `${vocab.word} | ${vocab.hanviet || ''} | ${vocab.hiragana || ''} | ${vocab.meaning}`;
-        } else {
-          rawText = `${vocab.word} | ${vocab.meaning}`;
-        }
-        await api.post('/vocabularies/bulk-import', {
+        await importDataFromJson({
           title: noteSetName.trim(),
-          raw_text: rawText,
+          vocabularies: [snapshotVocab(vocab)],
           folder_path: 'Note',
           language: vocab.language || 'ja',
         });
         toast.success('Đã tạo và lưu vào Note mới!');
       } else {
         await api.post('/vocabularies', {
-          word: vocab.word,
-          hanviet: vocab.hanviet || '',
-          hiragana: vocab.hiragana || '',
-          meaning: vocab.meaning,
-          language: vocab.language || 'ja',
+          ...snapshotVocab(vocab),
           set_id: selectedSetId,
         });
         toast.success('Đã thêm vào Note!');
       }
       onSaveSuccess();
       onClose();
-    } catch (error) {
+    } catch {
       toast.error('Lỗi khi lưu vào Note!');
     } finally {
       setIsSaving(false);
@@ -69,42 +53,8 @@ function SaveNoteModal({ vocab, sets, onClose, onSaveSuccess }) {
 
   if (!vocab) return null;
 
-  return ReactDOM.createPortal(
-    <motion.div
-      className="set-sheet-backdrop"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.16 }}
-      onClick={onClose}
-    >
-      <motion.div
-        className="set-sheet-panel"
-        style={{ maxWidth: '420px', height: 'auto', maxHeight: '88vh' }}
-        initial={window.innerWidth < 768 ? { y: '100%' } : { opacity: 0, scale: 0.95, y: 12 }}
-        animate={window.innerWidth < 768 ? { y: 0 } : { opacity: 1, scale: 1, y: 0 }}
-        exit={window.innerWidth < 768 ? { y: '100%' } : { opacity: 0, scale: 0.95, y: 10 }}
-        transition={{ type: 'spring', stiffness: 280, damping: 28, mass: 0.7 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="set-sheet-grabber d-md-none" />
-        <div className="set-sheet-header">
-          <div className="d-flex align-items-center gap-2">
-            <span className="btn-icon-soft chip-primary" style={{ width: '34px', height: '34px' }}>
-              <BookMarked size={16} />
-            </span>
-            <div>
-              <h6 className="fw-bold mb-0 text-dark">Lưu vào Sổ tay (Note)</h6>
-              <span className="text-muted" style={{ fontSize: '0.75rem' }}>
-                Lưu nhanh từ vựng khó để ôn tập riêng
-              </span>
-            </div>
-          </div>
-          <button type="button" className="btn-icon-soft chip-slate" onClick={onClose}>
-            <X size={16} />
-          </button>
-        </div>
-
+  return (
+    <AccessibleModal title="Lưu vào Sổ tay (Note)" onClose={onClose} className="note-vocab-modal">
         <div className="p-3 pt-2">
           <div className="bg-light p-3 rounded-3 mb-3 text-center border">
             <div className="fw-bold fs-5 text-dark">{vocab.word}</div>
@@ -119,8 +69,8 @@ function SaveNoteModal({ vocab, sets, onClose, onSaveSuccess }) {
 
           <form onSubmit={handleSave}>
             <div className="mb-3">
-              <label className="form-label fw-bold text-muted small mb-1">CHỌN HỌC PHẦN NOTE</label>
-              <select
+              <label htmlFor="note-set" className="form-label fw-bold text-muted small mb-1">CHỌN HỌC PHẦN NOTE</label>
+              <select id="note-set"
                 className="form-select bg-light border-0 fw-bold py-2"
                 value={selectedSetId}
                 onChange={(e) => setSelectedSetId(e.target.value)}
@@ -136,7 +86,8 @@ function SaveNoteModal({ vocab, sets, onClose, onSaveSuccess }) {
 
             {selectedSetId === 'new' && (
               <div className="mb-3">
-                <input
+                <label htmlFor="note-name" className="form-label">Tên học phần Note mới</label>
+                <input id="note-name"
                   type="text"
                   className="form-control bg-light border-0 fw-bold py-2"
                   placeholder="Tên học phần Note mới..."
@@ -167,9 +118,7 @@ function SaveNoteModal({ vocab, sets, onClose, onSaveSuccess }) {
             </div>
           </form>
         </div>
-      </motion.div>
-    </motion.div>,
-    document.body
+    </AccessibleModal>
   );
 }
 

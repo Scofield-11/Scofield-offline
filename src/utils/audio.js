@@ -213,7 +213,7 @@ const playCloudTtsFallback = (text, locale, rate = 1.0) => {
   }
 };
 
-export const speakText = (text, lang = 'ja', rate = 0.92) => {
+export const speakText = (text, lang = 'ja', rate = 0.92, { exactLocale = false } = {}) => {
   if (typeof window === 'undefined') return;
 
   // Làm sạch các ký tự ngoặc, gạch chéo để bộ đọc không bị vấp
@@ -225,7 +225,7 @@ export const speakText = (text, lang = 'ja', rate = 0.92) => {
 
   if (!cleanText) return;
 
-  const targetLocale = resolveTargetLocale(cleanText, lang);
+  const targetLocale = exactLocale ? lang : resolveTargetLocale(cleanText, lang);
 
   try {
     if ('speechSynthesis' in window) {

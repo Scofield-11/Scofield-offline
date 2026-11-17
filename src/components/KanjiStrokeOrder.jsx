@@ -1,24 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { RotateCcw, Play, Pause, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { RotateCcw, Play, Pause, Eye, EyeOff } from 'lucide-react';
+import { useReducedMotion } from 'framer-motion';
+import { extractHanCharacters } from '../utils/hanziData';
 
 // Bộ nhớ đệm tránh gọi lại mạng khi lật thẻ hoặc mở lại cùng 1 chữ Hán
 const strokeDataCache = new Map();
 
-const extractKanjiChars = (str) => {
-  if (!str) return [];
-  const matches = String(str).match(/[\u4e00-\u9faf\u3400-\u4dbf]/g);
-  return matches ? [...new Set(matches)] : [];
-};
-
 function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false }) {
-  const kanjiChars = useMemo(() => extractKanjiChars(text), [text]);
+  const kanjiChars = useMemo(() => extractHanCharacters(text), [text]);
+  const reducedMotion = useReducedMotion();
+  const [retry, setRetry] = useState(0);
   const [selectedCharIdx, setSelectedCharIdx] = useState(0);
   const [strokeData, setStrokeData] = useState({ paths: [], numbers: [] });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
   const [animKey, setAnimKey] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(autoStart);
+  const [isPlaying, setIsPlaying] = useState(autoStart && !reducedMotion);
   const [showNumbers, setShowNumbers] = useState(true);
   const [speed, setSpeed] = useState(1); // 1x hoặc 1.75x
 
@@ -40,15 +38,18 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
     if (strokeDataCache.has(hex)) {
       setStrokeData(strokeDataCache.get(hex));
       setError(false);
+      setLoading(false);
       setAnimKey((prev) => prev + 1);
-      setIsPlaying(true);
+      setIsPlaying(autoStart && !reducedMotion);
       return;
     }
 
     setLoading(true);
     setError(false);
+    setStrokeData({ paths: [], numbers: [] });
+    const controller = new AbortController();
 
-    fetch(`https://cdn.jsdelivr.net/gh/KanjiVG/kanjivg@master/kanji/${hex}.svg`)
+    fetch(`https://cdn.jsdelivr.net/gh/KanjiVG/kanjivg@r20260714/kanji/${hex}.svg`, { signal: controller.signal })
       .then((res) => {
         if (!res.ok) throw new Error('Not found');
         return res.text();
@@ -60,6 +61,7 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
 
         const pathNodes = doc.querySelectorAll('g[id^="kvg:StrokePaths"] path');
         const paths = Array.from(pathNodes).map((p) => p.getAttribute('d')).filter(Boolean);
+        if (!paths.length) throw new Error('Missing stroke paths');
 
         const numNodes = doc.querySelectorAll('g[id^="kvg:StrokeNumbers"] text');
         const numbers = Array.from(numNodes).map((t, idx) => {
@@ -76,7 +78,7 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
         strokeDataCache.set(hex, parsed);
         setStrokeData(parsed);
         setAnimKey((prev) => prev + 1);
-        setIsPlaying(true);
+        setIsPlaying(autoStart && !reducedMotion);
       })
       .catch(() => {
         if (isMounted) setError(true);
@@ -87,8 +89,9 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
-  }, [activeChar]);
+  }, [activeChar, autoStart, reducedMotion, retry]);
 
   if (kanjiChars.length === 0) return null;
 
@@ -118,12 +121,13 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
     setIsPlaying(true);
   };
 
-  const btnSize = compact ? 28 : 32;
+  const btnSize = 44;
   const iconSize = compact ? 13 : 14;
 
   return (
     <div
       className={`kanji-stroke-widget ${compact ? 'kanji-stroke-widget--compact' : ''}`}
+      style={{ maxWidth: '100%', width: compact ? size : Math.max(size, 220) }}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Thanh chọn từng chữ Hán nếu cụm từ có nhiều chữ Hán */}
@@ -135,6 +139,8 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
               type="button"
               className={`kanji-stroke-char-tab ${selectedCharIdx === idx ? 'active' : ''}`}
               onClick={() => setSelectedCharIdx(idx)}
+              aria-pressed={selectedCharIdx === idx}
+              aria-label={`${ch}, ký tự ${idx + 1}`}
             >
               {ch}
             </button>
@@ -172,7 +178,7 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
             {/* Lớp nét vẽ hoạt ảnh */}
             <g
               key={`anim-${activeChar}-${animKey}-${speed}`}
-              className={`kanji-anim-layer ${isPlaying ? 'playing' : 'paused'}`}
+              className={`kanji-anim-layer ${isPlaying ? 'playing' : 'paused'} ${reducedMotion && !isPlaying ? 'kanji-reduced-static' : ''}`}
             >
               {strokeData.paths.map((d, i) => (
                 <path
@@ -226,6 +232,7 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
           </div>
 
         {/* Thanh điều khiển nét viết + Nhãn số nét nằm ngoài ô chữ (không che chữ Hán) */}
+        {error && <div className="small text-secondary text-center">Chưa có dữ liệu nét viết. <button type="button" className="btn btn-mobile-chip chip-slate" onClick={() => setRetry((value) => value + 1)}>Thử lại</button></div>}
         {!error && (
           <div className="kanji-stroke-controls-dock">
             {!loading && strokeData.paths.length > 0 && (
@@ -240,6 +247,7 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
               style={{ width: btnSize, height: btnSize }}
               onClick={handleReplay}
               title="Vẽ lại từ đầu"
+              disabled={loading}
             >
               <RotateCcw size={iconSize} strokeWidth={2.3} />
             </button>
@@ -250,6 +258,7 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
               style={{ width: btnSize, height: btnSize }}
               onClick={togglePlay}
               title={isPlaying ? 'Tạm dừng' : 'Tiếp tục'}
+              disabled={loading}
             >
               {isPlaying ? (
                 <Pause size={iconSize} strokeWidth={2.3} />
@@ -264,6 +273,8 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
               style={{ width: btnSize, height: btnSize }}
               onClick={toggleNumbers}
               title="Ẩn/Hiện số thứ tự nét"
+              aria-pressed={showNumbers}
+              disabled={loading || !strokeData.numbers.length}
             >
               {showNumbers ? (
                 <Eye size={iconSize} strokeWidth={2.3} />
@@ -279,11 +290,12 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
               onClick={toggleSpeed}
               title="Đổi tốc độ vẽ"
             >
-              {speed === 1 ? '1x' : '2x'}
+              {speed === 1 ? '1x' : '1.75x'}
             </button>
           </div>
         )}
       </div>
+      {!compact && <small className="text-secondary mt-2"><a href="https://kanjivg.tagaini.net/" target="_blank" rel="noreferrer">KanjiVG</a> · <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noreferrer">CC BY-SA 3.0</a></small>}
     </div>
   );
 }

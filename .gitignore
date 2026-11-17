@@ -27,3 +27,6 @@ dist-ssr
 *.sw?
 .agents/
 design-system/
+playwright-report/
+test-results/
+test-results-check/

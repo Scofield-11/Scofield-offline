@@ -124,7 +124,7 @@ function ExamHistoryTable({ history, setViewHistory, handleClearHistory, onLoadM
                                         <td className="text-muted small px-4">
                                           {record.full_date || record.date}
                                         </td>
-                                        <td className="fw-bold" style={{ color: 'var(--text-main)' }}>{record.title}</td>
+                                        <td className="fw-bold" style={{ color: 'var(--text-main)' }}>{record.title}{record.exam_format === 'comprehensive' && <span className="badge chip-primary ms-2">3 trường</span>}</td>
                                         <td className="text-center">
                                           <span
                                             className={`badge rounded-pill px-3 py-1.5 fw-bold ${
@@ -166,7 +166,7 @@ function ExamHistoryTable({ history, setViewHistory, handleClearHistory, onLoadM
                                   >
                                     <div className="flex-grow-1 pe-2">
                                       <div className="fw-bold text-truncate" style={{ color: 'var(--text-main)', fontSize: '0.9rem' }}>
-                                        {record.title}
+                                        {record.title}{record.exam_format === 'comprehensive' && <span className="badge chip-primary ms-2">3 trường</span>}
                                       </div>
                                       <div className="text-muted small" style={{ fontSize: '0.75rem' }}>
                                         {record.full_date || record.date}
@@ -221,4 +221,3 @@ function ExamHistoryTable({ history, setViewHistory, handleClearHistory, onLoadM
 }
 
 export default ExamHistoryTable;
-  

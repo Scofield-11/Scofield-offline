@@ -13,7 +13,8 @@ export default defineConfig({
         'icons8-crab-16.png',
         'logo-180.jpg',
         'logo-512.jpg',
-        'sea_15651557.ico'
+        'sea_15651557.ico',
+        'licenses/*.txt'
       ],
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,jpg,jpeg,svg,json,woff,woff2}'],

@@ -1,0 +1,92 @@
+.vocab-answer-detail { color: var(--text-main, var(--text-primary)); min-width: 0; }
+.vocab-answer-feedback { padding: 16px; margin-bottom: 12px; border-radius: 12px; background: var(--bg-elevated); }
+.vocab-answer-feedback p { margin: 0 0 8px; overflow-wrap: anywhere; }
+.vocab-answer-feedback p:last-child { margin: 0; }
+.vocab-answer-wrong { text-decoration: line-through; }
+.vocab-answer-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.vocab-answer-field { min-width: 0; padding: 12px; border: 1px solid var(--surface-border); border-radius: 12px; background: var(--bg-surface); }
+.vocab-answer-field.is-tested { grid-column: 1 / -1; border-color: var(--brand-primary); background: var(--bg-elevated); }
+.vocab-answer-field dt { font-size: .75rem; color: var(--text-secondary); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.vocab-answer-field dd { margin: 6px 0 0; display: flex; align-items: center; justify-content: space-between; gap: 4px; font-weight: 600; overflow-wrap: anywhere; }
+.vocab-answer-field dd > span { min-width: 0; }
+.vocab-answer-field .hanviet-seal-badge { white-space: normal; overflow-wrap: anywhere; }
+.vocab-answer-detail .hanviet-seal-badge, .chinese-vocab-card .hanviet-seal-badge { color: var(--brand-accent); background: var(--bg-elevated); border-color: var(--primary-border); }
+.vocab-answer-field.is-missing dd { font-size: .85rem; font-weight: 400; font-style: italic; color: var(--text-secondary); }
+.vocab-answer-word { font-family: var(--font-jp-serif); font-size: 1.5rem; }
+.vocab-field-tag { font-size: .65rem; color: var(--brand-accent); }
+.vocab-answer-detail button { min-width: 44px; min-height: 44px; flex-shrink: 0; }
+.vocab-answer-detail :focus-visible { outline: 3px solid var(--brand-primary); outline-offset: 3px; }
+.vocab-modal-backdrop { z-index: 2060; }
+.vocab-modal-panel { max-width: 820px; color: var(--text-main, var(--text-primary)); max-height: 92dvh; }
+.vocab-modal-panel .set-sheet-header { gap: 12px; }
+.vocab-modal-panel button { min-width: 44px; min-height: 44px; }
+.vocab-modal-body { overflow-y: auto; overscroll-behavior: contain; min-height: 0; padding: 4px; }
+.vocab-modal-panel :focus-visible, .chinese-vocab-card :focus-visible { outline: 3px solid var(--brand-primary); outline-offset: 2px; }
+.chinese-vocab-modal-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 24px; align-items: start; }
+.chinese-vocab-modal .vocab-answer-grid { grid-template-columns: minmax(0, 1fr); }
+.chinese-vocab-card { color: var(--text-main, var(--text-primary)); }
+.chinese-vocab-main { border: 0; background: transparent; color: inherit; text-align: start; padding: 8px 0; display: flex; align-items: center; gap: 16px; width: 100%; min-width: 0; border-radius: 12px; }
+.chinese-vocab-main:hover { background: var(--bg-elevated); }
+.chinese-vocab-glyph { width: 100px; flex-shrink: 0; min-height: 100px; padding: 12px; display: grid; place-items: center; border: 1px solid var(--surface-border); border-radius: 16px; font: 700 2.2rem/1.5 var(--font-jp-serif); overflow-wrap: anywhere; background: linear-gradient(90deg, transparent 49.5%, var(--surface-border) 50%, transparent 50.5%), linear-gradient(transparent 49.5%, var(--surface-border) 50%, transparent 50.5%), var(--bg-elevated); }
+.chinese-vocab-copy { display: flex; flex-direction: column; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
+.chinese-vocab-pinyin { font-size: 1.1rem; font-weight: 700; color: var(--brand-accent); }
+.chinese-vocab-copy .hanviet-seal-badge { align-self: start; white-space: normal; }
+.chinese-vocab-meaning { line-height: 1.6; }
+.chinese-vocab-hint { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: .75rem; }
+.chinese-vocab-actions { display: flex; justify-content: flex-end; gap: 8px; padding-bottom: 8px; }
+.chinese-vocab-actions button { min-width: 44px; min-height: 44px; }
+.hanzi-stroke-widget { min-width: 0; text-align: center; }
+.hanzi-character-tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 16px; }
+.hanzi-character-tabs button { gap: 6px; font-size: 1.15rem; }
+.hanzi-character-tabs small { font: 500 .65rem var(--font-sans); }
+.hanzi-practice-frame { position: relative; width: 300px; max-width: 100%; aspect-ratio: 1; margin: auto; border: 1px solid var(--surface-border); border-radius: 20px; overflow: hidden; background: linear-gradient(90deg, transparent 49.6%, var(--surface-border) 50%, transparent 50.4%), linear-gradient(transparent 49.6%, var(--surface-border) 50%, transparent 50.4%), var(--bg-elevated); }
+.hanzi-writer-target { position: absolute; inset: 0; }
+.hanzi-writer-mount, .hanzi-writer-target svg { width: 100%; height: 100%; }
+.note-vocab-modal .vocab-modal-panel { max-width: 440px; }
+.hanzi-static-character { position: absolute; inset: 0; display: grid; place-items: center; font: 700 8rem var(--font-jp-serif); color: var(--brand-accent); }
+.hanzi-status { margin: 12px 0; color: var(--text-secondary); font-size: .85rem; }
+.hanzi-controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: end; gap: 8px; }
+.hanzi-speed { display: flex; flex-direction: column; gap: 4px; text-align: start; font-size: .7rem; color: var(--text-secondary); }
+.hanzi-speed select { min-height: 44px; width: auto; font-size: .85rem; }
+.hanzi-attribution { margin: 16px 0 0; color: var(--text-secondary); font-size: .7rem; line-height: 1.7; }
+.hanzi-attribution a { color: var(--brand-accent); }
+.test-lobby-format-grid.has-comprehensive { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.comprehensive-pool-info { color: var(--text-main, var(--text-primary)); overflow-wrap: anywhere; }
+.comprehensive-prompt { font-family: var(--font-jp-serif); font-size: clamp(2rem, 7vw, 3rem); overflow-wrap: anywhere; }
+.comprehensive-inputs { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.comprehensive-inputs label { display: block; margin-bottom: 6px; font-size: .85rem; font-weight: 700; color: var(--text-secondary); }
+.comprehensive-inputs input { min-height: 48px; font-size: 1rem; background: var(--bg-elevated); color: var(--text-main, var(--text-primary)); border-color: var(--surface-border); }
+.comprehensive-inputs input:focus-visible { outline: 3px solid var(--brand-primary); outline-offset: 2px; }
+.test-question-card { scroll-margin-top: 150px; }
+.comprehensive-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 24px; }
+.comprehensive-stats > div { display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--surface-border); background: var(--bg-surface); color: var(--text-main, var(--text-primary)); border-radius: 16px; }
+.comprehensive-stats span, .comprehensive-stats small { font-size: .8rem; color: var(--text-secondary); }
+.comprehensive-stats strong { font-size: 1.5rem; color: var(--brand-accent); }
+.comprehensive-result { color: var(--text-main, var(--text-primary)); overflow-wrap: anywhere; }
+.comprehensive-result dl { display: flex; flex-direction: column; gap: 12px; margin: 0; }
+.comprehensive-result dl > div { padding: 12px; background: var(--bg-elevated); border: 1px solid var(--surface-border); border-radius: 12px; }
+.comprehensive-result dt { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.comprehensive-result dt span { margin-left: auto; font-size: .75rem; }
+.comprehensive-result dd { margin: 4px 0 0; line-height: 1.6; }
+.comprehensive-result .field-correct dt { color: #187442; }
+.comprehensive-result .field-incorrect dt { color: #b42336; }
+[data-theme="dark"] .comprehensive-result .field-correct dt { color: #70dfaa; }
+[data-theme="dark"] .comprehensive-result .field-incorrect dt { color: #ff9daa; }
+@media (max-width: 390px) {
+  .comprehensive-stats { gap: 6px; }
+  .comprehensive-stats > div { padding: 10px; }
+  .comprehensive-stats span, .comprehensive-stats small { font-size: .7rem; }
+}
+@media (max-width: 767px) {
+  .chinese-vocab-modal-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .chinese-vocab-modal .vocab-answer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .vocab-modal-panel { max-height: 94dvh; }
+  .hanzi-practice-frame { width: 260px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chinese-vocab-card *, .vocab-modal-panel * { scroll-behavior: auto !important; transition: none !important; }
+}
+@media (max-width: 390px) {
+  .vocab-answer-field { padding: 9px; }
+  .vocab-answer-field dd { flex-wrap: wrap; }
+}

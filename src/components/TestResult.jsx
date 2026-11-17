@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
+import ComprehensiveResult, { ComprehensiveStats } from './ComprehensiveResult';
 import { RefreshCw, Sparkles, BookMarked, Printer, ArrowLeft } from 'lucide-react';
 
-function TestResult({ score, questions, onRestart, onCreateMistakeSet, onSaveNote }) {
+function TestResult({ score, questions, onRestart, onCreateMistakeSet, onSaveNote, restartLabel = 'Làm đề mới' }) {
+  const reducedMotion = useReducedMotion();
   const percent = Math.round((score.correct / score.total) * 100) || 0;
   const wrongCount = score.total - score.correct;
   const [displayPercent, setDisplayPercent] = useState(0);
 
   useEffect(() => {
+    if (reducedMotion) { setDisplayPercent(percent); return; }
     let startTime = null;
     const duration = 1100;
     let rafId;
@@ -24,7 +27,7 @@ function TestResult({ score, questions, onRestart, onCreateMistakeSet, onSaveNot
 
     rafId = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafId);
-  }, [percent]);
+  }, [percent, reducedMotion]);
 
   const strokeColor =
     percent >= 80 ? '#10b981' : percent >= 50 ? '#f59e0b' : '#ef4444';
@@ -73,7 +76,7 @@ function TestResult({ score, questions, onRestart, onCreateMistakeSet, onSaveNot
               strokeDasharray={circumference}
               initial={{ strokeDashoffset: circumference }}
               animate={{ strokeDashoffset }}
-              transition={{ duration: 1.1, ease: 'easeOut' }}
+              transition={{ duration: reducedMotion ? 0 : 1.1, ease: 'easeOut' }}
             />
           </svg>
           <div className="position-absolute d-flex flex-column justify-content-center align-items-center">
@@ -89,9 +92,9 @@ function TestResult({ score, questions, onRestart, onCreateMistakeSet, onSaveNot
 
         <div className="d-flex flex-wrap justify-content-center gap-2 position-relative" style={{ zIndex: 2 }}>
           <button className="btn btn-primary btn-touch px-4 d-flex align-items-center gap-2" onClick={onRestart}>
-            <RefreshCw size={16} /> <span>Làm đề mới</span>
+            <RefreshCw size={16} /> <span>{restartLabel}</span>
           </button>
-          {wrongCount > 0 && (
+          {wrongCount > 0 && onCreateMistakeSet && (
             <button className="btn btn-warning btn-touch text-dark px-4 d-flex align-items-center gap-2" onClick={onCreateMistakeSet}>
               <Sparkles size={16} /> <span>Lưu {wrongCount} câu sai</span>
             </button>
@@ -102,6 +105,7 @@ function TestResult({ score, questions, onRestart, onCreateMistakeSet, onSaveNot
         </div>
       </div>
 
+      {questions.some((q) => q.type === 'comprehensive') && <ComprehensiveStats questions={questions} />}
       <h4 className="mb-4 fw-bold" style={{ color: 'var(--text-main)' }}>
         Chi tiết bài làm:
       </h4>
@@ -134,6 +138,7 @@ function TestResult({ score, questions, onRestart, onCreateMistakeSet, onSaveNot
               )}
             </div>
 
+            {q.type === 'comprehensive' ? <ComprehensiveResult question={q} /> : <>
             <div
               className="p-3 rounded-3 border shadow-sm mb-3"
               style={{
@@ -165,6 +170,7 @@ function TestResult({ score, questions, onRestart, onCreateMistakeSet, onSaveNot
                 </span>
               </div>
             )}
+            </>}
           </div>
         </div>
       ))}
@@ -179,4 +185,3 @@ function TestResult({ score, questions, onRestart, onCreateMistakeSet, onSaveNot
 }
 
 export default TestResult;
-  

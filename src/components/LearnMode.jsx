@@ -7,7 +7,8 @@ import api from '../api/axiosConfig';
 import { playSound, speakText } from '../utils/audio';
 import SetSelector from './SetSelector';
 import GameModeSelector from './GameModeSelector';
-import { motion, AnimatePresence } from 'framer-motion';
+import VocabularyAnswerDetail from './VocabularyAnswerDetail';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Maximize2,
   Minimize2,
@@ -34,6 +35,7 @@ import {
 const CHUNK_SIZE = 7;
 
 function LearnMode() {
+  const reducedMotion = useReducedMotion();
   const { sets, setSets, loading, fetchSets } = useContext(VocabContext);
   const [selectedSetId, setSelectedSetId] = useState('');
   const [allData, setAllData] = useState([]);
@@ -333,6 +335,8 @@ function LearnMode() {
     setSelectedCorrectId(null);
 
     setAllData(pool);
+    setFeedback(null);
+    setInputText('');
     generateOptions(chunked[0][0], pool);
     setStreak(0);
     setMaxStreak(0);
@@ -443,7 +447,7 @@ function LearnMode() {
         } else {
           setIsFinished(true);
           playSound('win');
-          confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
+          if (!reducedMotion) confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
           vibrate([100, 50, 100, 50, 200]);
         }
       };
@@ -468,7 +472,7 @@ function LearnMode() {
     vibrate([200, 100, 200]);
     setStreak(0);
 
-    setIsShaking(true);
+    setIsShaking(!reducedMotion);
     setTimeout(() => setIsShaking(false), 400);
 
     setRounds((prev) => {
@@ -482,7 +486,12 @@ function LearnMode() {
       return newRounds;
     });
 
-    setFeedback({ isCorrect: false, correctAnswer: correctAnswerText, yourAnswer: userAnsText });
+    setFeedback({
+      isCorrect: false, correctAnswer: correctAnswerText, yourAnswer: userAnsText,
+      vocab: { ...currentWord, ...(currentWord.source_fields ? { source_fields: { ...currentWord.source_fields } } : {}) },
+      questionText: getQuestionText(currentWord),
+      frontField: getActiveFrontField(currentWord), backField: getActiveBackField(currentWord),
+    });
     playAudio(correctAnswerText, 'error');
   };
 
@@ -490,7 +499,7 @@ function LearnMode() {
     const newStreak = streak + 1;
     setStreak(newStreak);
     if (newStreak > maxStreak) setMaxStreak(newStreak);
-    if (newStreak >= 5 && newStreak % 5 === 0) {
+    if (!reducedMotion && newStreak >= 5 && newStreak % 5 === 0) {
       confetti({ particleCount: 20, spread: 45, origin: { y: 0.25 } });
     }
   };
@@ -1050,7 +1059,13 @@ function LearnMode() {
                       <span>Chưa chính xác! Từ này sẽ được hỏi lại.</span>
                     </h5>
 
-                    <div
+                    {['ja', 'zh'].includes(feedback.vocab.language || currentLanguage) ? (
+                      <VocabularyAnswerDetail
+                        vocab={feedback.vocab} language={feedback.vocab.language || currentLanguage}
+                        testedFrontField={feedback.frontField} testedBackField={feedback.backField}
+                        userAnswer={feedback.yourAnswer} questionText={feedback.questionText} correctAnswer={feedback.correctAnswer}
+                      />
+                    ) : <div
                       className="p-4 mb-4 rounded-4 text-start shadow-sm"
                       style={{
                         backgroundColor: 'var(--bg-elevated)',
@@ -1059,7 +1074,7 @@ function LearnMode() {
                       }}
                     >
                       <p className="mb-2">
-                        <strong>Câu hỏi:</strong> <span className="fs-5 fw-bold text-primary">{questionText}</span>
+                        <strong>Câu hỏi:</strong> <span className="fs-5 fw-bold text-primary">{feedback.questionText}</span>
                       </p>
                       <p className="text-muted mb-3">
                         <strong>Bạn chọn/gõ:</strong> <span className="text-decoration-line-through">{feedback.yourAnswer}</span>
@@ -1074,7 +1089,7 @@ function LearnMode() {
                           <Volume2 size={16} />
                         </button>
                       </p>
-                    </div>
+                    </div>}
 
                     <button
                       className="btn btn-primary btn-touch w-100 mt-2 py-2.5 fw-bold"

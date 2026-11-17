@@ -1,11 +1,11 @@
 // ============================================================================
 // SCOFIELD LOCAL-FIRST + SUPABASE CLOUD ENGINE (TABLE: sync_data)
 // ============================================================================
+import { comprehensiveHistoryFields, remapHistoryReferences } from '../utils/testHistory.js';
 
 const SUPABASE_REST_URL = 'https://htnzlthwzclkstdwvwya.supabase.co/rest/v1/sync_data';
 const SUPABASE_USERS_URL = 'https://htnzlthwzclkstdwvwya.supabase.co/rest/v1/app_users';
 const SUPABASE_PUB_KEY = 'sb_publishable_DS7d-iSQGgksM7LpKyptzQ_YXgGtbZF';
-const SUPABASE_SEC_KEY = 'sb_secret_O7fSZVJgpOygD4T08JK22A_fguUsNvC';
 
 const STORAGE_KEYS = {
   SETS: 'scofield_db_sets',
@@ -692,6 +692,7 @@ export const importDataFromJson = async (fileOrObject, mode = 'merge') => {
 
   let addedSets = 0;
   let addedVocabs = 0;
+  const importedVocabIds = {};
 
   const nowIso = new Date().toISOString();
 
@@ -719,14 +720,16 @@ export const importDataFromJson = async (fileOrObject, mode = 'merge') => {
       const word = String(v.word || v.kanji || '').trim();
       const meaning = String(v.meaning || '').trim();
       if (!word && !meaning) return;
+      const newVocabId = nextVocabId++;
+      if (v.id !== undefined) importedVocabIds[v.id] = newVocabId;
       vocabs.push({
-        id: nextVocabId++,
+        id: newVocabId,
         word,
         onyomi: String(v.onyomi || '').trim(),
         kunyomi: String(v.kunyomi || '').trim(),
         examples: Array.isArray(v.examples) ? v.examples : [],
         hanviet: String(v.hanviet || '').trim(),
-        hiragana: String(v.hiragana || [v.onyomi, v.kunyomi].filter(Boolean).join(' / ') || '').trim(),
+        hiragana: String(v.hiragana || v.reading || [v.onyomi, v.kunyomi].filter(Boolean).join(' / ') || '').trim(),
         meaning: meaning || word,
         language: v.language || lang,
         set_id: newId,
@@ -742,7 +745,7 @@ export const importDataFromJson = async (fileOrObject, mode = 'merge') => {
     return newId;
   };
 
-  if (Array.isArray(parsed.sets) || Array.isArray(parsed.vocabularies)) {
+  if (Array.isArray(parsed.sets) || (Array.isArray(parsed.vocabularies) && !parsed.title)) {
     const setIdMap = {};
     const externalVocabsBySet = {};
 
@@ -773,11 +776,11 @@ export const importDataFromJson = async (fileOrObject, mode = 'merge') => {
       parsed.test_histories.forEach((th) => {
         testHistories.push({
           id: nextTestHistId++,
-          set_id: setIdMap[th.set_id] || th.set_id || th.setId || null,
+          set_id: setIdMap[th.set_id ?? th.setId] ?? th.set_id ?? th.setId ?? null,
           title: th.title || 'Bài kiểm tra',
           score: Number(th.score) || 0,
           total: Number(th.total) || 0,
-          wrong_details: th.wrong_details || th.wrongDetails || [],
+          ...remapHistoryReferences(th, setIdMap, importedVocabIds),
           created_at: th.created_at || nowIso,
         });
       });
@@ -1119,7 +1122,7 @@ const handleRequest = async (method, url, payload = null) => {
         kanjiRecords.forEach((k) => {
           if (Array.isArray(k.examples)) {
             k.examples.forEach((ex, exIdx) => {
-              const w = String(ex?.word || '').trim();
+              const w = String(ex?.word || ex?.kanji || '').trim();
               if (!w) return;
               const hv = String(ex.hanviet || '').trim();
               const hira = String(ex.hiragana || ex.reading || '').trim();
@@ -1128,6 +1131,7 @@ const handleRequest = async (method, url, payload = null) => {
                 id: `${k.id}_ex_${exIdx}`,
                 parent_kanji_id: k.id,
                 example_index: exIdx,
+                source_fields: { ...ex },
                 word: w,
                 kanji: w,
                 hanviet: hv,
@@ -1664,6 +1668,7 @@ const handleRequest = async (method, url, payload = null) => {
         score: Number(payload?.score) || 0,
         total: Number(payload?.total) || 0,
         wrong_details: payload?.wrong_details || [],
+        ...comprehensiveHistoryFields(payload),
         created_at: new Date().toISOString(),
       };
       const updated = [newRecord, ...histories].slice(0, 100);
@@ -1688,6 +1693,7 @@ const handleRequest = async (method, url, payload = null) => {
         date: formatDateShort(h.created_at),
         full_date: formatDateFull(h.created_at),
         wrongDetails: h.wrong_details || [],
+        ...comprehensiveHistoryFields(h),
       }));
       return { data: sliced };
     }

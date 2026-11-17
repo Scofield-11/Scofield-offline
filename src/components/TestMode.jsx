@@ -2,15 +2,17 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import { VocabContext } from '../context/VocabContext';
 import { toast } from 'react-toastify';
 import confetti from 'canvas-confetti';
-import api from '../api/axiosConfig';
-import { motion, AnimatePresence } from 'framer-motion';
-import { BookMarked, Maximize2, Minimize2, ArrowLeft, CheckCircle2, X, AlertTriangle, Calendar } from 'lucide-react';
+import api, { importDataFromJson } from '../api/axiosConfig';
+import { AnimatePresence } from 'framer-motion';
+import { BookMarked, Maximize2, Minimize2, ArrowLeft, CheckCircle2, X, Calendar } from 'lucide-react';
 import TestSetup from './TestSetup';
 import TestResult from './TestResult';
 import ExamHistoryTable from './ExamHistoryTable';
 import SaveNoteModal from './SaveNoteModal';
+import ComprehensiveQuestion from './ComprehensiveQuestion';
+import AccessibleModal from './AccessibleModal';
+import { createComprehensiveQuestion, gradeComprehensive, getAnswerStatus, getFieldStats, isComprehensiveEligible, supportsComprehensive } from '../utils/vocabHelper';
 
-const MODAL_SPRING = { type: 'spring', stiffness: 380, damping: 30, mass: 0.8 };
 
 function TestMode() {
   const { sets, setSets, loading, fetchSets } = useContext(VocabContext);
@@ -46,6 +48,36 @@ function TestMode() {
 
   const [questionCount, setQuestionCount] = useState(0);
   const [questionFormat, setQuestionFormat] = useState('choice'); 
+  const comprehensiveSupported = supportsComprehensive(sets, selectedSetId);
+  const [comprehensivePool, setComprehensivePool] = useState({ setId: null, eligible: [], excluded: 0, loading: false });
+  const [isGenerating, setIsGenerating] = useState(false);
+  const generatingRef = useRef(false);
+  const selectionRef = useRef(null);
+  selectionRef.current = `${selectedSetId}:${questionFormat}`;
+  const isComprehensive = questionFormat === 'comprehensive';
+  const effectivePoolSize = isComprehensive
+    ? (comprehensiveSupported && comprehensivePool.setId === selectedSetId && !comprehensivePool.loading ? comprehensivePool.eligible.length : 0)
+    : poolSize;
+
+  useEffect(() => {
+    if (!comprehensiveSupported && questionFormat === 'comprehensive') setQuestionFormat('choice');
+  }, [comprehensiveSupported, questionFormat]);
+
+  useEffect(() => {
+    if (!comprehensiveSupported || !isComprehensive || isTestStarted) return;
+    let alive = true;
+    setComprehensivePool({ setId: selectedSetId, eligible: [], excluded: 0, loading: true });
+    api.get(`/sets/${selectedSetId}`).then(({ data }) => {
+      if (!alive) return;
+      const pool = data.vocabularies || [];
+      const eligible = pool.filter(isComprehensiveEligible);
+      setComprehensivePool({ setId: selectedSetId, eligible, excluded: pool.length - eligible.length, loading: false });
+      setQuestionCount((count) => Math.min(Number(count) || 20, eligible.length));
+    }).catch(() => {
+      if (alive) setComprehensivePool({ setId: selectedSetId, eligible: [], excluded: 0, loading: false, error: true });
+    });
+    return () => { alive = false; };
+  }, [selectedSetId, comprehensiveSupported, isComprehensive, isTestStarted]);
   
   const [isReversed, setIsReversed] = useState(false); 
   const [kanjiFront, setKanjiFront] = useState('kanji');
@@ -183,6 +215,7 @@ function TestMode() {
   }, [isTestStarted, isTestFinished]);
 
   useEffect(() => {
+    if (isComprehensive) return;
     const size = targetSets.reduce((sum, s) => sum + (s.vocab_count || 0), 0);
     setPoolSize(size);
     if (size > 0) {
@@ -190,7 +223,7 @@ function TestMode() {
     } else {
       setQuestionCount(0);
     }
-  }, [selectedSetId, sets, currentContentType, targetSets]);
+  }, [selectedSetId, sets, currentContentType, targetSets, isComprehensive]);
 
 
 
@@ -231,6 +264,13 @@ function TestMode() {
   };
 
   const generateTest = async () => {
+    if (generatingRef.current) return;
+    if (isComprehensive && (!comprehensiveSupported || effectivePoolSize === 0)) return toast.warning('Học phần chưa có từ đủ bốn trường.');
+    if (Number(questionCount) < 1) return;
+    generatingRef.current = true;
+    setIsGenerating(true);
+    const selection = selectionRef.current;
+    try {
     vibrate(40);
     let pool = [];
     let _allData = [];
@@ -239,15 +279,22 @@ function TestMode() {
 
     toast.info("Đang tải dữ liệu...", { autoClose: 1000 });
     const fullSets = await Promise.all(targetSets.map(async (s) => {
-      if (s.vocabularies && s.vocabularies.length > 0) return s;
+      if (!isComprehensive && s.vocabularies && s.vocabularies.length > 0) return s;
       try {
         const res = await api.get(`/sets/${s.id}`);
         return res.data;
       } catch (e) { return s; }
     }));
     
+    if (selection !== selectionRef.current) return;
     setSets(prev => prev.map(p => fullSets.find(fs => fs.id === p.id) || p));
     pool = fullSets.flatMap(s => s.vocabularies || []);
+    if (isComprehensive) {
+      const eligible = pool.filter(isComprehensiveEligible);
+      setComprehensivePool({ setId: selectedSetId, eligible, excluded: pool.length - eligible.length, loading: false });
+      pool = eligible;
+      if (pool.length < Number(questionCount)) toast.info(`Chỉ có ${pool.length} từ đủ dữ liệu; đề được giới hạn tương ứng.`);
+    }
     _allData = pool;
 
     setAllData(_allData);
@@ -259,6 +306,7 @@ function TestMode() {
     const selectedVocabs = shuffled.slice(0, Math.min(questionCount, pool.length));
 
     const newQuestions = selectedVocabs.map((vocab) => {
+      if (isComprehensive) return createComprehensiveQuestion(vocab);
       let type = questionFormat;
       if (questionFormat === 'mixed') type = Math.random() > 0.5 ? 'choice' : 'typing';
 
@@ -352,13 +400,19 @@ function TestMode() {
     setIsTestStarted(true);
     setIsTestFinished(false);
     if (window.innerWidth < 768 && !isFullscreen) toggleFullscreen();
+    } catch {
+      toast.error('Không thể tạo đề. Vui lòng thử lại.');
+    } finally {
+      generatingRef.current = false;
+      setIsGenerating(false);
+    }
   };
 
-  const handleAnswerChange = (index, value) => {
+  const handleAnswerChange = (index, value, field) => {
     vibrate(20);
-    const updatedQuestions = [...questions];
-    updatedQuestions[index].userAnswer = value;
-    setQuestions(updatedQuestions);
+    setQuestions((previous) => previous.map((q, idx) => idx === index ? {
+      ...q, userAnswer: field ? { ...q.userAnswer, [field]: value } : value,
+    } : q));
 
     // Tự động cuộn thanh .mobile-question-strip sao cho ô idx + 1 nằm giữa
     if (questionStripRef.current) {
@@ -366,14 +420,14 @@ function TestMode() {
       const btnEl = stripEl.children[index];
       if (btnEl) {
         const scrollLeft = btnEl.offsetLeft - stripEl.clientWidth / 2 + btnEl.clientWidth / 2;
-        stripEl.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+        stripEl.scrollTo({ left: scrollLeft, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
       }
     }
   };
 
   const handleAttemptSubmit = () => {
-    const answeredCount = questions.filter(q => q.userAnswer.trim() !== '').length;
-    if (answeredCount === 0) {
+    const answeredCount = questions.filter(q => getAnswerStatus(q) !== 'empty').length;
+    if (answeredCount === 0 && !isComprehensive) {
       vibrate([100, 50, 100]);
       return toast.error("Vui lòng trả lời ít nhất 1 câu trước khi nộp bài!");
     }
@@ -384,6 +438,11 @@ function TestMode() {
     setShowSubmitModal(false);
     let correctCount = 0;
     const gradedQuestions = questions.map(q => {
+        if (q.type === 'comprehensive') {
+          const graded = gradeComprehensive(q);
+          if (graded.isCorrect) correctCount++;
+          return graded;
+        }
         const clean = (str) =>
           String(str || '')
             .normalize('NFC')
@@ -434,9 +493,10 @@ function TestMode() {
     }
     const wrongDetails = gradedQuestions.filter(q => !q.isCorrect).map(q => ({
       question: q.questionText,
-      correct_ans: q.correctAnswer,
-      user_ans: q.userAnswer,
-      vocabId: q.id 
+      correct_ans: q.type === 'comprehensive' ? Object.values(q.correctAnswer).join(' · ') : q.correctAnswer,
+      user_ans: q.type === 'comprehensive' ? Object.values(q.userAnswer).join(' · ') : q.userAnswer,
+      vocabId: q.id,
+      ...(q.type === 'comprehensive' ? { originalVocab: q.originalVocab, fieldResults: q.fieldResults, type: q.type } : {}),
     }));
     
     api.post('/test-history', {
@@ -444,11 +504,12 @@ function TestMode() {
       title: `Test: ${setName}`,
       score: correctCount,
       total: gradedQuestions.length,
-      wrong_details: wrongDetails
+      wrong_details: wrongDetails,
+      ...(isComprehensive ? { exam_format: 'comprehensive', field_stats: getFieldStats(gradedQuestions), question_details: gradedQuestions } : {}),
     }).then(() => fetchHistory(true)).catch(() => toast.error("Lỗi lưu lịch sử!"));
     
     const ratio = correctCount / gradedQuestions.length;
-    if (ratio >= 0.8) {
+    if (ratio >= 0.8 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
       vibrate([100, 50, 100, 50, 200]);
     } else if (ratio >= 0.5) {
@@ -461,8 +522,7 @@ function TestMode() {
   const scrollToQuestion = (idx) => {
     const element = document.getElementById(`test-question-${idx}`);
     if (element) {
-      const y = element.getBoundingClientRect().top + window.scrollY - 80;
-      window.scrollTo({ top: y, behavior: 'smooth' });
+      element.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     }
   };
 
@@ -472,6 +532,19 @@ function TestMode() {
       <h5 className="text-muted fw-bold">Đang tải dữ liệu...</h5>
     </div>
   );
+
+  if (viewHistory?.exam_format === 'comprehensive' && Array.isArray(viewHistory.question_details)) {
+    return <>
+      {noteModalVocab && <SaveNoteModal vocab={noteModalVocab} sets={sets} onClose={() => setNoteModalVocab(null)} onSaveSuccess={() => fetchSets(false, true)} />}
+      <TestResult score={{ correct: viewHistory.score, total: viewHistory.total }} questions={viewHistory.question_details}
+        onRestart={() => setViewHistory(null)} restartLabel="Đóng lịch sử"
+        onSaveNote={(id) => {
+          const vocab = viewHistory.question_details.find((q) => q.id === id)?.originalVocab;
+          if (vocab) setNoteModalVocab(vocab);
+          else toast.error('Không tìm thấy dữ liệu gốc để lưu.');
+        }} />
+    </>;
+  }
 
   if (viewHistory) {
     const isPerfect = viewHistory.wrongDetails && viewHistory.wrongDetails.length === 0;
@@ -626,12 +699,13 @@ function TestMode() {
         <TestSetup 
           sets={sets} currentContentType={currentContentType}
           selectedSetId={selectedSetId} setSelectedSetId={setSelectedSetId}
-          questionCount={questionCount} setQuestionCount={setQuestionCount} poolSize={poolSize}
+          questionCount={questionCount} setQuestionCount={setQuestionCount} poolSize={effectivePoolSize}
           questionFormat={questionFormat} setQuestionFormat={setQuestionFormat}
           isReversed={isReversed} setIsReversed={setIsReversed}
           kanjiFront={kanjiFront} setKanjiFront={setKanjiFront}
           kanjiBack={kanjiBack} setKanjiBack={setKanjiBack}
           generateTest={generateTest}
+          comprehensiveSupported={comprehensiveSupported} comprehensivePool={comprehensivePool} isGenerating={isGenerating}
         />
         <div className="container mb-5" style={{ maxWidth: '980px' }}>
           <ExamHistoryTable history={history} setViewHistory={setViewHistory} handleClearHistory={handleClearHistory} onLoadMore={() => fetchHistory(false)} hasMore={hasMoreHistory} />
@@ -645,9 +719,15 @@ function TestMode() {
     if (wrongQs.length === 0) return;
     const title = window.prompt("Nhập tên học phần ôn tập:", "Ôn tập câu sai - Bài Test");
     if (!title || !title.trim()) return;
-    const rawText = wrongQs.map(q => `${q.questionText} | ${q.correctAnswer}`).join('\n');
     try {
-      await api.post("/vocabularies/bulk-import", { title: title.trim(), raw_text: rawText });
+      if (wrongQs.some((q) => q.type === 'comprehensive')) {
+        if (wrongQs.some((q) => !q.originalVocab)) return toast.error('Thiếu dữ liệu gốc; chưa thể tạo học phần an toàn.');
+        await importDataFromJson({ title: title.trim(), folder_path: 'Note', type: 'vocab', language: wrongQs[0].originalVocab.language,
+          vocabularies: wrongQs.map((q) => q.originalVocab) });
+      } else {
+        const rawText = wrongQs.map(q => `${q.questionText} | ${q.correctAnswer}`).join('\n');
+        await api.post("/vocabularies/bulk-import", { title: title.trim(), raw_text: rawText });
+      }
       await fetchSets(false, true);
       toast.success(`Đã tạo học phần: ${title}`);
     } catch (error) { toast.error("Lỗi khi tạo học phần ôn tập"); }
@@ -666,127 +746,35 @@ function TestMode() {
           </button>
         </div>
         <TestResult score={score} questions={questions} onRestart={() => { setIsTestStarted(false); setIsTestFinished(false); window.scrollTo(0,0); }} onCreateMistakeSet={handleCreateMistakeSet} onSaveNote={(vocabId) => {
-          const vocab = allData.find(v => v.id === vocabId);
+          const vocab = questions.find(q => q.id === vocabId)?.originalVocab || allData.find(v => v.id === vocabId);
           if (vocab) setNoteModalVocab(vocab);
         }} />
       </div>
     );
   }
 
-  const answeredCount = questions.filter(q => q.userAnswer.trim() !== '').length;
+  const answeredCount = questions.filter(q => getAnswerStatus(q) === 'complete').length;
+  const partialCount = questions.filter(q => getAnswerStatus(q) === 'partial').length;
 
   return (
     <div className={`container-fluid py-4 ${isFullscreen ? 'overflow-auto mobile-fullscreen' : ''}`} ref={containerRef} style={isFullscreen ? { minHeight: '100vh', backgroundColor: 'var(--bg-main)' } : {}}>
       
-      {/* MODAL XÁC NHẬN THOÁT */}
       <AnimatePresence>
-        {showExitModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.16 }}
-            className="set-sheet-backdrop"
-            style={{ zIndex: 9999 }}
-            onClick={() => setShowExitModal(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              transition={MODAL_SPRING}
-              className="card border-0 shadow-lg rounded-4 p-4 text-center"
-              style={{
-                width: '90%',
-                maxWidth: '400px',
-                backgroundColor: 'var(--bg-surface)',
-                border: '1px solid var(--surface-border)',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="d-flex justify-content-center mb-2">
-                <div
-                  className="d-flex align-items-center justify-content-center rounded-circle"
-                  style={{ width: '56px', height: '56px', background: 'rgba(239, 68, 68, 0.12)' }}
-                >
-                  <AlertTriangle size={28} className="text-danger" />
-                </div>
-              </div>
-              <h5 className="fw-bold text-danger mb-2">Cảnh báo</h5>
-              <p className="mb-4 fs-6" style={{ color: 'var(--text-secondary)' }}>
-                Bạn đang làm bài kiểm tra. Nếu thoát, kết quả hiện tại sẽ bị hủy. Bạn có chắc chắn muốn thoát?
-              </p>
-              <div className="d-flex gap-3">
-                <button className="btn btn-danger btn-touch fw-bold w-50 py-2 rounded-3" onClick={confirmExit}>
-                  Hủy bài thi
-                </button>
-                <button
-                  className="btn btn-light btn-touch fw-bold w-50 py-2 rounded-3"
-                  onClick={() => setShowExitModal(false)}
-                >
-                  Tiếp tục
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* MODAL XÁC NHẬN NỘP BÀI */}
-      <AnimatePresence>
-        {showSubmitModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.16 }}
-            className="set-sheet-backdrop"
-            style={{ zIndex: 9999 }}
-            onClick={() => setShowSubmitModal(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              transition={MODAL_SPRING}
-              className="card border-0 shadow-lg rounded-4 p-4 text-center"
-              style={{
-                width: '90%',
-                maxWidth: '400px',
-                backgroundColor: 'var(--bg-surface)',
-                border: '1px solid var(--surface-border)',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="d-flex justify-content-center mb-2">
-                <div
-                  className="d-flex align-items-center justify-content-center rounded-circle"
-                  style={{ width: '56px', height: '56px', background: 'rgba(99, 76, 226, 0.12)' }}
-                >
-                  <CheckCircle2 size={28} className="text-primary" />
-                </div>
-              </div>
-              <h5 className="fw-bold text-primary mb-2">Nộp bài</h5>
-              <p className="mb-4 fs-6" style={{ color: 'var(--text-secondary)' }}>
-                Bạn đã hoàn thành <strong className="text-success">{answeredCount}/{questions.length}</strong> câu. Bạn có chắc chắn muốn nộp bài thi?
-              </p>
-              <div className="d-flex gap-3">
-                <button
-                  className="btn btn-light btn-touch fw-bold w-50 py-2 rounded-3"
-                  onClick={() => setShowSubmitModal(false)}
-                >
-                  Hủy
-                </button>
-                <button
-                  className="btn btn-primary btn-touch fw-bold w-50 py-2 rounded-3"
-                  onClick={confirmSubmitTest}
-                >
-                  Nộp bài
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
+        {showExitModal && <AccessibleModal title="Rời bài kiểm tra?" onClose={() => setShowExitModal(false)}>
+          <p>Bạn đang làm bài kiểm tra. Nếu thoát, kết quả hiện tại sẽ bị hủy.</p>
+          <div className="d-flex gap-3">
+            <button className="btn btn-danger btn-touch flex-fill" onClick={confirmExit}>Hủy bài thi</button>
+            <button className="btn btn-light btn-touch flex-fill" onClick={() => setShowExitModal(false)}>Tiếp tục</button>
+          </div>
+        </AccessibleModal>}
+        {showSubmitModal && <AccessibleModal title="Nộp bài" onClose={() => setShowSubmitModal(false)}>
+          <p>Bạn đã hoàn thành <strong>{answeredCount}/{questions.length}</strong> câu.</p>
+          {answeredCount < questions.length && <p role="status">Còn {questions.length - answeredCount} câu chưa nhập đủ{partialCount ? `, trong đó ${partialCount} câu đang trả lời dở` : ''}. Những trường bỏ trống sẽ được chấm sai.</p>}
+          <div className="d-flex gap-3">
+            <button className="btn btn-light btn-touch flex-fill" onClick={() => setShowSubmitModal(false)}>Quay lại làm bài</button>
+            <button className="btn btn-primary btn-touch flex-fill" onClick={confirmSubmitTest}>Xác nhận nộp bài</button>
+          </div>
+        </AccessibleModal>}
       </AnimatePresence>
 
       <div className="mx-auto has-mobile-bottom-bar" style={{ maxWidth: '900px' }}>
@@ -818,10 +806,12 @@ function TestMode() {
 
           <div className="mobile-question-strip" ref={questionStripRef}>
             {questions.map((q, idx) => {
-              const isAnswered = q.userAnswer.trim() !== '';
+              const answerStatus = getAnswerStatus(q);
+              const isAnswered = answerStatus === 'complete';
               return (
                 <button
                   key={idx}
+                  aria-label={`Câu ${idx + 1}: ${isAnswered ? 'đã nhập đủ' : answerStatus === 'partial' ? 'đang trả lời dở' : 'chưa trả lời'}`}
                   className={`btn ${
                     isAnswered ? 'btn-primary text-white border-primary' : 'border'
                   }`}
@@ -836,7 +826,7 @@ function TestMode() {
                   }
                   onClick={() => scrollToQuestion(idx)}
                 >
-                  {idx + 1}
+                  {idx + 1}{answerStatus === 'partial' ? ' ◐' : isAnswered ? ' ✓' : ''}
                 </button>
               );
             })}
@@ -857,15 +847,24 @@ function TestMode() {
                     Câu {idx + 1} / {questions.length}
                   </span>
                   <span className="text-muted small fw-semibold">
-                    {q.type === 'choice' ? 'Chọn 1 đáp án đúng' : 'Điền đáp án'}
+                    {q.type === 'comprehensive' ? 'Điền đủ 3 trường' : q.type === 'choice' ? 'Chọn 1 đáp án đúng' : 'Điền đáp án'}
                   </span>
                 </div>
 
-                <h4 className="my-3 fw-bold" style={{ color: 'var(--text-main)', lineHeight: '1.4' }}>
+                <h4 className={`my-3 fw-bold ${q.type === 'comprehensive' ? 'comprehensive-prompt' : ''}`} style={{ color: 'var(--text-main)', lineHeight: '1.4' }}>
                   {q.questionText}
                 </h4>
 
-                {q.type === 'choice' ? (
+                {q.type === 'comprehensive' ? (
+                  <ComprehensiveQuestion question={q} index={idx}
+                    onChange={(field, value) => handleAnswerChange(idx, value, field)}
+                    onNext={() => {
+                      if (idx + 1 < questions.length) {
+                        scrollToQuestion(idx + 1);
+                        document.getElementById(`comprehensive-${idx + 1}-hanviet`)?.focus({ preventScroll: true });
+                      }
+                    }} />
+                ) : q.type === 'choice' ? (
                   <div className="row g-2 g-md-3 mt-1">
                     {q.options.map((opt, oIdx) => {
                       const isSelected = q.userAnswer === opt;

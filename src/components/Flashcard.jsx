@@ -14,7 +14,11 @@ const FLIP_SPRING = {
   restSpeed: 0.01,
 };
 
-function Flashcard({
+function Flashcard(props) {
+  return props.vocab ? <FlashcardContent {...props} /> : null;
+}
+
+function FlashcardContent({
   vocab,
   autoPlay,
   contentType = 'vocab',
@@ -61,8 +65,6 @@ function Flashcard({
       toast.error('Lỗi khi lưu trạng thái sao');
     }
   };
-
-  if (!vocab) return null;
 
   const vocabLangCode =
     vocab.language === 'en' ? 'en-US' : vocab.language === 'zh' ? 'zh-CN' : 'ja-JP';

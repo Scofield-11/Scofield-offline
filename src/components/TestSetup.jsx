@@ -31,6 +31,9 @@ function TestSetup({
   kanjiBack,
   setKanjiBack,
   generateTest,
+  comprehensiveSupported = false,
+  comprehensivePool,
+  isGenerating = false,
 }) {
   // Logic kiểm tra chế độ 4 trường (Kanji / Tiếng Nhật / Tiếng Trung) nguyên bản
   const hasFourFields = useMemo(() => {
@@ -119,6 +122,7 @@ function TestSetup({
 
   // Hiển thị chiều dịch đang kích hoạt
   const currentDirectionText = useMemo(() => {
+    if (questionFormat === 'comprehensive') return 'Chữ Hán → Hán Việt, Cách đọc, Nghĩa';
     if (hasFourFields) {
       const map = isChinese
         ? {
@@ -140,7 +144,7 @@ function TestSetup({
       return `${front} ➔ ${back}`;
     }
     return isReversed ? 'Nghĩa ➔ Từ vựng' : 'Từ vựng ➔ Nghĩa';
-  }, [hasFourFields, isChinese, kanjiFront, kanjiBack, isReversed]);
+  }, [hasFourFields, isChinese, kanjiFront, kanjiBack, isReversed, questionFormat]);
 
   // 3 Hình thức thi có Tonal Palette & thông số tốc độ
   const formatOptions = useMemo(
@@ -168,15 +172,20 @@ function TestSetup({
       {
         id: 'mixed',
         title: 'Hỗn hợp',
-        tag: 'Toàn diện',
+        tag: 'Kết hợp',
         desc: '50% trắc nghiệm & 50% tự luận',
         icon: Shuffle,
         speedSeconds: 9,
         colorKey: 'mixed',
         badgeClass: 'icon-badge-rose',
       },
+      ...(comprehensiveSupported ? [{
+        id: 'comprehensive', title: 'Toàn diện (3 trường)', tag: 'Nhớ đầy đủ',
+        desc: 'Hiện Chữ Hán → Gõ Hán Việt, Cách đọc và Nghĩa',
+        icon: ListChecks, speedSeconds: 30, colorKey: 'comprehensive', badgeClass: 'icon-badge-violet',
+      }] : []),
     ],
-    []
+    [comprehensiveSupported]
   );
 
   const activeFormatObj = useMemo(() => {
@@ -319,7 +328,7 @@ function TestSetup({
           {/* KHU VỰC 3: HÌNH THỨC LÀM BÀI (3 Thẻ Tonal Violet) */}
           <div className="test-lobby-card">
             <div className="test-lobby-card-title">Hình thức làm bài</div>
-            <div className="test-lobby-format-grid">
+            <div className={`test-lobby-format-grid ${comprehensiveSupported ? 'has-comprehensive' : ''}`}>
               {formatOptions.map((fmt) => {
                 const IconComponent = fmt.icon;
                 const isSelected = questionFormat === fmt.id;
@@ -329,6 +338,7 @@ function TestSetup({
                     type="button"
                     className={`test-lobby-format-card ${isSelected ? 'active' : ''}`}
                     onClick={() => setQuestionFormat(fmt.id)}
+                    aria-pressed={isSelected}
                   >
                     <div className="test-lobby-format-top">
                       <div className={`test-lobby-format-icon icon-badge ${fmt.badgeClass || fmt.colorKey}`}>
@@ -356,7 +366,14 @@ function TestSetup({
           </div>
 
           {/* KHU VỰC 4: KỸ NĂNG & DẠNG CÂU HỎI */}
-          <div className="test-lobby-card">
+          {questionFormat === 'comprehensive' ? <div className="test-lobby-card comprehensive-pool-info" role="status">
+            <div className="test-lobby-card-title">Chữ Hán → Ba trường trả lời</div>
+            {comprehensivePool?.loading ? <p>Đang kiểm tra dữ liệu từ ghép…</p> : comprehensivePool?.error ? <p>Không tải được dữ liệu. Hãy chọn lại học phần để thử lại.</p> : <>
+              <p><strong>{comprehensivePool?.eligible.length || 0}</strong> từ đủ dữ liệu · <strong>{comprehensivePool?.excluded || 0}</strong> từ bị loại do thiếu trường.</p>
+              <p className="small mb-0">Chỉ kiểm tra từ ghép có đủ Chữ Hán, Hán Việt, Cách đọc và Nghĩa. Số câu tối đa đã giới hạn theo số từ hợp lệ.</p>
+              {poolSize === 0 && <p className="mt-2 mb-0 fw-bold">Chưa thể bắt đầu. Hãy bổ sung dữ liệu từ ghép trong học phần Kanji.</p>}
+            </>}
+          </div> : <div className="test-lobby-card">
             <GameModeSelector
               hasFourFields={hasFourFields}
               currentContentType={currentContentType}
@@ -377,7 +394,7 @@ function TestSetup({
               onSwap={handleSwap}
               sectionLabel="Kỹ năng & Chiều dịch"
             />
-          </div>
+          </div>}
         </div>
 
         {/* CỘT PHẢI (5/12, Sticky): TẤM VÉ VÀO PHÒNG THI (HERO BATTLE TICKET) */}
@@ -497,9 +514,9 @@ function TestSetup({
                   type="button"
                   className="test-lobby-cta-btn"
                   onClick={generateTest}
-                  disabled={!poolSize || poolSize <= 0 || !questionCount || questionCount <= 0}
+                  disabled={isGenerating || !poolSize || poolSize <= 0 || !questionCount || questionCount <= 0 || (questionFormat === 'comprehensive' && comprehensivePool?.loading)}
                 >
-                  <span>Bắt đầu làm bài</span>
+                  <span>{isGenerating ? 'Đang tạo đề…' : 'Bắt đầu làm bài'}</span>
                   <ArrowRight size={18} strokeWidth={2.4} />
                 </button>
               )}
