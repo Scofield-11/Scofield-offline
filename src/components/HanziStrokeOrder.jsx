@@ -41,6 +41,11 @@ function HanziCharacter({ character, index }) {
       writerRef.current = writer;
       setStrokeCount(data.strokes.length);
       setStatus('ready');
+      const run = ++runRef.current;
+      setPlayState('playing');
+      writer.animateCharacter().then(() => {
+        if (alive && run === runRef.current) setPlayState('idle');
+      }).catch(() => {});
     }).catch(() => { if (alive) setStatus('error'); });
     return () => {
       alive = false;
@@ -79,8 +84,7 @@ function HanziCharacter({ character, index }) {
       <button className="btn-icon-soft chip-slate" disabled={status !== 'ready'} onClick={replay} aria-label="Vẽ lại từ đầu"><RotateCcw size={18} aria-hidden="true" /></button>
       <label className="hanzi-speed">Tốc độ<select className="form-select" value={speed} onChange={(event) => setSpeed(Number(event.target.value))}><option value={.5}>0.5×</option><option value={1}>1×</option><option value={2}>2×</option></select></label>
     </div>}
-    {reducedMotion && <p className="small text-secondary mt-2">Nét viết chỉ chuyển động khi bạn nhấn Phát.</p>}
-  </div>;
+    </div>;
 }
 
 export default function HanziStrokeOrder({ text }) {
