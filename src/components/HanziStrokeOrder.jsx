@@ -93,6 +93,5 @@ export default function HanziStrokeOrder({ text }) {
       {chars.map((char, index) => <button key={`${char}-${index}`} type="button" className={`btn btn-mobile-chip ${activeIndex === index ? 'btn-primary' : 'chip-slate'}`} aria-pressed={activeIndex === index} aria-label={`${char}, ký tự ${index + 1}`} onClick={() => setSelected(index)}>{char}<small>{index + 1}</small></button>)}
     </div>
     <HanziCharacter key={`${text}-${activeIndex}`} character={chars[activeIndex]} index={activeIndex} />
-    <p className="hanzi-attribution">Nét chữ: <a href="https://hanziwriter.org" target="_blank" rel="noreferrer">Hanzi Writer</a> · <a href="https://github.com/skishore/makemeahanzi" target="_blank" rel="noreferrer">Make Me a Hanzi / Arphic</a> · <a href="/licenses/ARPHICPL.txt" target="_blank" rel="noreferrer">Giấy phép dữ liệu</a></p>
   </div>;
 }

@@ -121,13 +121,22 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
     setIsPlaying(true);
   };
 
-  const btnSize = 44;
-  const iconSize = compact ? 13 : 14;
+  const btnSize = compact ? 30 : 34;
+  const iconSize = compact ? 13 : 15;
+  const btnStyle = {
+    width: btnSize,
+    height: btnSize,
+    minWidth: btnSize,
+    minHeight: btnSize,
+    padding: 0,
+    borderRadius: '10px',
+    flexShrink: 0,
+  };
 
   return (
     <div
       className={`kanji-stroke-widget ${compact ? 'kanji-stroke-widget--compact' : ''}`}
-      style={{ maxWidth: '100%', width: compact ? size : Math.max(size, 220) }}
+      style={{ maxWidth: '100%', width: 'fit-content', margin: '0 auto' }}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Thanh chọn từng chữ Hán nếu cụm từ có nhiều chữ Hán */}
@@ -234,9 +243,25 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
         {/* Thanh điều khiển nét viết + Nhãn số nét nằm ngoài ô chữ (không che chữ Hán) */}
         {error && <div className="small text-secondary text-center">Chưa có dữ liệu nét viết. <button type="button" className="btn btn-mobile-chip chip-slate" onClick={() => setRetry((value) => value + 1)}>Thử lại</button></div>}
         {!error && (
-          <div className="kanji-stroke-controls-dock">
+          <div
+            className="kanji-stroke-controls-dock"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexWrap: 'nowrap',
+              gap: '6px',
+              padding: '5px 8px',
+              borderRadius: '14px',
+              width: 'max-content',
+              maxWidth: '100%',
+            }}
+          >
             {!loading && strokeData.paths.length > 0 && (
-              <span className="kanji-stroke-count-pill">
+              <span
+                className="kanji-stroke-count-pill"
+                style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+              >
                 {strokeData.paths.length} nét
               </span>
             )}
@@ -244,7 +269,7 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
             <button
               type="button"
               className="btn-icon-soft chip-primary"
-              style={{ width: btnSize, height: btnSize }}
+              style={btnStyle}
               onClick={handleReplay}
               title="Vẽ lại từ đầu"
               disabled={loading}
@@ -255,7 +280,7 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
             <button
               type="button"
               className="btn-icon-soft chip-slate"
-              style={{ width: btnSize, height: btnSize }}
+              style={btnStyle}
               onClick={togglePlay}
               title={isPlaying ? 'Tạm dừng' : 'Tiếp tục'}
               disabled={loading}
@@ -270,7 +295,7 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
             <button
               type="button"
               className={`btn-icon-soft ${showNumbers ? 'chip-primary' : 'chip-slate'}`}
-              style={{ width: btnSize, height: btnSize }}
+              style={btnStyle}
               onClick={toggleNumbers}
               title="Ẩn/Hiện số thứ tự nét"
               aria-pressed={showNumbers}
@@ -286,7 +311,7 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
             <button
               type="button"
               className="btn-icon-soft chip-slate fw-bold"
-              style={{ width: btnSize, height: btnSize, fontSize: '0.65rem' }}
+              style={{ ...btnStyle, fontSize: '0.68rem' }}
               onClick={toggleSpeed}
               title="Đổi tốc độ vẽ"
             >
@@ -295,7 +320,6 @@ function KanjiStrokeOrder({ text, size = 136, autoStart = true, compact = false 
           </div>
         )}
       </div>
-      {!compact && <small className="text-secondary mt-2"><a href="https://kanjivg.tagaini.net/" target="_blank" rel="noreferrer">KanjiVG</a> · <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noreferrer">CC BY-SA 3.0</a></small>}
     </div>
   );
 }
